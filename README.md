@@ -9,8 +9,8 @@ Andy is an interpreted object-oriented multi-purpose programming language
 ## Table of Contents
 * [Examples](#Examples)
 * [Availability](#Availability)
-* [Building](#Building)
 * [Install](#Install)
+* [Building](#Building)
 
 ## Examples
 
@@ -45,6 +45,9 @@ On Linux or Windows Developer Command Prompt
 
 ```sh
     git clone https://github.com/andrey-moura/uva
+    cd uva
+    cmake -B build .
+    cmake --build build --config Release --parallel
     git clone https://github.com/andrey-moura/andy-lang
     cd andy-lang
     cmake -B build .

@@ -75,16 +75,16 @@ void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::st
         throw std::runtime_error(dlerror());
     }
 #elif defined(_WIN32)
-    HMODULE handle = LoadLibrary(executable_path_c_str);
+    HMODULE handle = LoadLibrary(module_path_c_str);
 
     if(!handle) {
         throw std::runtime_error("Failed to load library");
     }
 
-    andy::lang::extension* (*create_extension)() = (andy::lang::extension*(*)())dlsym(handle, "create_extension");
+    andy::lang::extension* (*create_extension)() = (andy::lang::extension*(*)())GetProcAddress(handle, "create_extension");
 
     if(!create_extension) {
-        throw std::runtime_error(dlerror());
+        throw std::runtime_error("Failed to load symbol");
     }
 #else
     throw std::runtime_error("unsupported platform");

@@ -13,25 +13,19 @@ jobs:
     runs-on: windows-2022
 
     steps:
-    - name: Checkout uva
-      uses: actions/checkout@v3
-      with:
-        repository: andrey-moura/uva
-        path: 'uva'
-    
     - name: Checkout andy-lang
       uses: actions/checkout@v3
       with:
-        submodules: recursive
         path: 'andy-lang'
-        
-    - name: Set up CMake
-      uses: lukka/get-cmake@latest
 
-    - name: Configure CMake
-      run: cmake -B build .
+    - name: Configure CMake for andy-lang
+      run: cmake -DCLONE_AND_INCLUDE_DEPENDENCIES=ON -B build .
       working-directory: andy-lang
       
-    - name: Build project
+    - name: Build project for andy-lang
       run: cmake --build build --config Release --parallel
+      working-directory: andy-lang
+
+    - name: Install andy-lang
+      run: cmake --install build --config Release
       working-directory: andy-lang
