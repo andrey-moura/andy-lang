@@ -1,4 +1,4 @@
-name: Ubuntu 22.04
+name: WebAssembly
 
 on:
   push:
@@ -23,15 +23,15 @@ jobs:
         path: 'emsdk'
 
     - name: Install emscripten
-      run: ./emsdk/emsdk install latest
+      run: ./emsdk install latest
       working-directory: emsdk
 
     - name: Activate emscripten
-      run: ./emsdk/emsdk activate latest
+      run: ./emsdk activate latest
       working-directory: emsdk
 
     - name: Configure emscripten
-      run: source ./emsdk/emsdk_env.sh
+      run: source ./emsdk_env.sh
       working-directory: emsdk
 
     - name: Checkout andy-lang
