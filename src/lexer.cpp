@@ -284,6 +284,21 @@ void andy::lang::lexer::read_next_token()
     }
 
     if(isdigit(c) || (c == '-' && isdigit(m_current[1]))) {
+        size_t index = m_current.data() - m_source.data();
+        if(index > 0) {
+            // Not beginning of the source code.
+            
+            // If the last immediate previous character is a digit, then we have a expression like
+            // 1-1 which is not a negative number, but a subtraction.
+
+            if(isdigit(m_source[index - 1])) {
+                read();
+                push_token(start, token_type::token_operator, std::move(m_buffer), token_kind::token_null, operator_type::operator_minus);
+                
+                // Let the next digit be read as a number
+            }
+
+        }
         token_kind kind = token_kind::token_integer;
         // if a token starts with a digit or a minus sign followed by a digit, it is a number
         read_while([this](const char& c) {
