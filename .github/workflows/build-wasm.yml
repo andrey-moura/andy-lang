@@ -31,7 +31,9 @@ jobs:
       working-directory: emsdk
 
     - name: Configure emscripten
-      run: source ./emsdk_env.sh
+      run: |
+        source ./emsdk_env.sh
+        echo "EMSDK_ENV_LOADED=1" >> $GITHUB_ENV
       working-directory: emsdk
 
     - name: Checkout andy-lang
