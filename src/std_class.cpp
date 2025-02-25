@@ -11,15 +11,25 @@ std::shared_ptr<andy::lang::structure> andy::lang::std_class::create(andy::lang:
 
     StdClass->methods = {
         { "print", andy::lang::method("print", method_storage_type::class_method, {"message"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::shared_ptr<andy::lang::object> obj = params[0]->cls->methods["to_string"].call(params[0]);
-            std::cout << obj->as<std::string>();
+            std::shared_ptr<andy::lang::object> obj = params[0];
+            if(obj->cls == interpreter->StringClass) {
+                std::cout << obj->as<std::string>();
+            } else {
+                std::string s = obj->cls->methods["to_string"].call(obj)->as<std::string>();
+                std::cout << s;
+            }
 
             return nullptr;
         })},
 
         { "puts", andy::lang::method("puts", method_storage_type::class_method, {"message"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::shared_ptr<andy::lang::object> obj = params[0]->cls->methods["to_string"].call(params[0]);
-            std::cout << obj->as<std::string>() << std::endl;
+            std::shared_ptr<andy::lang::object> obj = params[0];
+            if(obj->cls == interpreter->StringClass) {
+                std::cout << obj->as<std::string>() << std::endl;
+            } else {
+                std::string s = obj->cls->methods["to_string"].call(obj)->as<std::string>();
+                std::cout << s << std::endl;
+            }
 
             return nullptr;
         })},
