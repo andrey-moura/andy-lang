@@ -20,7 +20,7 @@ jobs:
         submodules: 'recursive'
 
     - name: Configure CMake for andy-lang
-      run: cmake -B build .
+      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
@@ -30,3 +30,19 @@ jobs:
     - name: Install andy-lang
       run: cmake --install build --config Release --component andy
       working-directory: andy-lang
+
+    - name: Configure andy again so the installer can find it
+      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
+      working-directory: andy-lang
+
+    - name: Build the installer
+      run: cmake --build build --config Release --parallel --target andy-lang-installer
+      working-directory: andy-lang
+
+    - name: Generate artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: andy-artifacts
+        path: |
+          andy-lang/build/Release/andy.exe
+          andy-lang/build/Release/andy-lang-installer.exe
