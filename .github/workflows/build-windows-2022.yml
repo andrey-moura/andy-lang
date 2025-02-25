@@ -30,3 +30,9 @@ jobs:
     - name: Install andy-lang
       run: cmake --install build --config Release --component andy
       working-directory: andy-lang
+
+    - name: Generate artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: andy.exe
+        path: andy-lang/build/Release/andy.exe

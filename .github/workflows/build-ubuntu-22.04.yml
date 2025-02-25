@@ -37,3 +37,9 @@ jobs:
     - name: Check andy-lang version
       run: andy --version
       working-directory: andy-lang
+
+    - name: Generate artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: andy
+        path: andy-lang/build/andy
