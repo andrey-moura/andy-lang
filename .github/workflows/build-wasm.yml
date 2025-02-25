@@ -30,9 +30,6 @@ jobs:
       run: ./emsdk activate latest
       working-directory: emsdk
 
-    - name: Configure Emscripten
-      run: echo "source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh" >> $BASH_ENV
-
     - name: Checkout andy-lang
       uses: actions/checkout@v3
       with:
@@ -44,7 +41,9 @@ jobs:
       working-directory: andy-lang
 
     - name: Configure emcmake for andy-lang
-      run: emcmake cmake .. -DCMAKE_BUILD_TYPE=Release
+      run: |
+        source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
+        emcmake cmake .. -DCMAKE_BUILD_TYPE=Release
       working-directory: andy-lang/build
       
     - name: Build project for andy-lang
