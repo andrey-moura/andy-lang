@@ -1,0 +1,61 @@
+name: Ubuntu 22.04
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Install dependencies
+      run: sudo apt-get install -y build-essential
+
+    - name: Checkout emscripten
+      uses: actions/checkout@v3
+      with:
+        repository: emscripten-core/emsdk
+        path: 'emsdk'
+
+    - name: Install emscripten
+      run: ./emsdk/emsdk install latest
+      working-directory: emsdk
+
+    - name: Activate emscripten
+      run: ./emsdk/emsdk activate latest
+      working-directory: emsdk
+
+    - name: Configure emscripten
+      run: source ./emsdk/emsdk_env.sh
+      working-directory: emsdk
+
+    - name: Checkout andy-lang
+      uses: actions/checkout@v3
+      with:
+        path: 'andy-lang'
+        submodules: 'recursive'
+
+    - name: Create build directory for andy-lang
+      run: mkdir build
+      working-directory: andy-lang
+
+    - name: Configure emcmake for andy-lang
+      run: emcmake cmake .. -DCMAKE_BUILD_TYPE=Release
+      working-directory: andy-lang/build
+      
+    - name: Build project for andy-lang
+      run: cmake --build build --config Release --parallel
+      working-directory: andy-lang
+
+    - name: Generate artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: andy
+        path: |
+          andy-lang/build/andy.js
+          andy-lang/build/andy.wasm
