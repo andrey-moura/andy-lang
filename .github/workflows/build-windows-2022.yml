@@ -36,7 +36,7 @@ jobs:
       working-directory: andy-lang
 
     - name: Build the installer
-      run: cmake --build build --config Release --parallel --target andy-installer
+      run: cmake --build build --config Release --parallel --target andy-lang-installer
       working-directory: andy-lang
 
     - name: Generate artifacts
@@ -45,4 +45,4 @@ jobs:
         name: andy-artifacts
         path: |
           andy-lang/build/Release/andy.exe
-          andy-lang/build/Release/andy-installer.exe
+          andy-lang/build/Release/andy-lang-installer.exe
