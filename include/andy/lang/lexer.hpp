@@ -116,6 +116,7 @@ namespace andy
         protected:
             std::string m_file_name;
             std::string_view m_source;
+            std::string_view m_current;
             std::string m_buffer;
             std::vector<andy::lang::lexer::token> m_tokens;
 
@@ -133,24 +134,24 @@ namespace andy
             /// @param token The token which should update the position.
             void update_start_position(const char& token);
 
-            /// @brief Discard the first character from the m_source and update the start position.
+            /// @brief Discard the first character from the m_current and update the start position.
             const char& discard();
-            /// @brief Discard all whitespaces from the m_source.
+            /// @brief Discard all whitespaces from the m_current.
             void discard_whitespaces();
 
-            /// @brief Read the first character from the m_source, stores it in m_buffer and update the start position.
+            /// @brief Read the first character from the m_current, stores it in m_buffer and update the start position.
             const char& read();
 
             template<typename T>
             void discard_while(T&& condition) {
-                while(m_source.size() && condition(m_source.front())) {
+                while(m_current.size() && condition(m_current.front())) {
                     discard();
                 }
             }
 
             template<typename T>
             void read_while(T&& condition) {
-                while(m_source.size() && condition(m_source.front())) {
+                while(m_current.size() && condition(m_current.front())) {
                     read();
                 }
             }

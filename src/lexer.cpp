@@ -142,11 +142,11 @@ void andy::lang::lexer::update_start_position(const char &token)
 
 const char &andy::lang::lexer::discard()
 {
-    const char& c = m_source.front();
+    const char& c = m_current.front();
 
     update_start_position(c);
 
-    m_source.remove_prefix(1);
+    m_current.remove_prefix(1);
 
     return c;
 }
@@ -162,15 +162,15 @@ void andy::lang::lexer::discard_whitespaces()
 const char &andy::lang::lexer::read()
 {
     // If it needs to read a character, and the buffer is empty, it is an error.
-    if(m_source.empty()) {
+    if(m_current.empty()) {
         throw std::runtime_error("lexer: unexpected end of file");
     }
     
-    const char& c = m_source.front();
+    const char& c = m_current.front();
 
     update_start_position(c);
 
-    m_source.remove_prefix(1);
+    m_current.remove_prefix(1);
 
     m_buffer.push_back(c);
 
@@ -245,20 +245,20 @@ void andy::lang::lexer::read_next_token()
 
     token_position start = m_start;
 
-    if(m_source.empty()) {
+    if(m_current.empty()) {
         push_token(start, token_type::token_eof);
         return;
     }
 
-    const char& c = m_source.front();
+    const char& c = m_current.front();
 
     // Ordered by less expensive checks first
 
     if(is_delimiter(c)) {
-        if(c == ':' && m_source.size() >= 1) {
-            if(isalpha(m_source[1])) {
+        if(c == ':' && m_current.size() >= 1) {
+            if(isalpha(m_current[1])) {
                 discard();
-                while(m_source.size() && (isalnum(m_source.front()) || m_source.front() == '_')) { 
+                while(m_current.size() && (isalnum(m_current.front()) || m_current.front() == '_')) { 
                     read();
                 }
                 push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_string);
@@ -271,7 +271,7 @@ void andy::lang::lexer::read_next_token()
     }
 
     // The comment starts with /, which is the division operator. So we need to check if it is a comment first.
-    if(c == '/' && m_source.size() > 2 && m_source[1] == '/') {
+    if(c == '/' && m_current.size() > 2 && m_current[1] == '/') {
         discard();
         discard();
 
@@ -283,14 +283,14 @@ void andy::lang::lexer::read_next_token()
         return;
     }
 
-    if(isdigit(c) || (c == '-' && isdigit(m_source[1]))) {
+    if(isdigit(c) || (c == '-' && isdigit(m_current[1]))) {
         token_kind kind = token_kind::token_integer;
         // if a token starts with a digit or a minus sign followed by a digit, it is a number
         read_while([this](const char& c) {
             return isdigit(c) || (m_buffer.empty() && c == '-');
         });
 
-        if(m_source.front() == '.') {
+        if(m_current.front() == '.') {
             read();
             read_while([](const char& c) {
                 return isdigit(c);
@@ -298,7 +298,7 @@ void andy::lang::lexer::read_next_token()
 
             kind = token_kind::token_float;
             
-            if(m_source.front() == 'f') {
+            if(m_current.front() == 'f') {
                 discard();
                 kind = token_kind::token_double;
             }
@@ -312,7 +312,7 @@ void andy::lang::lexer::read_next_token()
         read();
 
         // If the next character is also an operator, it is a double operator.
-        if(is_operator(m_source.front())) {
+        if(is_operator(m_current.front())) {
             read();
         }
 
@@ -332,8 +332,8 @@ void andy::lang::lexer::read_next_token()
         case '\'':
             discard();
 
-            while(m_source.front() != '\'') {
-                if(m_source.empty()) {
+            while(m_current.front() != '\'') {
+                if(m_current.empty()) {
                     throw std::runtime_error("lexer: unexpected end of file");
                 }
 
@@ -347,7 +347,7 @@ void andy::lang::lexer::read_next_token()
         break;
     }
 
-    if(is_preprocessor(m_source)) {
+    if(is_preprocessor(m_current)) {
         read_while([](const char& c) {
             return !isspace(c);
         });
@@ -393,7 +393,8 @@ void andy::lang::lexer::read_next_token()
 void andy::lang::lexer::tokenize(std::string __file_name, std::string_view __source)
 {
     m_file_name = std::move(__file_name);
-    m_source    = __source;
+    m_current    = __source;
+    m_source     = __source;
 
     do {
         read_next_token();
@@ -527,15 +528,15 @@ void andy::lang::lexer::token::merge(const token &other)
 
 void andy::lang::lexer::extract_and_push_string(token_position start)
 {
-    while(m_source.size()) {
-        char ch = m_source.front();
+    while(m_current.size()) {
+        char ch = m_current.front();
 
         switch(ch)
         {
             case '\\':
-                m_source.remove_prefix(1); // Remove the backslash
-                ch = m_source.front();     // Save the escaped character
-                m_source.remove_prefix(1); // Remove the escaped character
+                m_current.remove_prefix(1); // Remove the backslash
+                ch = m_current.front();     // Save the escaped character
+                m_current.remove_prefix(1); // Remove the escaped character
 
                 m_start.offset += 2;        // The backslash and the escaped character
                 m_start.column += 2;        // The backslash and the escaped character
@@ -548,7 +549,7 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                 return;
             break;
             case '$':
-                if(m_source.size() > 1 && m_source[1] == '{') {
+                if(m_current.size() > 1 && m_current[1] == '{') {
                     discard(); // Remove the dollar sign
                     discard(); // Remove the opening curly brace open
 
@@ -559,16 +560,16 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     push_token(start, token_type::token_operator, "+", token_kind::token_string);
 
                     // Read the variable or expression
-                    while(m_source.size() && m_source.front() != '}') {
+                    while(m_current.size() && m_current.front() != '}') {
                         read_next_token();
                     }
 
-                    if(m_source.size()) {
+                    if(m_current.size()) {
                         discard(); // Remove the closing curly brace
                     }
                     
                     // Check if the string is finished
-                    if(m_source.size() && m_source.front() == '\"') {
+                    if(m_current.size() && m_current.front() == '\"') {
                         discard(); // Remove the closing quote
                         return;
                     }
