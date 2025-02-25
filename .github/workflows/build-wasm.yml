@@ -30,11 +30,8 @@ jobs:
       run: ./emsdk activate latest
       working-directory: emsdk
 
-    - name: Configure emscripten
-      run: |
-        source ./emsdk_env.sh
-        echo "EMSDK_ENV_LOADED=1" >> $GITHUB_ENV
-      working-directory: emsdk
+    - name: Configure Emscripten
+      run: echo "source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh" >> $BASH_ENV
 
     - name: Checkout andy-lang
       uses: actions/checkout@v3
