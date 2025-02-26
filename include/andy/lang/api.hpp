@@ -1,5 +1,8 @@
+#include <filesystem>
+
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
+#include <andy/lang/config.hpp>
 
 namespace andy
 {
@@ -7,6 +10,10 @@ namespace andy
     {
         namespace api
         {
+            /// @brief Executes the code in a file and return the result.
+            /// @param path The path to the source code.
+            /// @return Returns a shared pointer to the object.
+            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path);
             /// @brief Creates the object with a value and automatically determines the class.
             /// @tparam T The type of the value.
             /// @param interpreter The interpreter.

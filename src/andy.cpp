@@ -1,19 +1,9 @@
 #include <iostream>
 #include <filesystem>
 
-#include <andy/lang/parser.hpp>
-#include <andy/lang/lexer.hpp>
-//#include <vm/vm.hpp>
+#include <andy/lang/api.hpp>
+
 #include <uva/console.hpp>
-#include <uva/file.hpp>
-#include <andy/lang/interpreter.hpp>
-#include <andy/lang/extension.hpp>
-#include <andy/lang/preprocessor.hpp>
-#include <andy/lang/config.hpp>
-
-using namespace andy;
-
-std::shared_ptr<andy::lang::object> application;
 
 #ifdef __UVA_DEBUG__
     #define try if(true)
@@ -77,24 +67,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        //std::filesystem::current_path(file_path.parent_path());
-
-        std::string source = uva::file::read_all_text<char>(file_path);
-
-        andy::lang::lexer l(file_path.string(), source);
-
-        andy::lang::preprocessor preprocessor;
-        preprocessor.process(file_path.string(), l);
-
-        andy::lang::parser p;
-        andy::lang::parser::ast_node root_node = p.parse_all(l);
-
-        andy::lang::interpreter interpreter;
-        interpreter.input_file_path = file_path;
-        std::shared_ptr<andy::lang::object> tmp;
-        std::shared_ptr<andy::lang::object> ret = interpreter.execute_all(root_node, tmp);
-
-        interpreter.start_extensions();
+        std::shared_ptr<andy::lang::object> ret = andy::lang::api::evaluate(file_path);
 
         if(!ret) {
             return 0;
@@ -105,9 +78,10 @@ int main(int argc, char** argv) {
             int ret_value = ret->as<int>();
             return ret_value;
         }
+        
     } catch (const std::exception& e) {
         uva::console::log_error(e.what());
-        return false;
+        return 1;
     }
 
     return 0;

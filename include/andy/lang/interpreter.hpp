@@ -49,6 +49,12 @@ namespace andy
             std::shared_ptr<andy::lang::object> execute_all(std::vector<andy::lang::parser::ast_node>::const_iterator begin, std::vector<andy::lang::parser::ast_node>::const_iterator end, std::shared_ptr<andy::lang::object>& object);
             std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object);
 
+            std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code)
+            {
+                std::shared_ptr<andy::lang::object> tmp;
+                return execute_all(source_code, tmp);
+            }
+
             /// @brief The global false class.
             std::shared_ptr<andy::lang::structure> FalseClass;
             /// @brief The global true class.

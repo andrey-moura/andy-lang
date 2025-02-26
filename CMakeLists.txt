@@ -25,6 +25,7 @@ foreach(MODULE ${MODULES})
 endforeach()
 
 add_library(andy-lang
+    ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/method.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/preprocessor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/extension.cpp
