@@ -32,7 +32,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                 params.push_back(std::string(param.token().content()));
             }
 
-            current_context.functions[std::string(method_name)] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, source_code);
+            current_context.functions[method_name] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, source_code);
         }
         break;
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
@@ -54,8 +54,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
 
                     const andy::lang::parser::ast_node& object_node_child = object_node->childrens().front();
 
-                    throw std::runtime_error("fix");
-                    // base_class_name = object_node_child.token().content() + "." + decname_node->token().content();
+                    base_class_name = std::string(object_node_child.token().content()) + "." + std::string(decname_node->token().content());
                 }
 
                 auto base_class = find_class(base_class_name);
@@ -81,12 +80,12 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                         params.push_back(std::string(param.token().content()));
                     }
 
-                    cls->methods[std::string(method_name)] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, class_child);
+                    cls->methods[method_name] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, class_child);
                 }
                 break;
                 case andy::lang::parser::ast_node_type::ast_node_vardecl: {
                     std::string_view var_name = class_child.decname();
-                    cls->instance_variables[std::string(var_name)] = NullClass;
+                    cls->instance_variables[var_name] = NullClass;
                 }
                 break;
                 default:
@@ -342,7 +341,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                 cls = object->cls;
             }
             std::shared_ptr<andy::lang::object> value = node_to_object(source_code.childrens()[1], cls, object);
-            current_context.variables[std::string(var_name)] = value;
+            current_context.variables[var_name] = value;
             return value;
         }
         break;
@@ -406,12 +405,10 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
 
             auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
 
-            std::string var_name(vardecl->decname());
-
             if(array_or_dictionary->cls == ArrayClass) {
                 std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
                 for(auto& value : array_values) {
-                    current_context.variables[var_name] = value;
+                    current_context.variables[vardecl->decname()] = value;
                     execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context), object);
                 }
             } else if(array_or_dictionary->cls == DictionaryClass) {
@@ -420,7 +417,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                     std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
                     std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
 
-                    current_context.variables[var_name] = params_object;
+                    current_context.variables[vardecl->decname()] = params_object;
 
                     execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context), object);
                 }

@@ -512,9 +512,9 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     // Push the string before the variable or expression
                     push_token(start, token_type::token_literal, token_kind::token_string);
 
-                    // We call the operator + to concatenate the string with the variable or expression 
-                    throw std::runtime_error("fix");
-                    // push_token(start, token_type::token_operator, "+", token_kind::token_string);
+                    // We call the operator + to concatenate the string with the variable or expression
+                    m_buffer = "+";
+                    push_token(start, token_type::token_operator, token_kind::token_string);
 
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
@@ -532,8 +532,8 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     }
 
                     // We call the operator + to concatenate the string with the variable or expression 
-                    throw std::runtime_error("fix");
-                    // push_token(m_start, token_type::token_operator, "+", token_kind::token_string);
+                    m_buffer = "+";
+                    push_token(m_start, token_type::token_operator, token_kind::token_string);
 
                     // Read the continuation of the string after the variable or expression
                     extract_and_push_string(m_start);
