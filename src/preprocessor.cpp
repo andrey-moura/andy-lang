@@ -103,11 +103,11 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
         throw std::runtime_error(file_name_token.error_message_at_current_position("Expected string literal after include directive"));
     }
 
-    const std::string& file_path_string = file_name_token.content();
+    std::string_view file_path_string = file_name_token.content();
 
     std::filesystem::path file_path = __lexer.path();
 
-    auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
+    auto files = list_files_with_wildcard(file_path.parent_path(), std::string(file_path_string));
 
     __lexer.erase_tokens(2); // Remove the directive and the file name token
 
@@ -137,7 +137,7 @@ void andy::lang::preprocessor::process_compile(const std::filesystem::path &__fi
         throw std::runtime_error(file_name_token.error_message_at_current_position("Expected string literal after compile directive"));
     }
 
-    const std::string& file_path_string = file_name_token.content();
+    std::string_view file_path_string = file_name_token.content();
 
     std::filesystem::path file_path = __file_name.parent_path();
 

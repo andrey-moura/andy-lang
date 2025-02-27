@@ -128,3 +128,4 @@ foreach(EXTENSION ${EXTENSIONS})
 endforeach()
 
 andy_tests_configure(andy)
+andy_tests_configure(andy-lang)

@@ -191,7 +191,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_preprocessor(andy::lang::
     andy::lang::lexer::token token = lexer.next_token();
 
     // If the directive has not been removed by the preprocessor, it is probably in an invalid location
-    throw std::runtime_error(token.error_message_at_current_position("Unexpected '"+ token.content() + "' directive"));
+    throw std::runtime_error(token.error_message_at_current_position("Unexpected '" + std::string(token.content()) + "' directive"));
 }
 
 andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(andy::lang::lexer &lexer, bool chain)
@@ -444,7 +444,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
                         andy::lang::lexer::token& matching_token = lexer.next_token();
 
                         if(matching_token.content() != matching) {
-                            throw std::runtime_error(matching_token.error_message_at_current_position("No matching '" + matching + "' found for '" + operator_node.token().content() + "'"));
+                            throw std::runtime_error(matching_token.error_message_at_current_position("No matching '" + std::string(matching) + "' found for '" + std::string(operator_node.token().content()) + "'"));
                         }
 
                         operator_token.merge(matching_token);
@@ -488,7 +488,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword(andy::lang::lexer
 {
     const andy::lang::lexer::token& token = lexer.see_next();
 
-    const std::map<std::string, andy::lang::parser::ast_node(andy::lang::parser::*)(andy::lang::lexer&)> keyword_parsers = {
+    const std::map<std::string_view, andy::lang::parser::ast_node(andy::lang::parser::*)(andy::lang::lexer&)> keyword_parsers = {
         { "class",    &andy::lang::parser::parse_keyword_class    },
         { "var",      &andy::lang::parser::parse_keyword_var      },
         { "function", &andy::lang::parser::parse_keyword_function },
@@ -600,7 +600,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_function(andy::la
                 // This is a constructor
                 // Use it as the function name
             } else {
-                throw std::runtime_error(identifier_token.error_message_at_current_position("Illegal use of keyword '" + identifier_token.content() + "' as function name"));
+                throw std::runtime_error(identifier_token.error_message_at_current_position("Illegal use of keyword '" + std::string(identifier_token.content()) + "' as function name"));
             }
             break;
         default:

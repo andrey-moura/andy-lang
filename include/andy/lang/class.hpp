@@ -21,11 +21,11 @@ namespace andy {
             ~structure();
         public:
             std::string name;
-            std::map<std::string, andy::lang::method> methods;
+            std::map<std::string_view, andy::lang::method> methods;
             std::shared_ptr<andy::lang::structure> base;
             std::vector<std::shared_ptr<andy::lang::structure>> deriveds;
-            std::map<std::string, std::shared_ptr<andy::lang::structure>> instance_variables;
-            std::map<std::string, std::shared_ptr<andy::lang::object>> class_variables;
+            std::map<std::string_view, std::shared_ptr<andy::lang::structure>> instance_variables;
+            std::map<std::string_view, std::shared_ptr<andy::lang::object>> class_variables;
             std::string source_content;
 
             var(*object_to_var)(std::shared_ptr<const andy::lang::object> obj) = nullptr;
