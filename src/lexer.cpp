@@ -467,7 +467,9 @@ std::string_view andy::lang::lexer::token::human_start_position() const
 
 void andy::lang::lexer::token::merge(const token &other)
 {
-    m_content = std::string_view(m_content.data(), other.end.offset - start.offset);
+    string_literal = m_content;
+    string_literal += other.m_content;
+
     end = other.end;
 }
 
