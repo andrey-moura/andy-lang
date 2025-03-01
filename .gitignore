@@ -3,3 +3,4 @@ build/
 logs/
 .vs/
 dependencies/
+release-build/

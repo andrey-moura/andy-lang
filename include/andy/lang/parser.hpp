@@ -137,15 +137,15 @@ namespace andy
                     return &child_from_type(__type)->token();
                 }
 
-                const std::string& child_content_from_type(const ast_node_type& __type) const {
+                const std::string_view child_content_from_type(const ast_node_type& __type) const {
                     return child_token_from_type(__type)->content();
                 }
 
-                const std::string& decname() const {
+                const std::string_view decname() const {
                     return child_content_from_type(ast_node_type::ast_node_declname);
                 }
 
-                const std::string& value() const {
+                const std::string_view value() const {
                     return child_content_from_type(ast_node_type::ast_node_valuedecl);
                 }
 

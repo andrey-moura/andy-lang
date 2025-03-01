@@ -24,7 +24,7 @@ namespace andy
             std::shared_ptr<object> base_instance = nullptr;
             std::shared_ptr<object> derived_instance = nullptr;
 
-            std::map<std::string, std::shared_ptr<andy::lang::object>> instance_variables;
+            std::map<std::string_view, std::shared_ptr<andy::lang::object>> instance_variables;
             // #ifdef __UVA_DEBUG__
             // andy::lang::object* debug_object = this;
 

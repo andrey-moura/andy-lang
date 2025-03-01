@@ -1,6 +1,6 @@
 # Call minimal.andy 10 times
 
-for i in {1..1000}
+for i in {1..100}
 do
-    andy experiments/launching.andy
+    andy examples/minimal.andy
 done

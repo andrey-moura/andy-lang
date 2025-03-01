@@ -16,7 +16,7 @@ namespace andy
         {
         public:
             lexer() = default;
-            lexer(std::string __file_name, std::string_view __source);
+            lexer(std::string_view __file_name, std::string_view __source);
             ~lexer() = default;
         public:
             enum token_type {
@@ -67,25 +67,26 @@ namespace andy
             };
             class token {
             protected:
-                std::string m_content;
+                std::string_view m_content;
                 token_type m_type;
                 token_kind m_kind;
                 operator_type m_operator;
             public:
                 struct {
                     union {
-                        int integer_value;
-                        double double_value;
-                        float float_value;
-                        bool boolean_value;
+                        int integer_literal;
+                        double double_literal;
+                        float float_literal;
+                        bool boolean_literal;
                     };
-                } m_literal;
+                };
+                std::string string_literal;
             public:
-                std::string m_file_name;
+                std::string_view m_file_name;
             public:
-                token(token_position start, token_position end, std::string content, token_type type, token_kind kind, std::string file_name, operator_type op = operator_type::operator_max);
-                token(token_position start, token_position end, std::string content, token_type type, token_kind kind = token_kind::token_null);
-                token(token&& other);
+                token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, operator_type op = operator_type::operator_max);
+                token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);
+                token(token&& other) = default;
                 token(const token&) = default;
                 token() = default;
                 ~token() = default;
@@ -100,7 +101,7 @@ namespace andy
                 void merge(const token& other);
             public:
                 /// @brief Return the content of the token.
-                const std::string & content() const { return m_content; }
+                std::string_view content() const;
                 /// @brief Return the type of the token.
                 token_type type() const { return m_type; }
                 /// @brief Return the kind of the token.
@@ -114,10 +115,10 @@ namespace andy
                 andy::lang::lexer::token& operator=(const andy::lang::lexer::token& other) = default;
             };
         protected:
-            std::string m_file_name;
+            std::string_view m_file_name;
             std::string_view m_source;
             std::string_view m_current;
-            std::string m_buffer;
+            std::string_view m_buffer;
             std::vector<andy::lang::lexer::token> m_tokens;
 
             token_position m_start;
@@ -125,7 +126,7 @@ namespace andy
             // iterating
             size_t iterator = 0;
         public:
-            std::filesystem::path path() const { return m_file_name; }
+            std::string_view path() const { return m_file_name; }
         protected:
             /// @brief Update a position (line, column, offset).
             /// @param position The position to update.
@@ -140,7 +141,7 @@ namespace andy
             void discard_whitespaces();
 
             /// @brief Read the first character from the m_current, stores it in m_buffer and update the start position.
-            const char& read();
+            void read();
 
             template<typename T>
             void discard_while(T&& condition) {
@@ -156,13 +157,13 @@ namespace andy
                 }
             }
 
-            void push_token(token_position start, token_type type, std::string content = "", token_kind kind = token_kind::token_null, operator_type op = operator_type::operator_max);
+            void push_token(token_position start, token_type type, token_kind kind = token_kind::token_null, operator_type op = operator_type::operator_max);
             void read_next_token();
             public:
                 /// @brief Tokenize the source code. Equivalent to the constructor.
                 /// @param __file_name The name of the file.
                 /// @param __source The source code.
-                void tokenize(std::string __file_name, std::string_view __source);
+                void tokenize(std::string_view __file_name, std::string_view __source);
             public:
                 void extract_and_push_string(token_position start);
         // iterating

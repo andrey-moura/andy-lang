@@ -2,130 +2,66 @@
 
 #include <algorithm>
 
-bool is_delimiter(const char& c) {
-    static std::vector<bool> delimiters;
-    if(delimiters.empty()) {
-        delimiters.resize(256, false);
+// Permitted delimiters: (){};:,
+const static uint64_t is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x101010001010000, 0, 0x101010100000000, 0, 0, 0, 0x10001000000, 0, 0, 0, 0x100000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+// Keep ordered as it is used in binary search
+const static std::vector<std::string_view> operators_lookup = { "break", "class", "else", "for", "foreach", "function", "if", "new", "return", "var", "while" };
+const static std::map<std::string_view, andy::lang::lexer::operator_type> string_to_operator_lookup = {
+    { "+",  andy::lang::lexer::operator_type::operator_plus          },
+    { "-",  andy::lang::lexer::operator_type::operator_minus         },
+    { "*",  andy::lang::lexer::operator_type::operator_multiply      },
+    { "/",  andy::lang::lexer::operator_type::operator_divide        },
+    { "%",  andy::lang::lexer::operator_type::operator_modulo        },
+    { "^",  andy::lang::lexer::operator_type::operator_power         },
+    { "&&", andy::lang::lexer::operator_type::operator_and           },
+    { "||", andy::lang::lexer::operator_type::operator_or            },
+    { "!",  andy::lang::lexer::operator_type::operator_not           },
+    { "==", andy::lang::lexer::operator_type::operator_equal         },
+    { "!=", andy::lang::lexer::operator_type::operator_not_equal     },
+    { "<",  andy::lang::lexer::operator_type::operator_less          },
+    { "<=", andy::lang::lexer::operator_type::operator_less_equal    },
+    { ">",  andy::lang::lexer::operator_type::operator_greater       },
+    { ">=", andy::lang::lexer::operator_type::operator_greater_equal },
+    { "++", andy::lang::lexer::operator_type::operator_increment     },
+    { "--", andy::lang::lexer::operator_type::operator_decrement     },
+};
 
-        delimiters['{'] = true;
-        delimiters['}'] = true;
-        delimiters['('] = true;
-        delimiters[')'] = true;
-        delimiters[';'] = true;
-        delimiters[','] = true;
-        delimiters[':'] = true;
-    }
-
-    return delimiters[(uint8_t)c];
+static bool is_delimiter(const char& c)
+{
+   return ((bool*)is_delimiter_lookup)[(uint8_t)c];
 }
 
 bool is_operator(const char& c) {
-    static std::vector<bool> operators;
-    if(operators.empty()) {
-        operators.resize(256, false);
-
-        operators['+'] = true;
-        operators['-'] = true;
-        operators['*'] = true;
-        operators['/'] = true;
-        operators['%'] = true;
-        operators['='] = true;
-        operators['!'] = true;
-        operators['?'] = true;
-        operators['<'] = true;
-        operators['>'] = true;
-        operators['['] = true;
-        operators[']'] = true;
-        operators['|'] = true;
-        operators['&'] = true;
-        operators['.'] = true;
-        operators['!'] = true;
-    }
-
-    return operators[(uint8_t)c];
+    return ((bool*)is_operator_lookup)[(uint8_t)c];
 }
 
-bool is_keyword(const std::string& str) {
-    static std::vector<std::string> keywords;
-
-    if(keywords.empty()) {
-        keywords = {
-            "var",
-            "function",
-            "return",
-            "class",
-            "if",
-            "for",
-            "foreach",
-            "new",
-            "else",
-            "while",
-            "break"
-        };
-
-        std::sort(keywords.begin(), keywords.end());
-    }
-
-    return std::binary_search(keywords.begin(), keywords.end(), str);
+bool is_keyword(std::string_view str) {
+    return std::binary_search(operators_lookup.begin(), operators_lookup.end(), str);
 }
 
 bool is_preprocessor(std::string_view str) {
     if(str.starts_with('#')) {
         return true;
     }
-    static std::vector<std::string> preprocessor;
 
-    if(preprocessor.empty()) {
-        preprocessor = {
-            "#include",
-            "#define",
-            "#ifdef",
-            "#endif",
-        };
-
-        std::sort(preprocessor.begin(), preprocessor.end());
-    }
-
-    return std::binary_search(preprocessor.begin(), preprocessor.end(), str);
+    return false;
 }
 
-andy::lang::lexer::operator_type operator_type_from_string(std::string_view str) {
-    static std::map<std::string_view, andy::lang::lexer::operator_type> operators;
+andy::lang::lexer::operator_type to_operator(std::string_view str) {
 
-    if(operators.empty()) {
-        operators = {
-            { "+",  andy::lang::lexer::operator_type::operator_plus          },
-            { "-",  andy::lang::lexer::operator_type::operator_minus         },
-            { "*",  andy::lang::lexer::operator_type::operator_multiply      },
-            { "/",  andy::lang::lexer::operator_type::operator_divide        },
-            { "%",  andy::lang::lexer::operator_type::operator_modulo        },
-            { "^",  andy::lang::lexer::operator_type::operator_power         },
-            { "&&", andy::lang::lexer::operator_type::operator_and           },
-            { "||", andy::lang::lexer::operator_type::operator_or            },
-            { "!",  andy::lang::lexer::operator_type::operator_not           },
-            { "==", andy::lang::lexer::operator_type::operator_equal         },
-            { "!=", andy::lang::lexer::operator_type::operator_not_equal     },
-            { "<",  andy::lang::lexer::operator_type::operator_less          },
-            { "<=", andy::lang::lexer::operator_type::operator_less_equal    },
-            { ">",  andy::lang::lexer::operator_type::operator_greater       },
-            { ">=", andy::lang::lexer::operator_type::operator_greater_equal },
-            { "++", andy::lang::lexer::operator_type::operator_increment     },
-            { "--", andy::lang::lexer::operator_type::operator_decrement     },
-        };
-    }
+    auto it = string_to_operator_lookup.find(str);
 
-    auto it = operators.find(str);
-
-    if(it == operators.end()) {
+    if(it == string_to_operator_lookup.end()) {
         return andy::lang::lexer::operator_type::operator_null;
     }
 
     return it->second;
 }
 
-andy::lang::lexer::lexer(std::string __file_name, std::string_view __source)
+andy::lang::lexer::lexer(std::string_view __file_name, std::string_view __source)
 {
-    tokenize(std::move(__file_name), __source);
+    tokenize(__file_name, __source);
 }
 
 void andy::lang::lexer::update_start_position(const char &token)
@@ -159,7 +95,7 @@ void andy::lang::lexer::discard_whitespaces()
     });
 }
 
-const char &andy::lang::lexer::read()
+void andy::lang::lexer::read()
 {
     // If it needs to read a character, and the buffer is empty, it is an error.
     if(m_current.empty()) {
@@ -168,33 +104,37 @@ const char &andy::lang::lexer::read()
     
     const char& c = m_current.front();
 
+    if(m_buffer.empty()) {
+        m_buffer = std::string_view(m_current.data(), 1);
+    } else {
+        m_buffer = std::string_view(m_buffer.data(), m_buffer.size() + 1);
+    }
+
     update_start_position(c);
 
     m_current.remove_prefix(1);
-
-    m_buffer.push_back(c);
-
-    return c;
 }
 
-void andy::lang::lexer::push_token(token_position start, token_type type, std::string content, token_kind kind, operator_type op)
+void andy::lang::lexer::push_token(token_position start, token_type type, token_kind kind, operator_type op)
 {
-    token t(start, m_start, std::move(content), type, kind, m_file_name, op);
+    token t(start, m_start, m_buffer, type, kind, m_file_name, op);
+
+    m_buffer = "";
 
     if(t.type() == token_type::token_literal) {
         switch(t.kind())
         {
         case token_kind::token_integer:
-            t.m_literal.integer_value = std::stoi(t.content());
+            t.integer_literal = atoi(t.content().data());
             break;
         case token_kind::token_float:
-            t.m_literal.float_value = std::stof(t.content());
+            t.float_literal = atof(t.content().data());
             break;
         case token_kind::token_double:
-            t.m_literal.double_value = std::stod(t.content());
+            t.double_literal = atof(t.content().data());
             break;
         case token_kind::token_boolean:
-            t.m_literal.boolean_value = t.content() == "true";
+            t.boolean_literal = t.content() == "true";
             break;
         case token_kind::token_string:
         case token_kind::token_null:
@@ -238,7 +178,7 @@ char unescape(const char& c)
 
 void andy::lang::lexer::read_next_token()
 {
-    m_buffer.clear();
+    m_buffer = "";
 
     // First, make sure we are at the beginning of the source code, not line breaks or spaces.
     discard_whitespaces();
@@ -261,12 +201,12 @@ void andy::lang::lexer::read_next_token()
                 while(m_current.size() && (isalnum(m_current.front()) || m_current.front() == '_')) { 
                     read();
                 }
-                push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_string);
+                push_token(start, token_type::token_literal, token_kind::token_string);
                 return;
             }
         }
         read();
-        push_token(start, token_type::token_delimiter, std::move(m_buffer));
+        push_token(start, token_type::token_delimiter);
         return;
     }
 
@@ -279,7 +219,7 @@ void andy::lang::lexer::read_next_token()
             return c != '\n';
         });
 
-        push_token(start, token_type::token_comment, std::move(m_buffer));
+        push_token(start, token_type::token_comment);
         return;
     }
 
@@ -293,7 +233,7 @@ void andy::lang::lexer::read_next_token()
 
             if(isdigit(m_source[index - 1])) {
                 read();
-                push_token(start, token_type::token_operator, std::move(m_buffer), token_kind::token_null, operator_type::operator_minus);
+                push_token(start, token_type::token_operator, token_kind::token_null, operator_type::operator_minus);
                 
                 // Let the next digit be read as a number
             }
@@ -319,7 +259,7 @@ void andy::lang::lexer::read_next_token()
             }
         }
 
-        push_token(start, token_type::token_literal, std::move(m_buffer), kind);
+        push_token(start, token_type::token_literal, kind);
         return;
     }
 
@@ -331,9 +271,9 @@ void andy::lang::lexer::read_next_token()
             read();
         }
 
-        operator_type op = operator_type_from_string(m_buffer);
+        operator_type op = to_operator(m_buffer);
 
-        push_token(start, token_type::token_operator, std::move(m_buffer), token_kind::token_null, op);
+        push_token(start, token_type::token_operator, token_kind::token_null, op);
         return;
     }
 
@@ -357,7 +297,7 @@ void andy::lang::lexer::read_next_token()
 
             discard();
 
-            push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_string);
+            push_token(start, token_type::token_literal, token_kind::token_string);
             return;
         break;
     }
@@ -367,7 +307,7 @@ void andy::lang::lexer::read_next_token()
             return !isspace(c);
         });
 
-        push_token(start, token_type::token_preprocessor, std::move(m_buffer));
+        push_token(start, token_type::token_preprocessor);
         return;
     }
 
@@ -384,28 +324,28 @@ void andy::lang::lexer::read_next_token()
 
     // Todo: map
     if(m_buffer == "null") {
-        push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_null);
+        push_token(start, token_type::token_literal, token_kind::token_null);
         return;
     } else if(m_buffer == "false") {
-        push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_boolean);
+        push_token(start, token_type::token_literal, token_kind::token_boolean);
         return;
     } else if(m_buffer == "true") {
-        push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_boolean);
+        push_token(start, token_type::token_literal, token_kind::token_boolean);
         return;
     }
 
     if(is_keyword(m_buffer)) {
-        push_token(start, token_type::token_keyword, std::move(m_buffer));
+        push_token(start, token_type::token_keyword);
         return;
     } else {
-        push_token(start, token_type::token_identifier, std::move(m_buffer));
+        push_token(start, token_type::token_identifier);
         return;
     }
 
     throw std::runtime_error("lexer: unknown token");
 }
 
-void andy::lang::lexer::tokenize(std::string __file_name, std::string_view __source)
+void andy::lang::lexer::tokenize(std::string_view __file_name, std::string_view __source)
 {
     m_file_name = std::move(__file_name);
     m_current    = __source;
@@ -486,25 +426,15 @@ void andy::lang::lexer::insert(const std::vector<andy::lang::lexer::token> &toke
     iterator += tokens.size();
 }
 
-andy::lang::lexer::token::token(token_position start, token_position end, std::string content, token_type type, token_kind kind, std::string file_name, operator_type op)
-    : start(start), end(end), m_content(std::move(content)), m_type(type), m_kind(kind), m_file_name(std::move(file_name)), m_operator(op)
+andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, operator_type op)
+    : start(start), end(end), m_content(content), m_type(type), m_kind(kind), m_file_name(std::move(file_name)), m_operator(op)
 {
 }
 
-andy::lang::lexer::token::token(token_position start, token_position end, std::string content, token_type type, token_kind kind)
-    : start(start), end(end), m_content(std::move(content)), m_type(type), m_kind(kind)
+andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind)
+    : start(start), end(end), m_content(content), m_type(type), m_kind(kind)
 {
 
-}
-
-andy::lang::lexer::token::token(token &&other)
-    : start(other.start), end(other.end),
-      m_content(std::move(other.m_content)),
-      m_type(other.m_type), m_kind(other.m_kind),
-      m_file_name(std::move(other.m_file_name)),
-      m_operator(other.m_operator),
-      m_literal(other.m_literal)
-{
 }
 
 std::string andy::lang::lexer::token::error_message_at_current_position(std::string_view what) const
@@ -537,30 +467,39 @@ std::string_view andy::lang::lexer::token::human_start_position() const
 
 void andy::lang::lexer::token::merge(const token &other)
 {
-    m_content += other.m_content;
+    string_literal = m_content;
+    string_literal += other.m_content;
+
     end = other.end;
+}
+
+std::string_view andy::lang::lexer::token::content() const
+{
+    if(string_literal.size()) {
+        return string_literal;
+    }
+
+    return m_content;
 }
 
 void andy::lang::lexer::extract_and_push_string(token_position start)
 {
+    std::string output;
     while(m_current.size()) {
         char ch = m_current.front();
 
         switch(ch)
         {
             case '\\':
-                m_current.remove_prefix(1); // Remove the backslash
+                read(); // Remove the backslash
                 ch = m_current.front();     // Save the escaped character
-                m_current.remove_prefix(1); // Remove the escaped character
-
-                m_start.offset += 2;        // The backslash and the escaped character
-                m_start.column += 2;        // The backslash and the escaped character
-
-                m_buffer.push_back(unescape(ch));
+                read(); // Remove the escaped character
+                output.push_back(unescape(ch));
             break;
             case '\"':
                 discard();
-                push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_string);
+                push_token(start, token_type::token_literal, token_kind::token_string);
+                m_tokens.back().string_literal = std::move(output);
                 return;
             break;
             case '$':
@@ -569,10 +508,12 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     discard(); // Remove the opening curly brace open
 
                     // Push the string before the variable or expression
-                    push_token(start, token_type::token_literal, std::move(m_buffer), token_kind::token_string);
+                    push_token(start, token_type::token_literal, token_kind::token_string);
+                    m_tokens.back().string_literal = std::move(output);
 
-                    // We call the operator + to concatenate the string with the variable or expression 
-                    push_token(start, token_type::token_operator, "+", token_kind::token_string);
+                    // We call the operator + to concatenate the string with the variable or expression
+                    m_buffer = "+";
+                    push_token(start, token_type::token_operator);
 
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
@@ -590,7 +531,8 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     }
 
                     // We call the operator + to concatenate the string with the variable or expression 
-                    push_token(m_start, token_type::token_operator, "+", token_kind::token_string);
+                    m_buffer = "+";
+                    push_token(m_start, token_type::token_operator);
 
                     // Read the continuation of the string after the variable or expression
                     extract_and_push_string(m_start);
@@ -600,6 +542,7 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                 read();
             break;
             default:
+                output.push_back(ch);
                 read();
                 break;
         }

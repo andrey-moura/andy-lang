@@ -19,8 +19,8 @@ namespace andy
         {
             std::shared_ptr<andy::lang::structure> cls;
             std::shared_ptr<andy::lang::object> self;
-            std::map<std::string, std::shared_ptr<andy::lang::object>> variables;
-            std::map<std::string, andy::lang::method> functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
+            std::map<std::string_view, andy::lang::method> functions;
 
             bool has_returned = false;
             std::shared_ptr<andy::lang::object> return_value;
@@ -48,6 +48,12 @@ namespace andy
 
             std::shared_ptr<andy::lang::object> execute_all(std::vector<andy::lang::parser::ast_node>::const_iterator begin, std::vector<andy::lang::parser::ast_node>::const_iterator end, std::shared_ptr<andy::lang::object>& object);
             std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object);
+
+            std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code)
+            {
+                std::shared_ptr<andy::lang::object> tmp;
+                return execute_all(source_code, tmp);
+            }
 
             /// @brief The global false class.
             std::shared_ptr<andy::lang::structure> FalseClass;
