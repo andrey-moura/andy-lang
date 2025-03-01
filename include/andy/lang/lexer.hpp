@@ -74,18 +74,19 @@ namespace andy
             public:
                 struct {
                     union {
-                        int integer_value;
-                        double double_value;
-                        float float_value;
-                        bool boolean_value;
+                        int integer_literal;
+                        double double_literal;
+                        float float_literal;
+                        bool boolean_literal;
                     };
-                } m_literal;
+                };
+                std::string string_literal;
             public:
                 std::string_view m_file_name;
             public:
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, operator_type op = operator_type::operator_max);
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);
-                token(token&& other);
+                token(token&& other) = default;
                 token(const token&) = default;
                 token() = default;
                 ~token() = default;
@@ -100,7 +101,7 @@ namespace andy
                 void merge(const token& other);
             public:
                 /// @brief Return the content of the token.
-                const std::string_view & content() const { return m_content; }
+                std::string_view content() const;
                 /// @brief Return the type of the token.
                 token_type type() const { return m_type; }
                 /// @brief Return the kind of the token.

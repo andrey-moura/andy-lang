@@ -621,7 +621,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
         switch(node.token().kind())
         {
             case lexer::token_kind::token_boolean: {
-                if(node.token().m_literal.boolean_value) {
+                if(node.token().boolean_literal) {
                     return std::make_shared<andy::lang::object>(TrueClass);
                 } else {
                     return std::make_shared<andy::lang::object>(FalseClass);
@@ -629,16 +629,16 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
             }
             break;
             case lexer::token_kind::token_integer: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, IntegerClass, node.token().m_literal.integer_value);
+                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, IntegerClass, node.token().integer_literal);
                 return obj;
             }
             case lexer::token_kind::token_float: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, FloatClass, node.token().m_literal.float_value);
+                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, FloatClass, node.token().float_literal);
                 return obj;
             }
             break;
             case lexer::token_kind::token_double: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, DoubleClass, node.token().m_literal.double_value);
+                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, DoubleClass, node.token().double_literal);
                 return obj;
             }
             case lexer::token_kind::token_string: {

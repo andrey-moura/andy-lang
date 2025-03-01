@@ -125,16 +125,16 @@ void andy::lang::lexer::push_token(token_position start, token_type type, token_
         switch(t.kind())
         {
         case token_kind::token_integer:
-            t.m_literal.integer_value = atoi(t.content().data());
+            t.integer_literal = atoi(t.content().data());
             break;
         case token_kind::token_float:
-            t.m_literal.float_value = atof(t.content().data());
+            t.float_literal = atof(t.content().data());
             break;
         case token_kind::token_double:
-            t.m_literal.double_value = atof(t.content().data());
+            t.double_literal = atof(t.content().data());
             break;
         case token_kind::token_boolean:
-            t.m_literal.boolean_value = t.content() == "true";
+            t.boolean_literal = t.content() == "true";
             break;
         case token_kind::token_string:
         case token_kind::token_null:
@@ -437,16 +437,6 @@ andy::lang::lexer::token::token(token_position start, token_position end, std::s
 
 }
 
-andy::lang::lexer::token::token(token &&other)
-    : start(other.start), end(other.end),
-      m_content(std::move(other.m_content)),
-      m_type(other.m_type), m_kind(other.m_kind),
-      m_file_name(std::move(other.m_file_name)),
-      m_operator(other.m_operator),
-      m_literal(other.m_literal)
-{
-}
-
 std::string andy::lang::lexer::token::error_message_at_current_position(std::string_view what) const
 {
     std::string output(what);
@@ -481,27 +471,33 @@ void andy::lang::lexer::token::merge(const token &other)
     end = other.end;
 }
 
+std::string_view andy::lang::lexer::token::content() const
+{
+    if(string_literal.size()) {
+        return string_literal;
+    }
+
+    return m_content;
+}
+
 void andy::lang::lexer::extract_and_push_string(token_position start)
 {
+    std::string output;
     while(m_current.size()) {
         char ch = m_current.front();
 
         switch(ch)
         {
             case '\\':
-                m_current.remove_prefix(1); // Remove the backslash
+                read(); // Remove the backslash
                 ch = m_current.front();     // Save the escaped character
-                m_current.remove_prefix(1); // Remove the escaped character
-
-                m_start.offset += 2;        // The backslash and the escaped character
-                m_start.column += 2;        // The backslash and the escaped character
-
-                throw std::runtime_error("fix");
-                //m_buffer.push_back(unescape(ch));
+                read(); // Remove the escaped character
+                output.push_back(unescape(ch));
             break;
             case '\"':
                 discard();
                 push_token(start, token_type::token_literal, token_kind::token_string);
+                m_tokens.back().string_literal = std::move(output);
                 return;
             break;
             case '$':
@@ -511,10 +507,11 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
 
                     // Push the string before the variable or expression
                     push_token(start, token_type::token_literal, token_kind::token_string);
+                    m_tokens.back().string_literal = std::move(output);
 
                     // We call the operator + to concatenate the string with the variable or expression
                     m_buffer = "+";
-                    push_token(start, token_type::token_operator, token_kind::token_string);
+                    push_token(start, token_type::token_operator);
 
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
@@ -533,7 +530,7 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
 
                     // We call the operator + to concatenate the string with the variable or expression 
                     m_buffer = "+";
-                    push_token(m_start, token_type::token_operator, token_kind::token_string);
+                    push_token(m_start, token_type::token_operator);
 
                     // Read the continuation of the string after the variable or expression
                     extract_and_push_string(m_start);
@@ -543,6 +540,7 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                 read();
             break;
             default:
+                output.push_back(ch);
                 read();
                 break;
         }
