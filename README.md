@@ -60,7 +60,7 @@ On Linux or Windows Developer Command Prompt
 ```sh
     git clone https://github.com/andrey-moura/andy-lang --recursive
     cd andy-lang
-    cmake -B build .
+    cmake -DCMAKE_BUILD_TYPE=Release -B build .
     cmake --build build --config Release --parallel
 ```
 
