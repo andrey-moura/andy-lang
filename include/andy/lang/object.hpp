@@ -43,7 +43,7 @@ namespace andy
             // The object move ptr.
             void (*native_move)(object* obj, object&& other) = nullptr;
             
-            void initialize(andy::lang::interpreter* interpreter);
+            void initialize(andy::lang::interpreter* interpreter, std::vector<std::shared_ptr<andy::lang::object>> params = {});
         public:
             object& operator=(object&& other)
             {
@@ -87,13 +87,15 @@ namespace andy
             /// @param value The value.
             /// @return Returns a shared pointer to the object.
             template<typename T>
-            static std::enable_if<!std::is_pointer<T>::value, std::shared_ptr<andy::lang::object>>::type instantiate(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, T value)
+            static std::enable_if<!std::is_pointer<T>::value, std::shared_ptr<andy::lang::object>>::type instantiate(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, T value, std::vector<std::shared_ptr<andy::lang::object>> params = {})
             {
                 auto obj = std::make_shared<andy::lang::object>(cls);
 
-                obj->set_native<T>(std::move(value));
+                if(!std::is_same_v<T, std::nullptr_t>) {
+                    obj->set_native<T>(std::move(value));
+                }
 
-                obj->initialize(interpreter);
+                obj->initialize(interpreter, params);
 
                 return obj;
             }
