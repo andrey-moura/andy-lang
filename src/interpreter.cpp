@@ -579,30 +579,53 @@ void andy::lang::interpreter::init()
 
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_from_declname(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)
 {
-    auto* fn_object = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
-
-    if(fn_object) {
-        auto* fn_object_decname = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-        std::string_view class_name = fn_object_decname->token().content();
-        std::string_view var_name = node.token().content();
-
-        for(auto& cls : classes) {
-            if(cls->name == class_name) {
-                auto it = cls->class_variables.find(var_name);
-
-                if(it != cls->class_variables.end()) {
-                    return it->second;
-                }
-            }
-        }
-
-        throw std::runtime_error("class " + std::string(class_name) + " not found");
-    }
     if(object) {
         auto it = object->instance_variables.find(node.token().content());
 
         if(it != object->instance_variables.end()) {
             return it->second;
+        }
+    }
+
+    auto* fn_object = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+
+    if(fn_object) {
+        auto* fn_object_decname = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+        
+        if(fn_object_decname) {
+            std::string_view class_name = fn_object_decname->token().content();
+            std::string_view var_name = node.token().content();
+    
+            if(auto fn_object = try_object_from_declname(*fn_object_decname)) {
+                return try_object_from_declname(node, fn_object->cls, fn_object);
+            }
+
+            for(auto& cls : classes) {
+                if(cls->name == class_name) {
+                    auto it = cls->class_variables.find(var_name);
+    
+                    if(it != cls->class_variables.end()) {
+                        return it->second;
+                    }
+                }
+            }
+    
+            throw std::runtime_error("class " + std::string(class_name) + " not found");
+        } else {
+            auto fn_object_fn_call = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call);
+
+            if(fn_object_fn_call) {
+                std::shared_ptr fn_object = execute(*fn_object_fn_call, object);
+                if(fn_object) {
+                    auto it = fn_object->instance_variables.find(node.token().content());
+                    if(it != fn_object->instance_variables.end()) {
+                        return it->second;
+                    }
+                    throw std::runtime_error("Class " + fn_object->cls->name + " does not have a variable called " + std::string(node.token().content()));
+                } else {
+                    throw std::runtime_error("Cannot read property '" + std::string(node.token().content()) + "' of void");
+                }
+            }
         }
     }
 
