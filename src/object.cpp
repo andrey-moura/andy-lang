@@ -25,7 +25,7 @@ andy::lang::object::~object()
     }
 }
 
-void andy::lang::object::initialize(andy::lang::interpreter *interpreter)
+void andy::lang::object::initialize(andy::lang::interpreter *interpreter, std::vector<std::shared_ptr<andy::lang::object>> params)
 {
     for(auto& instance_variable : cls->instance_variables) {
         instance_variables[instance_variable.first] = andy::lang::object::instantiate(interpreter, instance_variable.second, nullptr);
@@ -46,7 +46,7 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter)
         auto new_it = cls->methods.find("new");
 
         if(new_it != cls->methods.end()) {
-            interpreter->call(cls, shared_from_this(), new_it->second, {});
+            interpreter->call(cls, shared_from_this(), new_it->second, params);
         }
     }
 }
