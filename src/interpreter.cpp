@@ -14,6 +14,20 @@ andy::lang::interpreter::interpreter()
 
 void andy::lang::interpreter::load(std::shared_ptr<andy::lang::structure> cls)
 {
+    cls->methods["subclasses"] = andy::lang::method("subclasses", method_storage_type::instance_method, [cls,this](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+
+        std::vector<std::shared_ptr<andy::lang::object>> subclasses;
+        subclasses.reserve(cls->deriveds.size());
+
+        for(auto& cls : cls->deriveds) {
+            std::vector<std::shared_ptr<andy::lang::object>> params = { andy::lang::object::create(this, StringClass, cls->name) };
+            auto c = andy::lang::object::instantiate(this, ClassClass, nullptr, params);
+            subclasses.push_back(c);
+        }
+
+        return andy::lang::object::create(this, ArrayClass, std::move(subclasses));
+    });
+
     classes.push_back(cls);
 }
 
@@ -561,20 +575,21 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(std::shared_pt
 
 void andy::lang::interpreter::init()
 {
-    this->load(FalseClass   = andy::lang::false_class::create(this));
-    this->load(TrueClass    = andy::lang::true_class::create(this));
-    this->load(StringClass  = andy::lang::string_class::create(this));
-    this->load(IntegerClass = andy::lang::integer_class::create(this));
-    this->load(FloatClass   = andy::lang::float_class::create(this));
-    this->load(DoubleClass  = andy::lang::double_class::create(this));
-    this->load(FileClass    = andy::lang::file_class::create(this));
-    this->load(StdClass     = andy::lang::std_class::create(this));
-    this->load(ArrayClass   = andy::lang::array_class::create(this));
+    this->load(FalseClass      = andy::lang::false_class::create(this));
+    this->load(TrueClass       = andy::lang::true_class::create(this));
+    this->load(StringClass     = andy::lang::string_class::create(this));
+    this->load(IntegerClass    = andy::lang::integer_class::create(this));
+    this->load(FloatClass      = andy::lang::float_class::create(this));
+    this->load(DoubleClass     = andy::lang::double_class::create(this));
+    this->load(FileClass       = andy::lang::file_class::create(this));
+    this->load(StdClass        = andy::lang::std_class::create(this));
+    this->load(ArrayClass      = andy::lang::array_class::create(this));
     this->load(DictionaryClass = andy::lang::dictionary_class::create(this));
-    this->load(NullClass    = andy::lang::null_class::create(this));
-    this->load(SystemClass  = andy::lang::system_class::create(this));
-    this->load(PathClass    = andy::lang::path_class::create(this));
+    this->load(NullClass       = andy::lang::null_class::create(this));
+    this->load(SystemClass     = andy::lang::system_class::create(this));
+    this->load(PathClass       = andy::lang::path_class::create(this));
     this->load(AndyConfigClass = andy::lang::andy_config_class::create(this));
+    this->load(ClassClass      = andy::lang::class_class::create(this));
 }
 
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_from_declname(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)

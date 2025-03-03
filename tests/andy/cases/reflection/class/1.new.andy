@@ -1,0 +1,10 @@
+class Test
+{
+
+};
+
+var c_test = new Class('Test');
+
+if(c_test.name == 'Test') {
+    return 1;
+}
