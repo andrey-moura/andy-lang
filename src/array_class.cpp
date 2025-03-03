@@ -80,6 +80,14 @@ std::shared_ptr<andy::lang::structure> andy::lang::array_class::create(andy::lan
 
             return nullptr;
         })},
+
+        {"[]", andy::lang::method("[]", method_storage_type::instance_method, {"index"} , [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+
+            auto index = params[0]->as<int>();
+
+            return items[index];
+        })},
     };
     
     return ArrayClass;
