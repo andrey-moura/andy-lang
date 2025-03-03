@@ -267,8 +267,13 @@ void andy::lang::lexer::read_next_token()
         read();
 
         // If the next character is also an operator, it is a double operator.
-        if(is_operator(m_current.front())) {
-            read();
+        if(m_current.size()) {
+            // No operator can be double with a dot
+            if(m_current.front() != '.') {
+                if(is_operator(m_current.front())) {
+                    read();
+                }
+            }
         }
 
         operator_type op = to_operator(m_buffer);
