@@ -9,20 +9,20 @@ string(STRIP "${ANDYLANG_PROJECT_VERSION}" ANDYLANG_PROJECT_VERSION)
 project(andy-lang VERSION ${ANDYLANG_PROJECT_VERSION})
 
 option(BUILD_ANDY_CPP "Build andyc++" OFF)
-option(CLONE_AND_INCLUDE_DEPENDENCIES "Clone and include dependencies" on)
+option(BUILD_TESTS "Build tests" OFF)
 
 # Get the parent directory
 get_filename_component(ANDYLANG_PARENT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
-# Fild all folders under modules
-file(GLOB MODULES "${CMAKE_CURRENT_LIST_DIR}/modules/*")
-foreach(MODULE ${MODULES})
-    if(IS_DIRECTORY ${MODULE})
-        # Get name from module from the folder
-        include("${MODULE}/CMakeLists.txt")
-    endif()
-endforeach()
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
+
+if(BUILD_TESTS)
+    include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+endif()
 
 add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
@@ -127,5 +127,7 @@ foreach(EXTENSION ${EXTENSIONS})
     endif()
 endforeach()
 
-andy_tests_configure(andy)
-andy_tests_configure(andy-lang)
+if(BUILD_TESTS)
+    andy_tests_configure(andy)
+    andy_tests_configure(andy-lang)
+endif()
