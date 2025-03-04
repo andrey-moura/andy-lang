@@ -64,6 +64,26 @@ andy::lang::lexer::lexer(std::string_view __file_name, std::string_view __source
     tokenize(__file_name, __source);
 }
 
+void andy::lang::lexer::include(std::string __file_name, std::string __source)
+{
+    m_includes[std::move(__file_name)] = std::move(__source);
+}
+
+std::string_view andy::lang::lexer::source(const andy::lang::lexer::token& token) const
+{
+    if(token.m_file_name == m_file_name) {
+        return m_source;
+    }
+
+    auto it = m_includes.find(token.m_file_name);
+
+    if(it != m_includes.end()) {
+        return it->second;
+    }
+
+    throw std::runtime_error("lexer: cannot find source for token");
+}
+
 void andy::lang::lexer::update_start_position(const char &token)
 {
     if(token == '\n') {
@@ -117,7 +137,7 @@ void andy::lang::lexer::read()
 
 void andy::lang::lexer::push_token(token_position start, token_type type, token_kind kind, operator_type op)
 {
-    token t(start, m_start, m_buffer, type, kind, m_file_name, op);
+    token t(start, m_start, m_buffer, type, kind, m_file_name, m_source, op);
 
     m_buffer = "";
 
@@ -431,7 +451,7 @@ void andy::lang::lexer::insert(const std::vector<andy::lang::lexer::token> &toke
     iterator += tokens.size();
 }
 
-andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, operator_type op)
+andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op)
     : start(start), end(end), m_content(content), m_type(type), m_kind(kind), m_file_name(std::move(file_name)), m_operator(op)
 {
 }
@@ -485,6 +505,23 @@ std::string_view andy::lang::lexer::token::content() const
     }
 
     return m_content;
+}
+
+std::string_view andy::lang::lexer::token::human_type() const
+{
+    static std::vector<std::string_view> types = {
+        "undefined",
+        "comment",
+        "keyword",
+        "identifier",
+        "literal",
+        "delimiter",
+        "operator",
+        "preprocessor",
+        "eof",
+    };
+
+    return types[(int)m_type];
 }
 
 void andy::lang::lexer::extract_and_push_string(token_position start)

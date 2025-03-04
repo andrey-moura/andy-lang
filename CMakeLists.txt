@@ -9,6 +9,7 @@ string(STRIP "${ANDYLANG_PROJECT_VERSION}" ANDYLANG_PROJECT_VERSION)
 project(andy-lang VERSION ${ANDYLANG_PROJECT_VERSION})
 
 option(BUILD_ANDY_CPP "Build andyc++" OFF)
+option(BUILD_ANDY_ANALYZER "Build andy-analyzer" OFF)
 option(BUILD_TESTS "Build tests" OFF)
 
 # Get the parent directory
@@ -58,6 +59,14 @@ if(BUILD_ANDY_CPP)
     target_link_libraries(andyc++ PRIVATE andy-lang libclang)
 endif()
 
+if(BUILD_ANDY_ANALYZER)
+    add_executable(andy-analyzer
+        ${CMAKE_CURRENT_LIST_DIR}/src/analyzer.cpp
+    )
+
+    target_link_libraries(andy-analyzer PRIVATE andy-lang)
+endif()
+
 if(UNIX)
     target_link_libraries(andy-lang PRIVATE ${CMAKE_DL_LIBS})
     target_link_options(andy PRIVATE -Wl,--export-dynamic)
@@ -82,6 +91,10 @@ add_definitions(-DANDYLANG_VERSION="${ANDYLANG_PROJECT_VERSION}")
 
 # Install andy executable
 install(TARGETS andy DESTINATION bin)
+if(BUILD_ANDY_ANALYZER)
+    # Install andy-analyzer executable
+    install(TARGETS andy-analyzer DESTINATION bin)
+endif()
 # Install andy-lang library
 install(TARGETS andy-lang DESTINATION lib)
 # Install andy-lang headers
