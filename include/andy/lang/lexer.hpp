@@ -84,7 +84,7 @@ namespace andy
             public:
                 std::string_view m_file_name;
             public:
-                token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, operator_type op = operator_type::operator_max);
+                token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op = operator_type::operator_max);
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);
                 token(token&& other) = default;
                 token(const token&) = default;
@@ -108,6 +108,8 @@ namespace andy
                 token_kind kind() const { return m_kind; }
                 /// @brief Return the operator type of the token.
                 operator_type op() const { return m_operator; }
+                /// @brief Return the human type of the token.
+                std::string_view human_type() const;
             public:
                 token_position start;
                 token_position end;
@@ -117,6 +119,7 @@ namespace andy
         protected:
             std::string_view m_file_name;
             std::string_view m_source;
+            std::map<std::string, std::string, std::less<>> m_includes;
             std::string_view m_current;
             std::string_view m_buffer;
             std::vector<andy::lang::lexer::token> m_tokens;
@@ -127,6 +130,12 @@ namespace andy
             size_t iterator = 0;
         public:
             std::string_view path() const { return m_file_name; }
+            void include(std::string __file_name, std::string __source);
+            /// @brief Return the source code where the token is located.
+            /// @param token The token.
+            std::string_view source(const andy::lang::lexer::token& token) const;
+            /// @brief Return the root source code.
+            std::string_view source() const { return m_source; }
         protected:
             /// @brief Update a position (line, column, offset).
             /// @param position The position to update.

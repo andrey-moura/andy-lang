@@ -113,7 +113,7 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
 
     // After this the iterator is at the position of the next token
     
-    for(const std::string& file : files) {
+    for(std::string& file : files) {
         std::string file_content = uva::file::read_all_text<char>(file);
         andy::lang::lexer l(file, file_content);
 
@@ -122,6 +122,7 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
         l.erase_eof();
 
         __lexer.insert(l.tokens());
+        __lexer.include(std::move(file), std::move(file_content));
     }
 }
 
