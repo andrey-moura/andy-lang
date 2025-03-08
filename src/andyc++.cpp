@@ -326,7 +326,11 @@ int main(int argc, char* argv[]) {
                                 return CXChildVisit_Continue;
                             }, nullptr);
 
-                            cls->methods[m.name] = std::move(m);
+                            if(m.storage_type == andy::lang::method_storage_type::instance_method) {
+                                cls->instance_methods[m.name] = std::move(m);
+                            } else {
+                                cls->class_methods[m.name] = std::move(m);
+                            }
                         }
 
                         return CXChildVisit_Continue;
@@ -374,14 +378,14 @@ int main(int argc, char* argv[]) {
             output_file << "{" << std::endl;
             output_file << "\tauto " << snake_case_name << "_class = std::make_shared<andy::lang::structure>(" << "\"" << cls.name << "\"" << "); " << std::endl;
 
-            if(cls.methods.size() > 0) {
+            if(cls.instance_methods.size() > 0) {
                 output_file  << std::endl;
 
                 output_file  << "\t" << snake_case_name << "_class->methods = {" << std::endl;
 
                 size_t method_iterator = 0;
 
-                for(auto& [name, method] : cls.methods) {
+                for(auto& [name, method] : cls.instance_methods) {
                     if(method_iterator) {
                         output_file << "," << std::endl;
                     }

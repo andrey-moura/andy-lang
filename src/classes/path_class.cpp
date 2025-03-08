@@ -9,7 +9,7 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
 {
     auto PathClass = std::make_shared<andy::lang::structure>("Path");
     PathClass->class_variables["temp"] = andy::lang::object::create(interpreter, PathClass, std::move(std::filesystem::temp_directory_path()));
-    PathClass->methods = {
+    PathClass->instance_methods= {
         {"new", andy::lang::method("new",andy::lang::method_storage_type::instance_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             object->set_native<std::filesystem::path>(std::move(std::filesystem::path(params[0]->as<std::string>())));
 
@@ -27,6 +27,20 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
 
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
+        {"/=", andy::lang::method("/=",andy::lang::method_storage_type::instance_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            std::filesystem::path& path = object->as<std::filesystem::path>();
+            path /= params[0]->as<std::string>();
+
+            return nullptr;
+        })},
+        {"/", andy::lang::method("/",andy::lang::method_storage_type::instance_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            std::filesystem::path path = object->as<std::filesystem::path>() / params[0]->as<std::string>();
+            
+            return andy::lang::object::create(interpreter, interpreter->PathClass, std::move(path));
+        })},
+    };
+    
+    PathClass->class_methods = {
         {"set_current", andy::lang::method("set_current",andy::lang::method_storage_type::instance_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::filesystem::path path;
             std::shared_ptr<andy::lang::object> path_object = params[0];
@@ -42,19 +56,8 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
             std::filesystem::current_path(path);
 
             return nullptr;
-        })},
-        {"/=", andy::lang::method("/=",andy::lang::method_storage_type::instance_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::filesystem::path& path = object->as<std::filesystem::path>();
-            path /= params[0]->as<std::string>();
-
-            return nullptr;
-        })},
-        {"/", andy::lang::method("/",andy::lang::method_storage_type::instance_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::filesystem::path path = object->as<std::filesystem::path>() / params[0]->as<std::string>();
-            
-            return andy::lang::object::create(interpreter, interpreter->PathClass, std::move(path));
-        })},
+        })}
     };
-    
+
     return PathClass;
 }

@@ -5,7 +5,7 @@ std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter
 {
     auto TrueClass = std::make_shared<andy::lang::structure>("True");
 
-    TrueClass->methods = {
+    TrueClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [TrueClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>(TrueClass);
         })},

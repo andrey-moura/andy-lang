@@ -8,7 +8,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
         return var(obj->as<std::string>());
     };
 
-    StringClass->methods = {
+    StringClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 

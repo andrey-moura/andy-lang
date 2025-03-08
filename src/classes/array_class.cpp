@@ -18,7 +18,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
         return var(std::move(result));
     };
 
-    ArrayClass->methods = {
+    ArrayClass->instance_methods = {
         {"to_string", andy::lang::method("to_string",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string result = "[";
 
@@ -29,7 +29,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
                     result += ", ";
                 }
 
-                result += item->cls->methods["to_string"].call(item)->as<std::string>();
+                result += item->cls->instance_methods["to_string"].call(item)->as<std::string>();
             }
 
             result += "]";
@@ -48,7 +48,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
                     result += separator;
                 }
 
-                result += item->cls->methods["to_string"].call(item)->as<std::string>();
+                result += item->cls->instance_methods["to_string"].call(item)->as<std::string>();
             }
 
             return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(result));
