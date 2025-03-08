@@ -700,6 +700,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
                 std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, DoubleClass, node.token().double_literal);
                 return obj;
             }
+            break;
             case lexer::token_kind::token_string: {
                 std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(node.token().content())));
                 return obj;
@@ -744,6 +745,49 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
         }
 
         return andy::lang::object::instantiate(this, DictionaryClass, std::move(map));
+    } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_interpolated_string) {
+        std::string str;
+        for(size_t i = 0; i < node.childrens().size(); i++) {
+            auto& node_child = node.childrens()[i];
+            if(node_child.token().type() == andy::lang::lexer::token_type::token_literal)
+            {
+                switch (node_child.token().kind())
+                {
+                case lexer::token_kind::token_string:
+                    str += node_child.token().content();
+                    break;
+                case lexer::token_kind::token_integer:
+                    str += std::to_string(node_child.token().integer_literal);
+                    break;
+                case lexer::token_kind::token_float:
+                    str += std::to_string(node_child.token().float_literal);
+                    break;
+                case lexer::token_kind::token_double:
+                    str += std::to_string(node_child.token().double_literal);
+                    break;
+                case lexer::token_kind::token_boolean:
+                    str += node_child.token().boolean_literal ? "true" : "false";
+                    break;
+                case lexer::token_kind::token_null:
+                    str += "null";
+                    break;
+                default:
+                    node_child.token().error_message_at_current_position("interpreter: unknown token kind");
+                    break;
+                }
+            } else {
+                std::shared_ptr<andy::lang::object> obj = node_to_object(node.childrens()[i]);
+                if(obj->cls != StringClass) {
+                    auto method = obj->cls->instance_methods.find("to_string");
+                    if(method == obj->cls->instance_methods.end()) {
+                        throw std::runtime_error("object of class " + obj->cls->name + " does not have a method called 'to_string'");
+                    }
+                    obj = call(obj->cls, obj, method->second, {}, {});
+                }
+                str += obj->as<std::string>();
+            }
+        }
+        return andy::lang::object::create(this, StringClass, std::move(str));
     }
 
     throw std::runtime_error("interpreter: unknown node type");

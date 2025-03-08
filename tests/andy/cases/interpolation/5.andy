@@ -1,0 +1,4 @@
+var test = "${1 + 1}!";
+if(test == '2!') {
+    return 5;
+}
