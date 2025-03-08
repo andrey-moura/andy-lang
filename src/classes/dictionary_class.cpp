@@ -15,7 +15,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 
         return var(std::move(result));
     };
-    DictionaryClass->methods = {
+    DictionaryClass->instance_methods = {
         {"present?", andy::lang::method("present?",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 
@@ -30,7 +30,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 
             auto& dictionary = object->as<andy::lang::dictionary>();
 
-            auto operator_it = key->cls->methods.find("==");
+            auto operator_it = key->cls->instance_methods.find("==");
 
             for(auto& pair : dictionary) {
                 auto result = interpreter->call(key->cls, key, operator_it->second, { pair.first });

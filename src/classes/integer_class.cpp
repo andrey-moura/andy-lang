@@ -10,7 +10,7 @@ std::shared_ptr<andy::lang::structure> create_integer_class(andy::lang::interpre
         return var(obj->as<int>());
     };
 
-    IntegerClass->methods = {
+    IntegerClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             int i = object->as<int>();
             

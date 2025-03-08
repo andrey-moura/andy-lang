@@ -40,12 +40,12 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, std::v
         base_instance->initialize(interpreter);
     }
 
-    auto new_it = cls->methods.find("new");
+    auto new_it = cls->instance_methods.find("new");
 
-    if(new_it != cls->methods.end()) {
-        auto new_it = cls->methods.find("new");
+    if(new_it != cls->instance_methods.end()) {
+        auto new_it = cls->instance_methods.find("new");
 
-        if(new_it != cls->methods.end()) {
+        if(new_it != cls->instance_methods.end()) {
             interpreter->call(cls, shared_from_this(), new_it->second, params);
         }
     }
@@ -62,9 +62,9 @@ bool andy::lang::object::is_present() const
         throw std::runtime_error("object has no class");
     }
     
-    auto it = cls->methods.find("present?");
+    auto it = cls->instance_methods.find("present?");
 
-    if(it == cls->methods.end()) {
+    if(it == cls->instance_methods.end()) {
         throw std::runtime_error("present? is not defined in class " + cls->name);
     } else {
         auto this_without_const = const_cast<object*>(this);

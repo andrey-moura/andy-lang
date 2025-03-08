@@ -1,0 +1,8 @@
+class Test {
+    function test() {
+        return 1;
+    }
+}
+
+var test = new Test();
+return test.test();

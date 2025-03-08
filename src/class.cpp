@@ -40,6 +40,14 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
 andy::lang::structure::structure(const std::string& __name, std::vector<andy::lang::method> __methods)
     : name(__name)
 {
+    for(auto& method : __methods) {
+        if(method.storage_type == method_storage_type::class_method) {
+            class_methods[method.name] = std::move(method);
+        } else {
+            instance_methods[method.name] = std::move(method);
+        }
+    }
+
     uva::console::log_debug("{}#Class created", name);
 }
 

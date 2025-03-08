@@ -10,7 +10,7 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
 {
     auto FileClass = std::make_shared<andy::lang::structure>("File");
 
-    FileClass->methods = {
+    FileClass->class_methods = {
         { "read", andy::lang::method("read",andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::filesystem::path path;
             std::shared_ptr<andy::lang::object> path_object = params[0];

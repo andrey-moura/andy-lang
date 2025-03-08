@@ -8,13 +8,13 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
 {
     auto StdClass = std::make_shared<andy::lang::structure>("Standard");
 
-    StdClass->methods = {
+    StdClass->class_methods = {
         { "print", andy::lang::method("print",andy::lang::method_storage_type::class_method, {"message"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> obj = params[0];
             if(obj->cls == interpreter->StringClass) {
                 std::cout << obj->as<std::string>();
             } else {
-                std::string s = obj->cls->methods["to_string"].call(obj)->as<std::string>();
+                std::string s = obj->cls->instance_methods["to_string"].call(obj)->as<std::string>();
                 std::cout << s;
             }
 
@@ -26,7 +26,7 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
             if(obj->cls == interpreter->StringClass) {
                 std::cout << obj->as<std::string>() << std::endl;
             } else {
-                std::string s = obj->cls->methods["to_string"].call(obj)->as<std::string>();
+                std::string s = obj->cls->instance_methods["to_string"].call(obj)->as<std::string>();
                 std::cout << s << std::endl;
             }
 
@@ -41,7 +41,7 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
         })},
 
         { "system", andy::lang::method("system",andy::lang::method_storage_type::class_method, {"command"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::shared_ptr<andy::lang::object> command = params[0]->cls->methods["to_string"].call(params[0]);
+            std::shared_ptr<andy::lang::object> command = params[0]->cls->instance_methods["to_string"].call(params[0]);
             int code = ((std::system(command->as<std::string>().c_str())) & 0xff00) >> 8;
 
             return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, code);
