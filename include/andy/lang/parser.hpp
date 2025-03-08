@@ -37,6 +37,7 @@ namespace andy
                 ast_node_fn_object,
 
                 ast_node_valuedecl,
+                ast_node_interpolated_string,
                 ast_node_arraydecl,
                 ast_node_dictionarydecl,
                 ast_node_vardecl,

@@ -157,6 +157,7 @@ void andy::lang::lexer::push_token(token_position start, token_type type, token_
             t.boolean_literal = t.content() == "true";
             break;
         case token_kind::token_string:
+        case token_kind::token_interpolated_string:
         case token_kind::token_null:
             break;
         default:
@@ -550,12 +551,8 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     discard(); // Remove the opening curly brace open
 
                     // Push the string before the variable or expression
-                    push_token(start, token_type::token_literal, token_kind::token_string);
+                    push_token(start, token_type::token_literal, token_kind::token_interpolated_string);
                     m_tokens.back().string_literal = std::move(output);
-
-                    // We call the operator + to concatenate the string with the variable or expression
-                    m_buffer = "+";
-                    push_token(start, token_type::token_operator);
 
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
@@ -572,12 +569,11 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                         return;
                     }
 
-                    // We call the operator + to concatenate the string with the variable or expression 
-                    m_buffer = "+";
-                    push_token(m_start, token_type::token_operator);
-
                     // Read the continuation of the string after the variable or expression
                     extract_and_push_string(m_start);
+
+                    // So the parser knows where the string ends
+                    push_token(start, token_type::token_delimiter);
                     return;
                 }
 

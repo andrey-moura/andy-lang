@@ -38,6 +38,7 @@ namespace andy
                 token_float,
                 token_double,
                 token_string,
+                token_interpolated_string
             };
             enum operator_type {
                 operator_null,
@@ -69,8 +70,9 @@ namespace andy
             protected:
                 std::string_view m_content;
                 token_type m_type;
-                token_kind m_kind;
                 operator_type m_operator;
+            public:
+                token_kind m_kind;
             public:
                 struct {
                     union {
