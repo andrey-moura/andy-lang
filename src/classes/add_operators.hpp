@@ -10,7 +10,7 @@ namespace andy
         template<typename T>
         void add_operators(std::shared_ptr<andy::lang::structure> cls, interpreter* interpreter)
         {
-            cls->methods["+"] = andy::lang::method("+", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["+"] = andy::lang::method("+",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -23,7 +23,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator+(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods["-"] = andy::lang::method("-", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["-"] = andy::lang::method("-",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -36,7 +36,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator-(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods["*"] = andy::lang::method("*", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["*"] = andy::lang::method("*",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -49,7 +49,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator*(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods["/"] = andy::lang::method("/", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["/"] = andy::lang::method("/",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -63,7 +63,7 @@ namespace andy
                 throw std::runtime_error("undefined operator/(" + object->cls->name + ", " + other->cls->name + ")");
             });
             if constexpr (std::is_integral_v<T>) {
-                cls->methods["%"] = andy::lang::method("%", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+                cls->methods["%"] = andy::lang::method("%",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                     T& value = object->as<T>();
                     std::shared_ptr<andy::lang::object> other = params[0];
                     if(other->cls == interpreter->IntegerClass) {
@@ -73,13 +73,13 @@ namespace andy
                     throw std::runtime_error("undefined operator%(" + object->cls->name + ", " + other->cls->name + ")");
                 });
             }
-            cls->methods["++"] = andy::lang::method("+", method_storage_type::instance_method, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["++"] = andy::lang::method("+",andy::lang::method_storage_type::instance_method, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 value++;
 
                 return nullptr;
             });
-            cls->methods["!="] = andy::lang::method("!=", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["!="] = andy::lang::method("!=",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -92,7 +92,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator!=(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods["=="] = andy::lang::method("==", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["=="] = andy::lang::method("==",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -105,7 +105,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator==(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods["<"] = andy::lang::method("<", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["<"] = andy::lang::method("<",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -118,7 +118,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator<(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods[">"] = andy::lang::method(">", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods[">"] = andy::lang::method(">",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -131,7 +131,7 @@ namespace andy
 
                 throw std::runtime_error("undefined operator>(" + object->cls->name + ", " + other->cls->name + ")");
             });
-            cls->methods["+="] = andy::lang::method("+=", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["+="] = andy::lang::method("+=",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -146,7 +146,7 @@ namespace andy
 
                 return nullptr;
             });
-            cls->methods["-="] = andy::lang::method("-=", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["-="] = andy::lang::method("-=",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {
@@ -161,7 +161,7 @@ namespace andy
 
                 return nullptr;
             });
-            cls->methods["*="] = andy::lang::method("*=", method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            cls->methods["*="] = andy::lang::method("*=",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 T& value = object->as<T>();
                 std::shared_ptr<andy::lang::object> other = params[0];
                 if(other->cls == interpreter->DoubleClass) {

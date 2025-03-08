@@ -575,21 +575,23 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(std::shared_pt
 
 void andy::lang::interpreter::init()
 {
-    this->load(FalseClass      = andy::lang::false_class::create(this));
-    this->load(TrueClass       = andy::lang::true_class::create(this));
-    this->load(StringClass     = andy::lang::string_class::create(this));
-    this->load(IntegerClass    = andy::lang::integer_class::create(this));
-    this->load(FloatClass      = andy::lang::float_class::create(this));
-    this->load(DoubleClass     = andy::lang::double_class::create(this));
-    this->load(FileClass       = andy::lang::file_class::create(this));
-    this->load(StdClass        = andy::lang::std_class::create(this));
-    this->load(ArrayClass      = andy::lang::array_class::create(this));
-    this->load(DictionaryClass = andy::lang::dictionary_class::create(this));
-    this->load(NullClass       = andy::lang::null_class::create(this));
-    this->load(SystemClass     = andy::lang::system_class::create(this));
-    this->load(PathClass       = andy::lang::path_class::create(this));
-    this->load(AndyConfigClass = andy::lang::andy_config_class::create(this));
-    this->load(ClassClass      = andy::lang::class_class::create(this));
+    andy::lang::structure::create_structures(this);
+    
+    FalseClass      = find_class("False");
+    TrueClass       = find_class("True");
+    StringClass     = find_class("String");
+    IntegerClass    = find_class("Integer");
+    FloatClass      = find_class("Float");
+    DoubleClass     = find_class("Double");
+    FileClass       = find_class("File");
+    StdClass        = find_class("Standard");
+    ArrayClass      = find_class("Array");
+    DictionaryClass = find_class("Dictionary");
+    NullClass       = find_class("Null");
+    SystemClass     = find_class("System");
+    PathClass       = find_class("Path");
+    AndyConfigClass = find_class("AndyConfig");
+    ClassClass      = find_class("Class");
 }
 
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_from_declname(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)

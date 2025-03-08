@@ -1,8 +1,7 @@
 #include <andy/lang/lang.hpp>
-
 #include <andy/lang/interpreter.hpp>
 
-std::shared_ptr<andy::lang::structure> andy::lang::dictionary_class::create(andy::lang::interpreter* interpreter)
+std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter* interpreter)
 {
     auto DictionaryClass = std::make_shared<andy::lang::structure>("Dictionary");
     DictionaryClass->object_to_var = [](std::shared_ptr<const andy::lang::object> obj) {
@@ -17,7 +16,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::dictionary_class::create(andy
         return var(std::move(result));
     };
     DictionaryClass->methods = {
-        {"present?", andy::lang::method("present?", method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"present?", andy::lang::method("present?",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 
             if(value.empty()) {
@@ -26,7 +25,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::dictionary_class::create(andy
 
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
         })},
-        {"[]", andy::lang::method("[]", method_storage_type::instance_method, {"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"[]", andy::lang::method("[]",andy::lang::method_storage_type::instance_method, {"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> key = params[0];
 
             auto& dictionary = object->as<andy::lang::dictionary>();
