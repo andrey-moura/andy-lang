@@ -6,7 +6,7 @@
 
 #include <filesystem>
 
-std::shared_ptr<andy::lang::structure> andy::lang::andy_config_class::create(andy::lang::interpreter* interpreter)
+std::shared_ptr<andy::lang::structure> create_andy_config_class(andy::lang::interpreter* interpreter)
 {
     auto AndyConfigClass = std::make_shared<andy::lang::structure>("AndyConfig");
 

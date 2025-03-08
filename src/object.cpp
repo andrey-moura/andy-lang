@@ -71,7 +71,7 @@ bool andy::lang::object::is_present() const
 
         auto obj = it->second.call( this_without_const->shared_from_this() );
 
-        if(obj->cls->name == "TrueClass") {
+        if(obj->cls->name == "True") {
             return true;
         } else {
             return false;

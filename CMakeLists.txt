@@ -3,10 +3,29 @@ cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_CXX_STANDARD 20)
 
+execute_process(
+    COMMAND git describe --tags
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_FILE ${CMAKE_SOURCE_DIR}/VERSION
+)
+
 file(READ "${CMAKE_SOURCE_DIR}/VERSION" ANDYLANG_PROJECT_VERSION)
 string(STRIP "${ANDYLANG_PROJECT_VERSION}" ANDYLANG_PROJECT_VERSION)
+set(ANDYLANG_VERSION "${ANDYLANG_PROJECT_VERSION}")
 
-project(andy-lang VERSION ${ANDYLANG_PROJECT_VERSION})
+string(FIND "${ANDYLANG_VERSION}" "-beta" IS_BETA)
+if(NOT IS_BETA EQUAL -1)
+    # Removes the -beta* part
+    string(SUBSTRING "${ANDYLANG_VERSION}" 0 ${IS_BETA} ANDYLANG_VERSION)
+endif()
+
+string(FIND "${ANDYLANG_VERSION}" "-alpha" IS_ALPHA)
+if(NOT IS_ALPHA EQUAL -1)
+    # Removes the -alpha* part
+    string(SUBSTRING "${ANDYLANG_VERSION}" 0 ${IS_ALPHA} ANDYLANG_VERSION)
+endif()
+
+project(andy-lang VERSION ${ANDYLANG_VERSION})
 
 option(BUILD_ANDY_CPP "Build andyc++" OFF)
 option(BUILD_ANDY_ANALYZER "Build andy-analyzer" OFF)

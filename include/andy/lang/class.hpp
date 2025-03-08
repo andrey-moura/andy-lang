@@ -13,6 +13,7 @@ namespace andy {
     namespace lang {
         class object;
         class method;
+        class interpreter;
         class structure
         {
         public:
@@ -35,6 +36,8 @@ namespace andy {
             {
                 return call(methods[method], params);
             }
+        public:
+            static void create_structures(andy::lang::interpreter* interpreter);
         };
     };
 };
