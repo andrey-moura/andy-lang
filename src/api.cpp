@@ -15,10 +15,11 @@ namespace andy
             {
                 std::string source = uva::file::read_all_text<char>(path);
 
-                andy::lang::lexer l(path.string(), source);
+                std::string path_str = path.string();
+                andy::lang::lexer l(path_str, source);
         
                 andy::lang::preprocessor preprocessor;
-                preprocessor.process(path.string(), l);
+                preprocessor.process(path_str, l);
         
                 andy::lang::parser p;
                 andy::lang::parser::ast_node root_node = p.parse_all(l);
