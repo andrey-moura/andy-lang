@@ -185,8 +185,12 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                             if(cls->name == class_or_object_name) {
                                 auto it = cls->methods.find(function_name);
 
-                                if(it == cls->methods.end()) {
-                                    throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
+                                    if(function_name == "new") {
+                                        // default constructor
+                                        return andy::lang::object::instantiate(this, cls, nullptr);
+                                    } else {
+                                        throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
+                                    }
                                 }
 
                                 method_to_call = &it->second;
