@@ -1,7 +1,6 @@
 #include <andy/lang/lang.hpp>
 
 #include <andy/lang/interpreter.hpp>
-#include <andy/lang/array_class.hpp>
 
 std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interpreter* interpreter)
 {

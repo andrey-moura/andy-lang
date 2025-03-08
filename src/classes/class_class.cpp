@@ -1,5 +1,3 @@
-#include <andy/lang/class_class.hpp>
-
 #include <andy/lang/object.hpp>
 #include <andy/lang/interpreter.hpp>
 

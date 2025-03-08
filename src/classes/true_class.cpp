@@ -1,5 +1,4 @@
 #include <andy/lang/lang.hpp>
-
 #include <andy/lang/interpreter.hpp>
 
 std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter* interpreter)
