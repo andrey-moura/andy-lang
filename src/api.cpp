@@ -16,6 +16,7 @@ namespace andy
                 std::string source = uva::file::read_all_text<char>(path);
 
                 std::string path_str = path.string();
+
                 andy::lang::lexer l(path_str, source);
         
                 andy::lang::preprocessor preprocessor;

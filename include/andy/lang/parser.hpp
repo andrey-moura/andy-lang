@@ -37,12 +37,14 @@ namespace andy
                 ast_node_fn_object,
 
                 ast_node_valuedecl,
+                ast_node_interpolated_string,
                 ast_node_arraydecl,
                 ast_node_dictionarydecl,
                 ast_node_vardecl,
 
                 ast_node_decltype,
                 ast_node_declname,
+                ast_node_declstatic,
 
                 ast_node_conditional,
                 ast_node_while,
@@ -215,6 +217,7 @@ namespace andy
             andy::lang::parser::ast_node parse_keyword_foreach(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_while(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_break(andy::lang::lexer& lexer);
+            andy::lang::parser::ast_node parse_keyword_static(andy::lang::lexer& lexer);
         };
     }
 }; // namespace andy

@@ -10,7 +10,7 @@ std::shared_ptr<andy::lang::structure> create_double_class(andy::lang::interpret
         return var(obj->as<double>());
     };
 
-    DoubleClass->methods = {
+    DoubleClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             double i = object->as<double>();
             

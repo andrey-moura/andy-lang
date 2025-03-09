@@ -1,4 +1,5 @@
-var test = "${1 + 1}!";
-if(test == '2!') {
+var test = "1 + 1 is ${1 + 1}";
+
+if(test == '1 + 1 is 2') {
     return 3;
 }

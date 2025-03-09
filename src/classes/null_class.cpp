@@ -5,7 +5,7 @@ std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter
 {
     auto NullClass = std::make_shared<andy::lang::structure>("Null");
 
-    NullClass->methods = {
+    NullClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter, NullClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>( interpreter->FalseClass );
         })},

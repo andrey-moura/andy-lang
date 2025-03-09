@@ -6,7 +6,7 @@
 const static uint64_t is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x101010001010000, 0, 0x101010100000000, 0, 0, 0, 0x10001000000, 0, 0, 0, 0x100000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 // Keep ordered as it is used in binary search
-const static std::vector<std::string_view> keywords_lookup = { "break", "class", "else", "for", "foreach", "function", "if", "new", "return", "var", "while" };
+const static std::vector<std::string_view> operators_lookup = { "break", "class", "else", "for", "foreach", "function", "if", "new", "return", "static", "var", "while" };
 const static std::map<std::string_view, andy::lang::lexer::operator_type> string_to_operator_lookup = {
     { "+",  andy::lang::lexer::operator_type::operator_plus          },
     { "-",  andy::lang::lexer::operator_type::operator_minus         },
@@ -157,6 +157,7 @@ void andy::lang::lexer::push_token(token_position start, token_type type, token_
             t.boolean_literal = t.content() == "true";
             break;
         case token_kind::token_string:
+        case token_kind::token_interpolated_string:
         case token_kind::token_null:
             break;
         default:
@@ -550,12 +551,8 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     discard(); // Remove the opening curly brace open
 
                     // Push the string before the variable or expression
-                    push_token(start, token_type::token_literal, token_kind::token_string);
+                    push_token(start, token_type::token_literal, token_kind::token_interpolated_string);
                     m_tokens.back().string_literal = std::move(output);
-
-                    // We call the operator + to concatenate the string with the variable or expression
-                    m_buffer = "+";
-                    push_token(start, token_type::token_operator);
 
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
@@ -572,12 +569,11 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                         return;
                     }
 
-                    // We call the operator + to concatenate the string with the variable or expression 
-                    m_buffer = "+";
-                    push_token(m_start, token_type::token_operator);
-
                     // Read the continuation of the string after the variable or expression
                     extract_and_push_string(m_start);
+
+                    // So the parser knows where the string ends
+                    push_token(start, token_type::token_delimiter);
                     return;
                 }
 

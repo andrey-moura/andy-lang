@@ -10,7 +10,7 @@ std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interprete
         return var(obj->as<float>());
     };
 
-    FloatClass->methods = {
+    FloatClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             float i = object->as<float>();
             

@@ -397,6 +397,30 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
     }
 
     ast_node identifier_or_literal_node(std::move(identifier_or_literal), node_type);
+
+    if(identifier_or_literal_node.token().type() == andy::lang::lexer::token_type::token_literal &&
+        identifier_or_literal_node.token().kind() == andy::lang::lexer::token_kind::token_interpolated_string)
+    {
+        identifier_or_literal_node.token().m_kind = andy::lang::lexer::token_kind::token_string;
+        ast_node interpolated_node(ast_node_type::ast_node_interpolated_string);
+        interpolated_node.add_child(std::move(identifier_or_literal_node));
+
+        for(auto next_token = lexer.see_next(); next_token.type() != andy::lang::lexer::token_type::token_eof; next_token = lexer.see_next())
+        {
+            if(next_token.type() == andy::lang::lexer::token_type::token_delimiter)
+            {
+                lexer.consume_token();
+                break;
+            }
+
+            ast_node child_node = parse_identifier_or_literal(lexer);
+
+            interpolated_node.add_child(std::move(child_node));
+        }
+
+        identifier_or_literal_node = interpolated_node;
+    }
+
     if(!chain) {
         return identifier_or_literal_node;
     }
@@ -498,6 +522,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword(andy::lang::lexer
         { "foreach",  &andy::lang::parser::parse_keyword_foreach  },
         { "while",    &andy::lang::parser::parse_keyword_while    },
         { "break",    &andy::lang::parser::parse_keyword_break    },
+        { "static",   &andy::lang::parser::parse_keyword_static   },
     };
 
     auto keyword_parser = keyword_parsers.find(token.content());
@@ -940,4 +965,27 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_break(andy::lang:
     break_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_decltype));
 
     return break_node;
+}
+
+andy::lang::parser::ast_node andy::lang::parser::parse_keyword_static(andy::lang::lexer &lexer)
+{
+    const andy::lang::lexer::token& static_token = lexer.next_token();
+
+    const andy::lang::lexer::token& next_token = lexer.see_next();
+
+    if(next_token.type() == andy::lang::lexer::token_type::token_keyword) {
+        if(next_token.content() == "function") {
+            ast_node node = parse_keyword_function(lexer);
+            node.add_child(ast_node(std::move(static_token), ast_node_type::ast_node_declstatic));
+
+            return node;
+        } else if(next_token.content() == "var") {
+            ast_node node = parse_keyword_var(lexer);
+            node.add_child(ast_node(std::move(static_token), ast_node_type::ast_node_declstatic));
+
+            return node;
+        }
+    }
+    
+    throw std::runtime_error(next_token.error_message_at_current_position("Expected keyword 'function' or 'var' after 'static'"));
 }
