@@ -22,7 +22,7 @@ std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter
             } else {
                 return std::make_shared<andy::lang::object>(interpreter->FalseClass);
             }
-        })}, 
+        })},
     };
     
     return TrueClass;

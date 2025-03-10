@@ -329,25 +329,43 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
             if(token.content() == "new") {
                 lexer.consume_token(); // Consume the 'new' token
 
-                andy::lang::lexer::token& class_name_token = lexer.next_token();
+                ast_node fn_call = parse_identifier_or_literal(lexer);
 
-                ast_node object_node(ast_node_type::ast_node_fn_object);
-                object_node.add_child(std::move(ast_node(class_name_token, ast_node_type::ast_node_declname)));
-                ast_node fn_node(ast_node_type::ast_node_fn_call);
-                fn_node.add_child(std::move(ast_node(std::move(token), ast_node_type::ast_node_declname)));
-
-                const andy::lang::lexer::token& parenthesis_token = lexer.next_token();
-
-                if(parenthesis_token.content() != "(") {
-                    throw std::runtime_error(parenthesis_token.error_message_at_current_position("Expected '('"));
+                if(fn_call.type() != ast_node_type::ast_node_fn_call) {
+                    throw std::runtime_error(token.error_message_at_current_position("Expected function call after 'new'"));
                 }
 
-                ast_node params = extract_fn_call_params(lexer);
+                // Ex: Test() where Test will be the declaration name
 
-                fn_node.add_child(std::move(params));
-                fn_node.add_child(std::move(object_node));
+                fn_call.set_type(ast_node_type::ast_node_declname);
 
-                return fn_node;
+                // The function call has a declaration name as a child, we need to move to the parent and
+                // remove it from the children list
+
+                fn_call.set_token(fn_call.childrens().front().token());
+                fn_call.childrens().erase(fn_call.childrens().begin());
+
+                // Now we need to add the 'new' keyword as a function call
+
+                ast_node new_node(ast_node_type::ast_node_fn_call);
+                new_node.add_child(std::move(ast_node(token, ast_node_type::ast_node_declname)));
+
+                // Need to extract the params from the function call and add it to the new node
+                auto params_it = std::find_if(fn_call.childrens().begin(), fn_call.childrens().end(), [](const ast_node& node) {
+                    return node.type() == ast_node_type::ast_node_fn_params;
+                });
+
+                if(params_it != fn_call.childrens().end()) {
+                    new_node.add_child(std::move(*params_it));
+                    fn_call.childrens().erase(params_it);
+                }
+                
+                ast_node obj_node(ast_node_type::ast_node_fn_object);
+                obj_node.add_child(std::move(fn_call));
+
+                new_node.add_child(std::move(obj_node));
+
+                return new_node;
             } else {
                 throw std::runtime_error(token.error_message_at_current_position("Unexpected keyword"));
             }
@@ -513,15 +531,16 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword(andy::lang::lexer
     const andy::lang::lexer::token& token = lexer.see_next();
 
     const std::map<std::string_view, andy::lang::parser::ast_node(andy::lang::parser::*)(andy::lang::lexer&)> keyword_parsers = {
-        { "class",    &andy::lang::parser::parse_keyword_class    },
-        { "var",      &andy::lang::parser::parse_keyword_var      },
-        { "function", &andy::lang::parser::parse_keyword_function },
-        { "return",   &andy::lang::parser::parse_keyword_return   },
-        { "if",       &andy::lang::parser::parse_keyword_if       },
-        { "for",      &andy::lang::parser::parse_keyword_for      },
-        { "foreach",  &andy::lang::parser::parse_keyword_foreach  },
-        { "while",    &andy::lang::parser::parse_keyword_while    },
-        { "break",    &andy::lang::parser::parse_keyword_break    },
+        { "class",     &andy::lang::parser::parse_keyword_class     },
+        { "var",       &andy::lang::parser::parse_keyword_var       },
+        { "function",  &andy::lang::parser::parse_keyword_function  },
+        { "return",    &andy::lang::parser::parse_keyword_return    },
+        { "if",        &andy::lang::parser::parse_keyword_if        },
+        { "namespace", &andy::lang::parser::parse_keyword_namespace },
+        { "for",       &andy::lang::parser::parse_keyword_for       },
+        { "foreach",   &andy::lang::parser::parse_keyword_foreach   },
+        { "while",     &andy::lang::parser::parse_keyword_while     },
+        { "break",     &andy::lang::parser::parse_keyword_break     },
         { "static",   &andy::lang::parser::parse_keyword_static   },
     };
 
@@ -751,6 +770,29 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_if(andy::lang::le
     }
 
     return if_node;
+}
+
+andy::lang::parser::ast_node andy::lang::parser::parse_keyword_namespace(andy::lang::lexer &lexer) {
+    ast_node namespace_node(ast_node_type::ast_node_classdecl);
+    namespace_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_decltype));
+
+    const andy::lang::lexer::token& identifier_token = lexer.see_next();
+
+    if(identifier_token.type() != lexer::token_type::token_identifier) {
+        throw std::runtime_error(identifier_token.error_message_at_current_position("Expected namespace name after 'namespace'"));
+    }
+
+    namespace_node.add_child(std::move(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_declname)));
+
+    ast_node namespace_context = parse_node(lexer);
+
+    if(namespace_context.type() != ast_node_type::ast_node_context) {
+        throw std::runtime_error(namespace_context.token().error_message_at_current_position("Expected context after namespace declaration"));
+    }
+
+    namespace_node.add_child(std::move(namespace_context));
+
+    return namespace_node;
 }
 
 andy::lang::parser::ast_node andy::lang::parser::parse_keyword_for(andy::lang::lexer &lexer)

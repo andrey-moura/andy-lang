@@ -1,0 +1,11 @@
+namespace Test
+{
+    namespace Test2
+    {
+        function test() {
+            return 2;
+        }
+    }
+}
+
+return Test.Test2.test();

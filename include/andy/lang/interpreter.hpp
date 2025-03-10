@@ -46,6 +46,10 @@ namespace andy
             /// @param cls The syntax tree to exeuctes. All its childs (not recursively) will be executed.
             std::shared_ptr<andy::lang::object> execute(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object);
 
+            /// @brief Exeuctes a class declaration into the interpreter.
+            /// @param source_code The class declaration.
+            std::shared_ptr<andy::lang::structure> execute_classdecl(andy::lang::parser::ast_node source_code);
+
             std::shared_ptr<andy::lang::object> execute_all(std::vector<andy::lang::parser::ast_node>::const_iterator begin, std::vector<andy::lang::parser::ast_node>::const_iterator end, std::shared_ptr<andy::lang::object>& object);
             std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object);
 

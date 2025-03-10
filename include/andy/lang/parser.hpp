@@ -147,6 +147,10 @@ namespace andy
                     return child_content_from_type(ast_node_type::ast_node_declname);
                 }
 
+                const std::string_view decl_type() const {
+                    return child_content_from_type(ast_node_type::ast_node_decltype);
+                }
+
                 const std::string_view value() const {
                     return child_content_from_type(ast_node_type::ast_node_valuedecl);
                 }
@@ -213,6 +217,7 @@ namespace andy
             andy::lang::parser::ast_node parse_keyword_function(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_return(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_if(andy::lang::lexer& lexer);
+            andy::lang::parser::ast_node parse_keyword_namespace(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_for(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_foreach(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_while(andy::lang::lexer& lexer);

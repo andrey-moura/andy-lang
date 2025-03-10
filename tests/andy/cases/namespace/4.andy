@@ -1,0 +1,12 @@
+namespace Test
+{
+    class Test2
+    {
+        function test() {
+            return 4;
+        }
+    }
+}
+
+var test = new Test.Test2();
+return test.test();

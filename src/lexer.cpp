@@ -6,7 +6,7 @@
 const static uint64_t is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x101010001010000, 0, 0x101010100000000, 0, 0, 0, 0x10001000000, 0, 0, 0, 0x100000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 // Keep ordered as it is used in binary search
-const static std::vector<std::string_view> operators_lookup = { "break", "class", "else", "for", "foreach", "function", "if", "new", "return", "static", "var", "while" };
+const static std::vector<std::string_view> keywords_lookup = { "break", "class", "else", "for", "foreach", "function", "if", "namespace", "new", "return", "static", "var", "while" };
 const static std::map<std::string_view, andy::lang::lexer::operator_type> string_to_operator_lookup = {
     { "+",  andy::lang::lexer::operator_type::operator_plus          },
     { "-",  andy::lang::lexer::operator_type::operator_minus         },
