@@ -20,21 +20,21 @@
 
 void andy::lang::structure::create_structures(andy::lang::interpreter* interpreter)
 {
-    interpreter->load(create_false_class(interpreter));
-    interpreter->load(create_true_class(interpreter));
-    interpreter->load(create_string_class(interpreter));
-    interpreter->load(create_integer_class(interpreter));
-    interpreter->load(create_double_class(interpreter));
-    interpreter->load(create_float_class(interpreter));
-    interpreter->load(create_file_class(interpreter));
-    interpreter->load(create_std_class(interpreter));
-    interpreter->load(create_array_class(interpreter));
-    interpreter->load(create_null_class(interpreter));
-    interpreter->load(create_dictionary_class(interpreter));
-    interpreter->load(create_system_class(interpreter));
-    interpreter->load(create_path_class(interpreter));
-    interpreter->load(create_andy_config_class(interpreter));
-    interpreter->load(create_class_class(interpreter));
+    interpreter->load(interpreter->FalseClass       = create_false_class       (interpreter) );
+    interpreter->load(interpreter->TrueClass        = create_true_class        (interpreter) );
+    interpreter->load(interpreter->StringClass      = create_string_class      (interpreter) );
+    interpreter->load(interpreter->IntegerClass     = create_integer_class     (interpreter) );
+    interpreter->load(interpreter->DoubleClass      = create_double_class      (interpreter) );
+    interpreter->load(interpreter->FloatClass       = create_float_class       (interpreter) );
+    interpreter->load(interpreter->FileClass        = create_file_class        (interpreter) );
+    interpreter->load(interpreter->StdClass         = create_std_class         (interpreter) );
+    interpreter->load(interpreter->ArrayClass       = create_array_class       (interpreter) );
+    interpreter->load(interpreter->NullClass        = create_null_class        (interpreter) );
+    interpreter->load(interpreter->DictionaryClass  = create_dictionary_class  (interpreter) );
+    interpreter->load(interpreter->SystemClass      = create_system_class      (interpreter) );
+    interpreter->load(interpreter->PathClass        = create_path_class        (interpreter) );
+    interpreter->load(interpreter->AndyConfigClass  = create_andy_config_class (interpreter) );
+    interpreter->load(interpreter->ClassClass       = create_class_class       (interpreter) );
 }
 
 andy::lang::structure::structure(const std::string& __name, std::vector<andy::lang::method> __methods)

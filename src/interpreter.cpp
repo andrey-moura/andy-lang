@@ -640,22 +640,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(std::shared_pt
 void andy::lang::interpreter::init()
 {
     andy::lang::structure::create_structures(this);
-    
-    FalseClass      = find_class("False");
-    TrueClass       = find_class("True");
-    StringClass     = find_class("String");
-    IntegerClass    = find_class("Integer");
-    FloatClass      = find_class("Float");
-    DoubleClass     = find_class("Double");
-    FileClass       = find_class("File");
-    StdClass        = find_class("Standard");
-    ArrayClass      = find_class("Array");
-    DictionaryClass = find_class("Dictionary");
-    NullClass       = find_class("Null");
-    SystemClass     = find_class("System");
-    PathClass       = find_class("Path");
-    AndyConfigClass = find_class("AndyConfig");
-    ClassClass      = find_class("Class");
 }
 
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_from_declname(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)
