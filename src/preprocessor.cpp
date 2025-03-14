@@ -165,11 +165,11 @@ void andy::lang::preprocessor::process_compile(const std::filesystem::path &__fi
     std::filesystem::path temp_file = std::filesystem::temp_directory_path() / "andy_temp_compile.txt";
 
     if(system(("cmake -B build . > " + temp_file.string()).c_str())) {
-        throw std::runtime_error(file_name_token.error_message_at_current_position("Compile: CMake failed."));
+        throw std::runtime_error(file_name_token.error_message_at_current_position("Compile: CMake failed"));
     }
 
     if(system(("cmake --build build --config Debug > " + temp_file.string()).c_str())) {
-        throw std::runtime_error(file_name_token.error_message_at_current_position("Compile: Build failed."));
+        throw std::runtime_error(file_name_token.error_message_at_current_position("Compile: Build failed"));
     }
 
     std::filesystem::current_path(current_path);

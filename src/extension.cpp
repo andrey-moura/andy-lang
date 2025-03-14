@@ -28,7 +28,7 @@ void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::st
     std::filesystem::path executable_path = uva::file::executable_path();
     std::filesystem::path module_path = executable_path;
 
-    std::string library_name = std::string(module) + "-shared";
+    std::string library_name = std::string(module);
 
     std::string_view module_extension;
 

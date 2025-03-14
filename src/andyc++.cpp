@@ -14,7 +14,6 @@
 #include <clang-c/Index.h>  // This is libclang.
 
 bool debug = false;
-bool extension = false;
 std::string_view folder_arg;
 
 std::map<std::string, std::string> results;
@@ -74,7 +73,7 @@ int create_extension() {
                 snake_case_name.push_back(c);
             }
         }
-        output_file << "extern void create_" << snake_case_name << "_class(andy::lang::interpreter* interpreter);" << std::endl;
+        output_file << "extern std::shared_ptr<andy::lang::structure> create_" << snake_case_name << "_class(andy::lang::interpreter* interpreter);" << std::endl;
     }
     output_file << std::endl;
     output_file << "class AndyLangExtension : public andy::lang::extension {" << std::endl;
@@ -95,7 +94,7 @@ int create_extension() {
                 snake_case_name.push_back(c);
             }
         }
-        output_file << "        create_" << snake_case_name << "_class(interpreter);" << std::endl;
+        output_file << "        interpreter->load(create_" << snake_case_name << "_class(interpreter));" << std::endl;
     }
 
     output_file << "    }" << std::endl;
@@ -107,15 +106,177 @@ int create_extension() {
     return 0;
 }
 
-int main(int argc, char* argv[]) {
+int help(int argc, char* argv[]) {
+    display_usage(argv[0]);
+    return 0;
+}
 
-    for(size_t i = 0; i < argc; i++) {
-        //std::cout << "Arg " << i << ": " << argv[i] << std::endl;
+int init(int argc, char* argv[]) {
+    bool force = false;
+    for(size_t i = 2; i < argc; i++) {
+        std::string_view arg = argv[i];
+
+        if(arg == "--force" || arg == "-f") {
+            force = true;
+        } else {
+            uva::console::log_error("Unknown argument: " + std::string(arg));
+            return 1;
+        }
     }
 
+    std::filesystem::path folder = std::filesystem::current_path() / "lib";
+
+    if(!std::filesystem::exists(folder)) {
+        if(!std::filesystem::create_directories(folder)) {
+            uva::console::log_error("Failed to create directory 'lib'");
+            return 1;
+        }
+    }
+
+    std::filesystem::path cmake_path = folder / "CMakeLists.txt";
+
+    if(std::filesystem::exists(cmake_path)) {
+        if(force) {
+            std::filesystem::remove(cmake_path);
+        } else {
+            uva::console::log_error("CMakeLists.txt already exists. Use --force to overwrite");
+            return 1;
+        }
+    }
+
+    const char* cmakelists_format = R"(cmake_minimum_required(VERSION 3.30)
+
+project(lib)
+
+find_package(andy-lang REQUIRED)
+
+set(CMAKE_CXX_STANDARD 20)
+
+andy_lang_extension(
+    lib
+)
+)";
+
+    std::ofstream cmakelists(cmake_path);
+    cmakelists << cmakelists_format;
+    cmakelists.flush();
+
+    uva::console::log_success("    Created lib/CMakeLists.txt");
+    
+    std::cout << std::endl;
+
+    std::cout << "Do not forget to add the following lines to your andy source file:" << std::endl << std::endl;
+    std::cout << "// The toplevel directory of your CMake project" << std::endl;
+    std::cout << "#compile 'lib'" << std::endl;
+    std::cout << "// The name passed to the add_library" << std::endl;
+    std::cout << "import('lib');" << std::endl;
+    
+    return 0;
+}
+
+int create_class(int argc, char* argv[]) {
+    if(argc < 3) {
+        uva::console::log_error("Expected class name");
+        return 1;
+    }
+    bool force = false;
+    for(size_t i = 3; i < argc; i++) {
+        std::string_view arg = argv[i];
+
+        if(arg == "--force" || arg == "-f") {
+            force = true;
+        } else {
+            uva::console::log_error("Unknown argument: " + std::string(arg));
+            return 1;
+        }
+    }
+
+    std::string_view class_name = argv[2];
+
+    std::filesystem::path lib_folder = std::filesystem::current_path() / "lib";
+    std::filesystem::path src_folder = lib_folder / "src";
+    std::filesystem::path include_folder = lib_folder / "include";
+
+    if(!std::filesystem::exists(src_folder)) {
+        if(!std::filesystem::create_directories(src_folder)) {
+            uva::console::log_error("Failed to create directory 'src'");
+            return 1;
+        }
+    }
+
+    if(!std::filesystem::exists(include_folder)) {
+        if(!std::filesystem::create_directories(include_folder)) {
+            uva::console::log_error("Failed to create directory 'include'");
+            return 1;
+        }
+    }
+
+    std::filesystem::path src_file = src_folder / (std::string(class_name) + ".cpp");
+    std::filesystem::path include_file = include_folder / (std::string(class_name) + ".hpp");
+
+    if(std::filesystem::exists(src_file)) {
+        if(force) {
+            std::filesystem::remove(src_file);
+        } else {
+            uva::console::log_error("Source file already exists. Use --force to overwrite");
+            return 1;
+        }
+    }
+
+    if(std::filesystem::exists(include_file)) {
+        if(force) {
+            std::filesystem::remove(include_file);
+        } else {
+            uva::console::log_error("Include file already exists. Use --force to overwrite");
+            return 1;
+        }
+    }
+
+    std::ofstream
+        src(src_file),
+        include(include_file);
+
+    include << "#pragma once" << std::endl;
+    include << std::endl;
+    include << "class " << class_name << " {" << std::endl;
+    include << "public:" << std::endl;
+    include << "\t" << class_name << "();" << std::endl;
+    include << "};" << std::endl;
+
+    src << "#include <" << class_name << ".hpp>" << std::endl;
+    src << std::endl;
+    src << class_name << "::" << class_name << "()" << std::endl;
+    src << "{" << std::endl;
+    src << "}" << std::endl;
+    
+    include.flush();
+    src.flush();
+
+    uva::console::log_success("    Created " + include_file.string());
+    uva::console::log_success("    Created " + src_file.string());
+
+    return 0;
+}
+
+int main(int argc, char* argv[]) {
     if(argc < 2) {
         display_usage(argv[0]);
         return 1;
+    }
+
+    std::string_view arg1 = argv[1];
+
+    std::map<std::string_view, int(*)(int, char**)> commands = {
+        { "--init",  init },
+        { "--help",  help },
+        { "--class", create_class },
+        { "--h",     help },
+    };
+
+    auto it = commands.find(arg1);
+
+    if(it != commands.end()) {
+        return it->second(argc, argv);
     }
 
     for(size_t i = 1; i < argc; i++) {
@@ -140,13 +301,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    if(extension) {
-        return create_extension();
-    }
-
     std::vector<std::string_view> input_files;
 
-    std::string_view input_files_paths_str = argv[1];
+    std::string_view input_files_paths_str = arg1;
 
     const char* start = input_files_paths_str.data();
     const char* end = input_files_paths_str.data();
@@ -303,6 +460,9 @@ int main(int argc, char* argv[]) {
                             andy::lang::method m;
                             m.name = std::move(name);
 
+                            // Figure out if it is static or instance method
+                            m.storage_type = clang_CXXMethod_isStatic(class_c) ? andy::lang::method_storage_type::class_method : andy::lang::method_storage_type::instance_method;
+
                             if(return_type.size()) {
                                 if(return_type != "void") {
                                     results[m.name] = return_type;
@@ -374,14 +534,14 @@ int main(int argc, char* argv[]) {
             std::string snake_case_name = cls.name;
             std::transform(snake_case_name.begin(), snake_case_name.end(), snake_case_name.begin(), [](unsigned char c) { return std::tolower(c); });
 
-            output_file << "void create_" << snake_case_name << "_class(andy::lang::interpreter* interpreter)" << std::endl;
+            output_file << "std::shared_ptr<andy::lang::structure> create_" << snake_case_name << "_class(andy::lang::interpreter* interpreter)" << std::endl;
             output_file << "{" << std::endl;
             output_file << "\tauto " << snake_case_name << "_class = std::make_shared<andy::lang::structure>(" << "\"" << cls.name << "\"" << "); " << std::endl;
 
             if(cls.instance_methods.size() > 0) {
                 output_file  << std::endl;
 
-                output_file  << "\t" << snake_case_name << "_class->methods = {" << std::endl;
+                output_file  << "\t" << snake_case_name << "_class->instance_methods = {" << std::endl;
 
                 size_t method_iterator = 0;
 
@@ -426,6 +586,7 @@ int main(int argc, char* argv[]) {
                 output_file << "\tinterpreter->load(" << snake_case_name << "_class);" << std::endl;
             }
 
+            output_file << "\treturn " << snake_case_name << "_class;" << std::endl;
             output_file << "}" << std::endl;
             output_file.flush();
         }

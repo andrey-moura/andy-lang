@@ -14,3 +14,35 @@ add_compile_definitions(
     ANDY_COMPILER="${ANDY_COMPILER}"
     ANDYLANG_VERSION="${ANDYLANG_PROJECT_VERSION}"
 )
+
+function(andy_lang_extension extension_name)
+    set(library_name andylang-${extension_name})
+    file(GLOB_RECURSE EXTENSION_SOURCES "src/*.cpp")
+    file(GLOB_RECURSE EXTENSION_HEADERS "include/*.h*")
+
+    set(INTERMEDIATE_DIR ${CMAKE_CURRENT_LIST_DIR}/intermediate)
+
+    file(MAKE_DIRECTORY ${INTERMEDIATE_DIR})
+
+    execute_process(
+        COMMAND /home/andrey/Moonslate/andy-lang/build/andyc++ ${EXTENSION_HEADERS} -f ${INTERMEDIATE_DIR}
+    )
+
+    file(GLOB_RECURSE EXTENSION_INTERMEDIATES "intermediate/*.cpp")
+
+    string (REPLACE "${INTERMEDIATE_DIR}/" "" EXTENSION_CLASS_LIST "${EXTENSION_INTERMEDIATES}")
+    string (REPLACE ".andy.cpp" "" EXTENSION_CLASS_LIST "${EXTENSION_CLASS_LIST}")
+    list(REMOVE_ITEM EXTENSION_CLASS_LIST "extension.cpp")
+    string (REPLACE ";" "," EXTENSION_CLASS_LIST "${EXTENSION_CLASS_LIST}")
+
+    include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
+
+    add_library(${library_name} SHARED ${EXTENSION_SOURCES} ${EXTENSION_INTERMEDIATES})
+
+    # target_link_options(${library_name} PRIVATE -static-libgcc -static-libstdc++ -static)
+
+    # Copy andy-lang-lib to the bin directory
+    add_custom_command(TARGET ${library_name} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${library_name}> ${CMAKE_CURRENT_LIST_DIR}/bin/lib${library_name}.so
+    )
+endfunction()
