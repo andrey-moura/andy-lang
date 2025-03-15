@@ -156,7 +156,7 @@ foreach(EXTENSION ${EXTENSIONS})
         # Get name from extension from the folder
         get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
         include("${EXTENSION}/CMakeLists.txt")
-        target_link_libraries(andy-lang ${EXTENSION_NAME})
+        target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
     endif()
 endforeach()
 
