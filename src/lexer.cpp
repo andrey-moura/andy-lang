@@ -373,7 +373,7 @@ void andy::lang::lexer::read_next_token()
 
 void andy::lang::lexer::tokenize(std::string_view __file_name, std::string_view __source)
 {
-    m_file_name = std::move(__file_name);
+    m_file_name  = __file_name;
     m_current    = __source;
     m_source     = __source;
 
@@ -453,7 +453,7 @@ void andy::lang::lexer::insert(const std::vector<andy::lang::lexer::token> &toke
 }
 
 andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op)
-    : start(start), end(end), m_content(content), m_type(type), m_kind(kind), m_file_name(std::move(file_name)), m_operator(op)
+    : start(start), end(end), m_content(content), m_type(type), m_kind(kind), m_file_name(file_name), m_operator(op)
 {
 }
 
