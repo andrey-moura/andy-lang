@@ -40,23 +40,19 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
 
     if (baseclass_node)
     {
-        std::string base_class_name;
-        auto decname_node = baseclass_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+        std::shared_ptr<andy::lang::structure> base_class = nullptr;
 
-        if(decname_node->childrens().size() == 0) {
-            base_class_name = baseclass_node->decname();
-        } else {
-            auto object_node = decname_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
-
-            const andy::lang::parser::ast_node& object_node_child = object_node->childrens().front();
-
-            base_class_name = std::string(object_node_child.token().content()) + "." + std::string(decname_node->token().content());
+        if(auto fn_object = baseclass_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname)) {
+            auto cls_object = try_object_from_declname(*fn_object);
+            if(cls_object && cls_object->cls == ClassClass) {
+                base_class = cls_object->as<std::shared_ptr<andy::lang::structure>>();
+            } else {
+                base_class = find_class(baseclass_node->decname());
+            }
         }
-
-        auto base_class = find_class(base_class_name);
-
+        
         if(!base_class) {
-            throw std::runtime_error("base class " + std::string(base_class_name) + " not found");
+            throw std::runtime_error("base class " + std::string(baseclass_node->decname()) + " not found");
         }
 
         cls->base = base_class;
