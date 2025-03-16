@@ -154,7 +154,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                 object_node = object_node->childrens().data();
 
                 if(object_node->type() == andy::lang::parser::ast_node_type::ast_node_declname) {
-                    object_to_call = try_object_from_declname(*object_node);
+                    object_to_call = try_object_from_declname(*object_node, object ? object->cls : nullptr, object);
 
                     if(object_to_call) {
                         if(is_assignment) {
@@ -170,17 +170,24 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                             if(function_name == "new") {
                                 if(object_to_call->cls == ClassClass) {
                                     auto real_class = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
-                                    method_it = real_class->class_methods.find(function_name);
+                                    method_it = real_class->instance_methods.find(function_name);
 
-                                    if(method_it == real_class->class_methods.end()) {
+                                    if(method_it == real_class->instance_methods.end()) {
                                         // default constructor
                                         return andy::lang::object::instantiate(this, real_class, nullptr);
+                                    } else {
+                                        method_to_call = &method_it->second;
+                                        class_to_call = real_class;
+                                        object_to_call = andy::lang::object::instantiate(this, real_class, nullptr, { andy::lang::object::create(this, StringClass, object_to_call->cls->name) });
                                     }
                                 } else {
                                     method_it = object_to_call->cls->instance_methods.find(function_name);
                                     if(method_it == object_to_call->cls->instance_methods.end()) {
                                         // default constructor
                                         return andy::lang::object::instantiate(this, object_to_call->cls, nullptr);
+                                    } else {
+                                        method_to_call = &method_it->second;
+                                        class_to_call = object_to_call->cls;
                                     }
                                 }
                             } else {
