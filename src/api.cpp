@@ -36,3 +36,39 @@ namespace andy
         };
     };
 };
+
+#include <andy/lang/api.h>
+
+std::vector<std::shared_ptr<andy::lang::object>> objects;
+andy::lang::interpreter* interpreter;
+
+void andy_lang_api_init()
+{
+    interpreter = new andy::lang::interpreter();
+    objects.resize(32);
+}
+
+andy_lang_object andy_lang_api_create_object(void* obj)
+{
+    andy_lang_object object = objects.size();
+    if(obj) {
+        objects[object] = ((andy::lang::object*)obj)->shared_from_this();
+    } else {
+        objects[object] = andy::lang::object::create(interpreter, nullptr, nullptr);
+    }
+    return object;
+}
+
+andy_lang_object andy_lang_api_evaluate_file(const char* path)
+{
+    std::filesystem::path path_fs(path);
+    std::shared_ptr<andy::lang::object> obj = andy::lang::api::evaluate(path_fs);
+    
+    return andy_lang_api_create_object(obj.get());
+}
+
+void andy_lang_api_destroy()
+{
+    objects.clear();
+    delete interpreter;
+}

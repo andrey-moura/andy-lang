@@ -16,6 +16,11 @@ namespace andy
             /// @param path The path to the source code.
             /// @return Returns a shared pointer to the object.
             std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path);
+            /// @brief Executes the code in a string and return the result.
+            /// @param source The source code.
+            /// @return Returns a shared pointer to the object.
+            std::shared_ptr<andy::lang::object> evaluate(std::string_view source);
+            /// @brief Executes the code in a string and return the result.
             /// @brief Creates the object with a value and automatically determines the class.
             /// @tparam T The type of the value.
             /// @param interpreter The interpreter.
