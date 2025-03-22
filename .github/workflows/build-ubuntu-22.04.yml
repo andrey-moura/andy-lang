@@ -38,8 +38,25 @@ jobs:
       run: andy --version
       working-directory: andy-lang
 
+    - name: Run tests for andy-lang
+      run: build/andy-test tests
+      working-directory: andy-lang
+
     - name: Generate artifacts
       uses: actions/upload-artifact@v4
       with:
         name: andy
         path: andy-lang/build/andy
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: Test Results
+        path: andy_tests.xml
+
+    - name: Report Test Results
+      uses: dorny/test-reporter@v1
+      with:
+        name: CTest Results
+        path: andy_tests.xml
+        reporter: java-junit
