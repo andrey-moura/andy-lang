@@ -60,7 +60,7 @@ jobs:
     - name: Report Test Results
       uses: dorny/test-reporter@v1
       with:
-        name: CTest Results
+        name: Test Results
         path: andy_tests.xml
         reporter: java-junit
         working-directory: andy-lang

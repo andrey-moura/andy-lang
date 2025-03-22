@@ -11,7 +11,10 @@ on:
 jobs:
   build:
     runs-on: windows-2022
-
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
     steps:
     - name: Checkout andy-lang
       uses: actions/checkout@v3
@@ -20,15 +23,15 @@ jobs:
         submodules: 'recursive'
 
     - name: Configure CMake for andy-lang
-      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=true -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
-      run: cmake --build build --config Release --parallel --target andy
+      run: cmake --build build --config Release --parallel
       working-directory: andy-lang
 
     - name: Install andy-lang
-      run: cmake --install build --config Release --component andy
+      run: cmake --install build --config Release
       working-directory: andy-lang
 
     - name: Configure andy again so the installer can find it
@@ -46,3 +49,21 @@ jobs:
         path: |
           andy-lang/build/Release/andy.exe
           andy-lang/build/Release/andy-lang-installer.exe
+
+    - name: Run tests for andy-lang
+      run: build/andy-test tests
+      working-directory: andy-lang
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: Test Results
+        path: andy-lang/andy_tests.xml
+
+    - name: Report Test Results
+      uses: dorny/test-reporter@v1
+      with:
+        name: Test Results
+        path: andy_tests.xml
+        reporter: java-junit
+        working-directory: andy-lang

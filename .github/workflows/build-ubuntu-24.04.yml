@@ -11,7 +11,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
-
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
     steps:
     - name: Install dependencies
       run: sudo apt-get install -y build-essential
@@ -23,7 +26,7 @@ jobs:
         submodules: 'recursive'
 
     - name: Configure CMake for andy-lang
-      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
+      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=true -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
@@ -38,8 +41,26 @@ jobs:
       run: andy --version
       working-directory: andy-lang
 
+    - name: Run tests for andy-lang
+      run: build/andy-test tests
+      working-directory: andy-lang
+
     - name: Generate artifacts
       uses: actions/upload-artifact@v4
       with:
         name: andy
         path: andy-lang/build/andy
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: Test Results
+        path: andy-lang/andy_tests.xml
+
+    - name: Report Test Results
+      uses: dorny/test-reporter@v1
+      with:
+        name: Test Results
+        path: andy_tests.xml
+        reporter: java-junit
+        working-directory: andy-lang
