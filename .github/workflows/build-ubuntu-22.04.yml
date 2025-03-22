@@ -58,5 +58,5 @@ jobs:
       uses: dorny/test-reporter@v1
       with:
         name: CTest Results
-        path: andy_tests.xml
+        path: andy-lang/andy_tests.xml
         reporter: java-junit
