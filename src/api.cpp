@@ -33,6 +33,12 @@ namespace andy
         
                 return ret;
             }
+
+            void contained_class(andy::lang::interpreter *interpreter, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::structure> contained) {
+                auto cls_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, contained);
+                cls_obj->cls->instance_methods["new"].call(cls_obj);
+                cls->class_variables[contained->name] = cls_obj;
+            }
         };
-    };
+    }; // namespace lang
 };
