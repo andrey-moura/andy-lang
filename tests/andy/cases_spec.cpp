@@ -39,7 +39,7 @@ describe of("Running cases", []() {
         });
       } else {
         if(entry.path().extension() == ".andy") {
-          std::string command = "./andy '" + file_path.string() + "'";
+          std::string command = "./build/andy '" + file_path.string() + "'";
           std::string stem = file_path.stem().string();
           if(isdigit(stem[0])) {
             int ret = std::stoi(stem);
