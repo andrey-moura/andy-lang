@@ -81,7 +81,9 @@ if(BUILD_ANDY_ANALYZER)
 endif()
 
 if(UNIX)
-    target_link_libraries(andy-lang PRIVATE ${CMAKE_DL_LIBS})
+    find_package(Threads REQUIRED)
+
+    target_link_libraries(andy-lang PRIVATE ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
     target_link_options(andy PRIVATE -Wl,--export-dynamic)
 
     set_target_properties(andy PROPERTIES LINK_SEARCH_START_STATIC ON)
