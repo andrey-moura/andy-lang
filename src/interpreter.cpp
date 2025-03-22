@@ -681,7 +681,9 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 if(cls->name == class_name) {
                     auto it = cls->class_variables.find(var_name);
     
-                    if(it != cls->class_variables.end()) {
+                    if(it == cls->class_variables.end()) {
+                        throw std::runtime_error("class " + std::string(class_name) + " does not have a variable called " + std::string(var_name));
+                    } else {
                         return it->second;
                     }
                 }
