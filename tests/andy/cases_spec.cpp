@@ -5,6 +5,10 @@
 
 using namespace andy::tests;
 
+#ifdef _WIN32
+  #define WEXITSTATUS(status) (status)
+#endif
+
 describe of("Running cases", []() {
   std::filesystem::path cases_path = std::filesystem::path(ANDYLANG_PROJECT_DIR) / "tests" / "andy" / "cases";
   std::filesystem::path tmp_file = std::filesystem::temp_directory_path() / "andy_tests_output.txt";
@@ -39,7 +43,7 @@ describe of("Running cases", []() {
         });
       } else {
         if(entry.path().extension() == ".andy") {
-          std::string command = "./andy '" + file_path.string() + "'";
+          std::string command = "./build/andy '" + file_path.string() + "'";
           std::string stem = file_path.stem().string();
           if(isdigit(stem[0])) {
             int ret = std::stoi(stem);

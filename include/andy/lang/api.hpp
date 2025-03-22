@@ -42,6 +42,11 @@ namespace andy
                     return obj;
                 }
             }
+            /// @brief Adds a class to another class.
+            /// @param interpreter The interpreter.
+            /// @param cls The class.
+            /// @param contained The contained class.
+            void contained_class(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::structure> contained);
         };
     };
 };
