@@ -7,13 +7,13 @@
 #include <andy/lang/parser.hpp>
 
 #ifdef _WIN32
-    #define UVA_EXTENSION(name) \
+    #define ANDY_EXTENSION(name) \
     extern "C" __declspec(dllexport) andy::lang::extension* create_extension()\
     {\
         return new name ();\
     }
 #else
-    #define UVA_EXTENSION(name) \
+    #define ANDY_EXTENSION(name) \
     extern "C" andy::lang::extension* create_extension()\
     {\
         return new name ();\
