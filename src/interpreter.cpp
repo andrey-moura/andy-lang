@@ -199,7 +199,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                                         message.reserve(100);
                                         message += "class ";
                                         message += object_to_call->cls->name;
-                                        message += " does not have a method called ";
+                                        message += " does not have a function called ";
                                         message += std::string(function_name);
                                         throw std::runtime_error(message);
                                     };
@@ -251,7 +251,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                                     auto it = cls->class_methods.find(function_name);
 
                                     if(it == cls->class_methods.end()) {
-                                        throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a method called " + std::string(function_name));
+                                        throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
                                     }
 
                                     method_to_call = &it->second;
@@ -272,7 +272,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                     auto it = object_to_call->cls->instance_methods.find(std::string(function_name));
 
                     if(it == object_to_call->cls->instance_methods.end()) {
-                        throw std::runtime_error("class " + object_to_call->cls->name + " does not have a method called " + std::string(function_name));
+                        throw std::runtime_error("class " + object_to_call->cls->name + " does not have a function called " + std::string(function_name));
                     }
 
                     method_to_call = &it->second;
@@ -289,7 +289,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                         auto it = class_to_call->instance_methods.find(std::string(function_name));
 
                         if(it == class_to_call->instance_methods.end()) {
-                            throw std::runtime_error("class " + class_to_call->name + " does not have a method called " + std::string(function_name));
+                            throw std::runtime_error("class " + class_to_call->name + " does not have a function called " + std::string(function_name));
                         }
 
                         method_to_call = &it->second;
@@ -305,7 +305,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                         auto it = object_to_call->cls->instance_methods.find(std::string(function_name));
 
                         if(it == object_to_call->cls->instance_methods.end()) {
-                            throw std::runtime_error("class " + object_to_call->cls->name + " does not have a method called " + std::string(function_name));
+                            throw std::runtime_error("class " + object_to_call->cls->name + " does not have a function called " + std::string(function_name));
                         }
 
                         method_to_call = &it->second;
@@ -821,7 +821,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
                 if(obj->cls != StringClass) {
                     auto method = obj->cls->instance_methods.find("to_string");
                     if(method == obj->cls->instance_methods.end()) {
-                        throw std::runtime_error("object of class " + obj->cls->name + " does not have a method called 'to_string'");
+                        throw std::runtime_error("object of class " + obj->cls->name + " does not have a function called 'to_string'");
                     }
                     obj = call(obj->cls, obj, method->second, {}, {});
                 }
