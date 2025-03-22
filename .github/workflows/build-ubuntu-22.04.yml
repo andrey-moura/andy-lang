@@ -52,7 +52,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Test Results
-        path: andy_tests.xml
+        path: andy-lang/andy_tests.xml
 
     - name: Report Test Results
       uses: dorny/test-reporter@v1
