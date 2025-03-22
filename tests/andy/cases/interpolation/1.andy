@@ -2,5 +2,5 @@ var test1 = 'test';
 var test = "${test1} 1";
 
 if(test == 'test 1') {
-    return 2;
+    return 1;
 }
