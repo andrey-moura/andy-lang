@@ -32,15 +32,15 @@ static bool is_delimiter(const char& c)
    return ((bool*)is_delimiter_lookup)[(uint8_t)c];
 }
 
-bool is_operator(const char& c) {
+static bool is_operator(const char& c) {
     return ((bool*)is_operator_lookup)[(uint8_t)c];
 }
 
-bool is_keyword(std::string_view str) {
+static bool is_keyword(std::string_view str) {
     return std::binary_search(keywords_lookup.begin(), keywords_lookup.end(), str);
 }
 
-bool is_preprocessor(std::string_view str) {
+static bool is_preprocessor(std::string_view str) {
     if(str.starts_with('#')) {
         return true;
     }
@@ -48,7 +48,7 @@ bool is_preprocessor(std::string_view str) {
     return false;
 }
 
-andy::lang::lexer::operator_type to_operator(std::string_view str) {
+static andy::lang::lexer::operator_type to_operator(std::string_view str) {
 
     auto it = string_to_operator_lookup.find(str);
 
