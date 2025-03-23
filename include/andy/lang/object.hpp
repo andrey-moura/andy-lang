@@ -13,7 +13,7 @@ namespace andy
         class object;
         class structure;
         class interpreter;
-        constexpr size_t max_native_size = 32;
+        constexpr size_t max_native_size = 40;
         class object : public std::enable_shared_from_this<object>
         {
         public:
