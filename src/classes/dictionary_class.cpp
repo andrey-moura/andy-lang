@@ -33,7 +33,14 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             auto operator_it = key->cls->instance_methods.find("==");
 
             for(auto& pair : dictionary) {
-                auto result = interpreter->call(key->cls, key, operator_it->second, { pair.first });
+                andy::lang::function_call __call = {
+                    "==",
+                    key->cls,
+                    key,
+                    operator_it->second,
+                    { pair.first }
+                };
+                auto result = interpreter->call(__call);
                 if(result->cls == interpreter->TrueClass) {
                     return pair.second;
                 }

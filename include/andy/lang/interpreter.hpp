@@ -21,6 +21,7 @@ namespace andy
             std::shared_ptr<andy::lang::object> self;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
             std::map<std::string_view, andy::lang::method> functions;
+            const andy::lang::parser::ast_node* given_block = nullptr;
 
             bool has_returned = false;
             std::shared_ptr<andy::lang::object> return_value;
@@ -103,13 +104,7 @@ namespace andy
             /// @brief The global class class.
             std::shared_ptr<andy::lang::structure> ClassClass;
 
-            std::shared_ptr<andy::lang::object> call(
-                std::shared_ptr<andy::lang::structure> cls,
-                std::shared_ptr<andy::lang::object>    object,
-                const andy::lang::method&              method,
-                std::vector<std::shared_ptr<andy::lang::object>> positional_params,
-                std::map<std::string, std::shared_ptr<andy::lang::object>> named_params = {}
-            );
+            std::shared_ptr<andy::lang::object> call(function_call& call);
 
             std::shared_ptr<andy::lang::structure> find_class(const std::string_view& name) {
                 for(auto& cls : classes) {
