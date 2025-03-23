@@ -6,7 +6,22 @@
 const static uint64_t is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x101010001010000, 0, 0x101010100000000, 0, 0, 0, 0x10001000000, 0, 0, 0, 0x100000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 // Keep ordered as it is used in binary search
-const static std::vector<std::string_view> keywords_lookup = { "break", "class", "else", "for", "foreach", "function", "if", "namespace", "new", "return", "static", "var", "while" };
+const static std::vector<std::string_view> keywords_lookup = {
+    "break",
+    "class",
+    "else",
+    "for",
+    "foreach",
+    "function",
+    "if",
+    "namespace",
+    "new",
+    "return",
+    "static",
+    "var",
+    "while",
+    "yield"
+};
 const static std::map<std::string_view, andy::lang::lexer::operator_type> string_to_operator_lookup = {
     { "+",  andy::lang::lexer::operator_type::operator_plus          },
     { "-",  andy::lang::lexer::operator_type::operator_minus         },
@@ -32,15 +47,15 @@ static bool is_delimiter(const char& c)
    return ((bool*)is_delimiter_lookup)[(uint8_t)c];
 }
 
-bool is_operator(const char& c) {
+static bool is_operator(const char& c) {
     return ((bool*)is_operator_lookup)[(uint8_t)c];
 }
 
-bool is_keyword(std::string_view str) {
+static bool is_keyword(std::string_view str) {
     return std::binary_search(keywords_lookup.begin(), keywords_lookup.end(), str);
 }
 
-bool is_preprocessor(std::string_view str) {
+static bool is_preprocessor(std::string_view str) {
     if(str.starts_with('#')) {
         return true;
     }
@@ -48,7 +63,7 @@ bool is_preprocessor(std::string_view str) {
     return false;
 }
 
-andy::lang::lexer::operator_type to_operator(std::string_view str) {
+static andy::lang::lexer::operator_type to_operator(std::string_view str) {
 
     auto it = string_to_operator_lookup.find(str);
 

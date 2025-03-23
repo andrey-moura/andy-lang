@@ -4,7 +4,16 @@
 
 std::shared_ptr<andy::lang::object> andy::lang::method::call(std::shared_ptr<andy::lang::object> o)
 {
-    return function(o, std::vector<std::shared_ptr<andy::lang::object>>(), std::map<std::string, std::shared_ptr<andy::lang::object>>());
+    andy::lang::function_call call = {
+        name,
+        nullptr,
+        o,
+        *this,
+        {},
+        {},
+        nullptr
+    };
+    return function(call);
 }
 
 void andy::lang::method::init_params(std::vector<std::string> __params)

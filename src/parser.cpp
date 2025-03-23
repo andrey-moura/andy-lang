@@ -403,6 +403,13 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
             fn_node.add_child(std::move(params_node));
         }
 
+        const auto& possible_block = lexer.see_next();
+
+        if(possible_block.type() == andy::lang::lexer::token_type::token_delimiter && possible_block.content() == "{") {
+            ast_node block_node = parse_delimiter(lexer);
+            fn_node.add_child(std::move(block_node));
+        }
+
         return fn_node;
     }
 
@@ -541,7 +548,8 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword(andy::lang::lexer
         { "foreach",   &andy::lang::parser::parse_keyword_foreach   },
         { "while",     &andy::lang::parser::parse_keyword_while     },
         { "break",     &andy::lang::parser::parse_keyword_break     },
-        { "static",   &andy::lang::parser::parse_keyword_static   },
+        { "static",    &andy::lang::parser::parse_keyword_static    },
+        { "yield",     &andy::lang::parser::parse_keyword_yield     }
     };
 
     auto keyword_parser = keyword_parsers.find(token.content());
@@ -1030,4 +1038,18 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_static(andy::lang
     }
     
     throw std::runtime_error(next_token.error_message_at_current_position("Expected keyword 'function' or 'var' after 'static'"));
+}
+
+andy::lang::parser::ast_node andy::lang::parser::parse_keyword_yield(andy::lang::lexer &lexer)
+{
+    andy::lang::parser::ast_node node(std::move(lexer.next_token()), ast_node_type::ast_node_yield);
+
+    auto next_token = lexer.see_next();
+
+    if(next_token.type() == andy::lang::lexer::token_type::token_delimiter && next_token.content() == "(") {
+        lexer.consume_token(); // Consume the '(' token
+        node.add_child(extract_fn_call_params(lexer));
+    }
+
+    return node;
 }

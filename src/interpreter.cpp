@@ -74,7 +74,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
 
             auto static_node = class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declstatic);
 
-            auto method = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, class_child);
+            auto method = andy::lang::method(std::move(std::string(method_name)), method_storage_type::instance_method, params, class_child);
 
             if(static_node || source_code.decl_type() == "namespace") {
                 cls->class_methods[method_name] = std::move(method);
@@ -405,7 +405,17 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                 }
             }
 
-            std::shared_ptr<andy::lang::object> ret = call(class_to_call, object_to_call, *method_to_call, positional_params, named_params);
+            andy::lang::function_call __call = {
+                function_name,
+                class_to_call,
+                object_to_call,
+                *method_to_call,
+                std::move(positional_params),
+                std::move(named_params),
+                source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
+            };
+
+            std::shared_ptr<andy::lang::object> ret = call(__call);
 
             if(is_super) {
                 object_to_call->base_instance = ret;
@@ -532,6 +542,21 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
             }
         }
         break;
+        case andy::lang::parser::ast_node_type::ast_node_yield: {
+            andy::lang::method method;
+            method.name = "yield";
+            method.block_ast = *current_context.given_block;
+            andy::lang::function_call __call = {
+                "yield",
+                nullptr,
+                nullptr,
+                method,
+                {},
+                {},
+                current_context.given_block
+            };
+            return call(__call);
+        }
     default:
         throw std::runtime_error(source_code.token().error_message_at_current_position("interpreter: Unexpected token"));
         break;
@@ -570,51 +595,57 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(andy::l
     return execute_all(source_code.childrens().begin(), source_code.childrens().end(), object);
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object, const andy::lang::method &method, std::vector<std::shared_ptr<andy::lang::object>> positional_params, std::map<std::string, std::shared_ptr<andy::lang::object>> named_params)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call& call)
 {
     push_context();
 
-    bool is_constructor = method.name == "new";
+    current_context.given_block = call.given_block;
+
+    bool is_constructor = call.name == "new";
 
     if(is_constructor) {
         // Special case
         // The object is created before the method is called
         // If the object was instantiated in from native code, it will be passed as a parameter
-        if(!object) {
-            object = std::make_shared<andy::lang::object>(cls);
+        if(!call.object) {
+            call.object = std::make_shared<andy::lang::object>(call.cls);
         }
     }
 
     std::shared_ptr<andy::lang::object> ret = nullptr;
 
-    if(method.positional_params.size() != positional_params.size()) {
-        throw std::runtime_error("function " + method.name + " expects " + std::to_string(method.positional_params.size()) + " parameters, but " + std::to_string(positional_params.size()) + " were given");
+    if(call.positional_params.size() != call.method.positional_params.size()) {
+        throw std::runtime_error("function " + call.method.name + " expects " + std::to_string(call.method.positional_params.size()) + " parameters, but " + std::to_string(call.positional_params.size()) + " were given");
     }
 
-    for(const auto& param : method.named_params) {
-        auto it = named_params.find(param.name);
+    for(const auto& param : call.method.named_params) {
+        auto it = call.named_params.find(param.name);
 
-        if(it == named_params.end()) {
+        if(it == call.named_params.end()) {
             if(param.has_default_value) {
-                named_params[param.name] = var_to_object(param.default_value);
+                call.named_params[param.name] = var_to_object(param.default_value);
             } else {
-                throw std::runtime_error("function " + method.name + " called without parameter " + param.name);
+                throw std::runtime_error("function " + call.method.name + " called without parameter " + param.name);
             }
         }
     }
 
-    if(method.block_ast.childrens().size()) {
-        for(size_t i = 0; i < method.positional_params.size(); i++) {
-            current_context.variables[method.positional_params[i].name] = positional_params[i];
+    if(call.method.block_ast.childrens().size()) {
+        for(size_t i = 0; i < call.method.positional_params.size(); i++) {
+            current_context.variables[call.method.positional_params[i].name] = call.positional_params[i];
         }
 
-        for(auto& [name, value] : named_params) {
+        for(auto& [name, value] : call.named_params) {
             current_context.variables[name] = value;
         }
         
-        ret = execute(*method.block_ast.block(), object);
-    } else if(method.function) {
-        ret = method.function(object, positional_params, named_params);
+        if(call.method.block_ast.type() == andy::lang::parser::ast_node_type::ast_node_context) {
+            ret = execute_all(call.method.block_ast, call.object);
+        } else {
+            ret = execute(*call.method.block_ast.block(), call.object);
+        }
+    } else if(call.method.function) {
+        ret = call.method.function(call);
     }
 
     if(is_constructor) {
@@ -622,7 +653,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(std::shared_pt
             throw std::runtime_error("constructor should not return a value");
         }
 
-        ret = object;
+        ret = call.object;
     }
 
     for (auto& [name, value] : current_context.variables) {
@@ -825,7 +856,16 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
                     if(method == obj->cls->instance_methods.end()) {
                         throw std::runtime_error("object of class " + obj->cls->name + " does not have a function called 'to_string'");
                     }
-                    obj = call(obj->cls, obj, method->second, {}, {});
+                    andy::lang::function_call __call = {
+                        "to_string",
+                        obj->cls,
+                        obj,
+                        method->second,
+                        {},
+                        {},
+                        nullptr
+                    };
+                    obj = call(__call);
                 }
                 str += obj->as<std::string>();
             }
