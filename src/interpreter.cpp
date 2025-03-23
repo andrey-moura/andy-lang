@@ -74,7 +74,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
 
             auto static_node = class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declstatic);
 
-            auto method = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, class_child);
+            auto method = andy::lang::method(std::move(std::string(method_name)), method_storage_type::instance_method, params, class_child);
 
             if(static_node || source_code.decl_type() == "namespace") {
                 cls->class_methods[method_name] = std::move(method);
