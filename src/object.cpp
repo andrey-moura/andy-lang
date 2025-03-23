@@ -46,7 +46,14 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, std::v
         auto new_it = cls->instance_methods.find("new");
 
         if(new_it != cls->instance_methods.end()) {
-            interpreter->call(cls, shared_from_this(), new_it->second, params);
+            andy::lang::function_call __call = {
+                "new",
+                cls,
+                shared_from_this(),
+                new_it->second,
+                params
+            };
+            interpreter->call(__call);
         }
     }
 }
