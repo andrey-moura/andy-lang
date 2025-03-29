@@ -5,6 +5,8 @@
 
 #include <uva/file.hpp>
 
+extern void create_builtin_libs();
+
 namespace andy
 {
     namespace lang
@@ -24,6 +26,8 @@ namespace andy
         
                 andy::lang::parser p;
                 andy::lang::parser::ast_node root_node = p.parse_all(l);
+
+                create_builtin_libs();
         
                 andy::lang::interpreter interpreter;
                 interpreter.input_file_path = path;
@@ -38,6 +42,26 @@ namespace andy
                 auto cls_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, contained);
                 cls_obj->cls->instance_methods["new"].call(cls_obj);
                 cls->class_variables[contained->name] = cls_obj;
+            }
+
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> object, std::string_view fn) {
+                auto method = object->cls->instance_methods.find(fn);
+
+                if(method == object->cls->instance_methods.end()) {
+                    throw std::runtime_error("Class " + object->cls->name + " does not have a instance funtion called '" + std::string(fn) + "'");
+                }
+
+                andy::lang::function_call call = {
+                    method->second.name,
+                    object->cls,
+                    object,
+                    method->second,
+                    {},
+                    {},
+                    nullptr
+                };
+
+                return interpreter->call(call);
             }
         };
     }; // namespace lang
