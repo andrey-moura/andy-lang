@@ -1,0 +1,77 @@
+import(:tests);
+
+describe('Integer') {
+    describe('operators') {
+        describe('+') {
+            it('should add two integers') {
+                var a = 1;
+                var b = 2;
+                expect(a + b).to_eq(3);
+            }
+        }
+        describe('-') {
+            it('should subtract two integers') {
+                var a = 1;
+                var b = 2;
+                expect(a - b).to_eq(-1);
+            }
+        }
+        describe('*') {
+            it('should multiply two integers') {
+                var a = 2;
+                var b = 3;
+                expect(a * b).to_eq(6);
+            }
+        }
+        describe('/') {
+            it('should divide two integers') {
+                var a = 6;
+                var b = 3;
+                expect(a / b).to_eq(2);
+            }
+        }
+        describe('%') {
+            it('should modulo two integers') {
+                var a = 6;
+                var b = 4;
+                expect(a % b).to_eq(2);
+            }
+        }
+        describe('+=') {
+            it('should add and assign two integers') {
+                var test = 0;
+                test += 1;
+                expect(test).to_eq(1);
+            }
+        }
+        describe('-=') {
+            it('should subtract and assign two integers') {
+                var test = 0;
+                test -= 1;
+                expect(test).to_eq(-1);
+            }
+        }
+        describe('*=') {
+            it('should multiply and assign two integers') {
+                var test = 2;
+                test *= 3;
+                expect(test).to_eq(6);
+            }
+        }
+        describe('/=') {
+            it('should divide and assign two integers') {
+                var test = 6;
+                test /= 3;
+                expect(test).to_eq(2);
+            }
+        }
+        describe('%=') {
+            it('should modulo and assign two integers') {
+                var test = 6;
+                test %= 4;
+                expect(test).to_eq(2);
+            }
+        }
+    }
+}
+ 

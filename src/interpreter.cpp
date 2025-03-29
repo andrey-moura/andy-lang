@@ -103,7 +103,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
     return cls;
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object)
 {
     switch (source_code.type())
     {
@@ -142,7 +142,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                 method_to_call = &it->second;
             }
 
-            andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+            const andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
 
             std::string_view function_name = source_code.decname();
             bool is_super = function_name == "super";
@@ -199,7 +199,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                                         message.reserve(100);
                                         message += "class ";
                                         message += object_to_call->cls->name;
-                                        message += " does not have a method called ";
+                                        message += " does not have a function called ";
                                         message += std::string(function_name);
                                         throw std::runtime_error(message);
                                     };
@@ -251,7 +251,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                                     auto it = cls->class_methods.find(function_name);
 
                                     if(it == cls->class_methods.end()) {
-                                        throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a method called " + std::string(function_name));
+                                        throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
                                     }
 
                                     method_to_call = &it->second;
@@ -272,7 +272,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                     auto it = object_to_call->cls->instance_methods.find(std::string(function_name));
 
                     if(it == object_to_call->cls->instance_methods.end()) {
-                        throw std::runtime_error("class " + object_to_call->cls->name + " does not have a method called " + std::string(function_name));
+                        throw std::runtime_error("class " + object_to_call->cls->name + " does not have a function called " + std::string(function_name));
                     }
 
                     method_to_call = &it->second;
@@ -289,7 +289,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                         auto it = class_to_call->instance_methods.find(std::string(function_name));
 
                         if(it == class_to_call->instance_methods.end()) {
-                            throw std::runtime_error("class " + class_to_call->name + " does not have a method called " + std::string(function_name));
+                            throw std::runtime_error("class " + class_to_call->name + " does not have a function called " + std::string(function_name));
                         }
 
                         method_to_call = &it->second;
@@ -305,7 +305,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                         auto it = object_to_call->cls->instance_methods.find(std::string(function_name));
 
                         if(it == object_to_call->cls->instance_methods.end()) {
-                            throw std::runtime_error("class " + object_to_call->cls->name + " does not have a method called " + std::string(function_name));
+                            throw std::runtime_error("class " + object_to_call->cls->name + " does not have a function called " + std::string(function_name));
                         }
 
                         method_to_call = &it->second;
@@ -376,11 +376,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
             std::vector<std::shared_ptr<andy::lang::object>> positional_params;
             std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
 
-            andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+            const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
 
             if(params_node) {
                 for(auto& param : params_node->childrens()) {
-                    andy::lang::parser::ast_node* value_node = &param;
+                    const andy::lang::parser::ast_node* value_node = &param;
                     if(param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl && param.childrens().size()) {
                         // Named parameter
                         if(auto __value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl)) {
@@ -391,7 +391,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(andy::lang:
                     
                     value = node_to_object(*value_node);
 
-                    andy::lang::parser::ast_node* name = nullptr;
+                    const andy::lang::parser::ast_node* name = nullptr;
                     
                     if(param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
                         name = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
@@ -576,7 +576,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(std::ve
             break;
         }
 
-        result = execute(*it, object);
+        result = execute(node, object);
 
         if(it->type() == andy::lang::parser::ast_node_type::ast_node_fn_return) {
             current_context.has_returned = true;
@@ -590,7 +590,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(std::ve
     return nullptr;
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object)
 {
     return execute_all(source_code.childrens().begin(), source_code.childrens().end(), object);
 }
@@ -712,7 +712,9 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 if(cls->name == class_name) {
                     auto it = cls->class_variables.find(var_name);
     
-                    if(it != cls->class_variables.end()) {
+                    if(it == cls->class_variables.end()) {
+                        throw std::runtime_error("class " + std::string(class_name) + " does not have a variable called " + std::string(var_name));
+                    } else {
                         return it->second;
                     }
                 }
@@ -852,7 +854,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
                 if(obj->cls != StringClass) {
                     auto method = obj->cls->instance_methods.find("to_string");
                     if(method == obj->cls->instance_methods.end()) {
-                        throw std::runtime_error("object of class " + obj->cls->name + " does not have a method called 'to_string'");
+                        throw std::runtime_error("object of class " + obj->cls->name + " does not have a function called 'to_string'");
                     }
                     andy::lang::function_call __call = {
                         "to_string",

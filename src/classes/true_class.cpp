@@ -9,6 +9,9 @@ std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [TrueClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>(TrueClass);
         })},
+        {"==", andy::lang::method("==", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            return params[0]->cls == interpreter->TrueClass ? std::make_shared<andy::lang::object>(interpreter->TrueClass) : std::make_shared<andy::lang::object>(interpreter->FalseClass);
+        })},
         {"||", andy::lang::method("||", andy::lang::method_storage_type::instance_method, {"other"}, [TrueClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>(TrueClass);
         })},

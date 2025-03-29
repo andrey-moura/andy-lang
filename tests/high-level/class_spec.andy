@@ -1,0 +1,25 @@
+import(:tests)
+
+class Test {
+    function instance_fn() {
+        return 1;
+    }
+
+    static function static_fn() {
+        return 1;
+    }
+}
+
+describe('Class') {
+    describe('instance methods') {
+        it('should call an instance method') {
+            var test = new Test();
+            expect(test.instance_fn()).to_eq(1);
+        }
+    }
+    describe('static methods') {
+        it('should call a static method') {
+            expect(Test.static_fn()).to_eq(1);
+        }
+    }
+}

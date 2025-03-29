@@ -1,5 +1,0 @@
-var condition = true;
-
-if (condition) {
-    return 3;
-}
