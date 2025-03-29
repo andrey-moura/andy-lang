@@ -15,16 +15,28 @@
 
 #include <uva/file.hpp>
 
-//std::vector<andy::lang::extension*> extensions;
+std::map<std::string_view, std::shared_ptr<andy::lang::extension>> andy::lang::extension::builtins;
 
 andy::lang::extension::extension(const std::string &name)
     : m_name(name)
 {
-    //extensions.push_back(this);
+    
+}
+
+void andy::lang::extension::add_builtin(std::shared_ptr<andy::lang::extension> extension)
+{
+    builtins.insert({ extension->name(), extension });
 }
 
 void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::string_view module)
 {
+    auto it = builtins.find(module);
+
+    if(it != builtins.end()) {
+        interpreter->load_extension(it->second.get());
+        return;
+    }
+
     std::filesystem::path executable_path = uva::file::executable_path();
     std::filesystem::path module_path = executable_path;
 
@@ -53,7 +65,7 @@ void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::st
         provided_extension_path.replace_extension(module_extension);
 
         if(!std::filesystem::exists(provided_extension_path)) {
-            throw std::runtime_error("module " + std::string(module) + " not found. Expect it to be at " + module_path.string() + " or " + provided_extension_path.string());
+            throw std::runtime_error("Module " + std::string(module) + " not found. Expect it to be builtin or to be located at " + module_path.string() + " or " + provided_extension_path.string());
         }
 
         module_path = provided_extension_path;

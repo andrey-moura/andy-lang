@@ -4,3 +4,4 @@ logs/
 dependencies/
 release-build/
 andy_tests.xml
+src/builtin_libs.cpp
