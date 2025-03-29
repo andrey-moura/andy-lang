@@ -176,6 +176,34 @@ namespace andy
 
                 return nullptr;
             });
+            cls->instance_methods["/="] = andy::lang::method("/=",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+                T& value = object->as<T>();
+                std::shared_ptr<andy::lang::object> other = params[0];
+                if(other->cls == interpreter->DoubleClass) {
+                    value /= other->as<double>();
+                } else if(other->cls == interpreter->IntegerClass) {
+                    value /= other->as<int>();
+                } else if(other->cls == interpreter->FloatClass) {
+                    value /= other->as<float>();
+                } else {
+                    throw std::runtime_error("undefined operator/=(" + object->cls->name + ", " + other->cls->name + ")");
+                }
+
+                return nullptr;
+            });
+            if constexpr (std::is_integral_v<T>) {
+                cls->instance_methods["%="] = andy::lang::method("%=",andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, cls](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+                    T& value = object->as<T>();
+                    std::shared_ptr<andy::lang::object> other = params[0];
+                    if(other->cls == interpreter->IntegerClass) {
+                        value %= other->as<int>();
+                    } else {
+                        throw std::runtime_error("undefined operator%=(" + object->cls->name + ", " + other->cls->name + ")");
+                    }
+
+                    return nullptr;
+                });
+            }
         }
     };
 };
