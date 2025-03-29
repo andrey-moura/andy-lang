@@ -82,8 +82,6 @@ add_library(andy-lang
     $<TARGET_OBJECTS:uva-console>
 )
 
-target_link_libraries(andy-lang)
-
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
