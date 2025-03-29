@@ -377,6 +377,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
 
     // After a literal or identifier we can have:
     // '(' (function call)
+    ast_node identifier_or_literal_node;
 
     if(const auto& next_token = lexer.see_next();
         (next_token.type() == andy::lang::lexer::token_type::token_delimiter && next_token.content() == "(")
@@ -410,18 +411,18 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
             fn_node.add_child(std::move(block_node));
         }
 
-        return fn_node;
-    }
-
-    ast_node_type node_type;
-
-    if(identifier_or_literal.type() == andy::lang::lexer::token_type::token_literal) {
-        node_type = ast_node_type::ast_node_valuedecl;
+        identifier_or_literal_node = fn_node;
     } else {
-        node_type = ast_node_type::ast_node_declname;
-    }
+        ast_node_type node_type;
+    
+        if(identifier_or_literal.type() == andy::lang::lexer::token_type::token_literal) {
+            node_type = ast_node_type::ast_node_valuedecl;
+        } else {
+            node_type = ast_node_type::ast_node_declname;
+        }
 
-    ast_node identifier_or_literal_node(std::move(identifier_or_literal), node_type);
+        identifier_or_literal_node = andy::lang::parser::ast_node(std::move(identifier_or_literal), ast_node_type::ast_node_declname);
+    }
 
     if(identifier_or_literal_node.token().type() == andy::lang::lexer::token_type::token_literal &&
         identifier_or_literal_node.token().kind() == andy::lang::lexer::token_kind::token_interpolated_string)
