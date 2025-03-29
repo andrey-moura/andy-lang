@@ -1,6 +1,0 @@
-var test1 = 'test';
-var test = "${test1}";
-
-if(test == 'test') {
-    return 2;
-}

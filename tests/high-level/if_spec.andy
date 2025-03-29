@@ -1,0 +1,129 @@
+import(:tests)
+
+function test() {
+    return 1;
+}
+
+describe('if') {
+    it('should execute the if block on literal true condition') {
+        var test = 0;
+        if (true) {
+            test = 1;
+        }
+        expect(test).to_eq(1);
+    }
+    it('should execute the if block on variable true condition') {
+        var test = 0;
+        var condition = true;
+        if (condition) {
+            test = 1;
+        }
+        expect(test).to_eq(1);
+    }
+    it('should execute the if block on true expression condition') {
+        var test = 0;
+        var condition = true;
+        if (condition == true) {
+            test = 1;
+        }
+        expect(test).to_eq(1);
+    }
+    it('should execute the if block on true integer literal condition') {
+        var test = 0;
+        if (1) {
+            test = 1;
+        }
+        expect(test).to_eq(1);
+    }
+    it('should execute the if block on true function result') {
+        var test = 0;
+        if (test()) {
+            test = 1;
+        }
+        expect(test).to_eq(1);
+    }
+    it('should not execute the if block on literal false condition') {
+        var test = 0;
+        if (false) {
+            test = 1;
+        }
+        expect(test).to_eq(0);
+    }
+    it('should not execute the if block on variable false condition') {
+        var test = 0;
+        var condition = false;
+        if (condition) {
+            test = 1;
+        }
+        expect(test).to_eq(0);
+    }
+    it('should not execute the if block on false expression condition') {
+        var test = 0;
+        var condition = false;
+        if (condition == true) {
+            test = 1;
+        }
+        expect(test).to_eq(0);
+    }
+    it('should not execute the if block on false integer literal condition') {
+        var test = 0;
+        if (0) {
+            test = 1;
+        }
+        expect(test).to_eq(0);
+    }
+    it('should not execute the if block on false function result') {
+        var test = 0;
+        if (test() == 0) {
+            test = 1;
+        }
+        expect(test).to_eq(0);
+    }
+    it('should execute the else block on literal false condition') {
+        var test = 0;
+        if (false) {
+            test = 1;
+        } else {
+            test = 2;
+        }
+        expect(test).to_eq(2);
+    }
+    it('should execute the else block on variable false condition') {
+        var test = 0;
+        var condition = false;
+        if (condition) {
+            test = 1;
+        } else {
+            test = 2;
+        }
+        expect(test).to_eq(2);
+    }
+    it('should execute the else block on false expression condition') {
+        var test = 0;
+        var condition = false;
+        if (condition == true) {
+            test = 1;
+        } else {
+            test = 2;
+        }
+        expect(test).to_eq(2);
+    }
+    it('should execute the else block on false integer literal condition') {
+        var test = 0;
+        if (0) {
+            test = 1;
+        } else {
+            test = 2;
+        }
+        expect(test).to_eq(2);
+    }
+    it('should execute the else block on false function result') {
+        var test = 0;
+        if (test() == 0) {
+            test = 1;
+        } else {
+            test = 2;
+        }
+        expect(test).to_eq(2);
+    }
+}

@@ -1,7 +1,0 @@
-class Test {
-    static function test() {
-        return 1;
-    }
-}
-
-return Test.test();

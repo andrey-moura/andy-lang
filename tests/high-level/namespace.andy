@@ -1,0 +1,46 @@
+import(:tests)
+
+namespace TestNamespace
+{
+    namespace SubNamespace
+    {
+        function test() {
+            return 1;
+        }
+
+        class TestClass
+        {
+            function test() {
+                return 1;
+            }
+        }
+    }
+
+    function test() {
+        return 1;
+    }
+
+    class TestClass
+    {
+        function test() {
+            return 1;
+        }
+    }
+}
+
+describe('Namespace') {
+    it('should call a function in a namespace') {
+        expect(TestNamespace.test()).to_eq(1);
+    }
+    it('should call a function in a sub-namespace') {
+        expect(TestNamespace.SubNamespace.test()).to_eq(1);
+    }
+    it('should call a method in a class in a namespace') {
+        var test = new TestNamespace.TestClass();
+        expect(test.test()).to_eq(1);
+    }
+    it('should call a method in a class in a sub-namespace') {
+        var test = new TestNamespace.SubNamespace.TestClass();
+        expect(test.test()).to_eq(1);
+    }
+}

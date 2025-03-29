@@ -1,0 +1,11 @@
+import(:tests)
+
+describe('Standard') {
+    describe('::system') {
+        it('should adquire the exit code') {
+            var exit_code_to_expect = Random.integer();
+            var exit_code = system("exit ${exit_code_to_expect}");
+            expect(exit_code).to_eq(exit_code_to_expect);
+        }
+    }
+}
