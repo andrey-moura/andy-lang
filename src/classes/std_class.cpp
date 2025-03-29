@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random>
 
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
@@ -6,6 +7,18 @@
 
 std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter* interpreter)
 {
+    auto RandomClass = std::make_shared<andy::lang::structure>("Random");
+    RandomClass->class_methods = {
+        { "integer", andy::lang::method("integer",andy::lang::method_storage_type::class_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            static std::random_device rd;
+            static std::mt19937 gen(rd());
+            std::uniform_int_distribution<int> dis(INT_MIN, INT_MAX);
+            return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, dis(gen));
+        })},
+    };
+
+    interpreter->load(RandomClass);
+
     auto StdClass = std::make_shared<andy::lang::structure>("Standard");
 
     StdClass->class_methods = {
