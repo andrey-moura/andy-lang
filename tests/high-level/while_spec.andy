@@ -1,0 +1,22 @@
+import(:tests)
+
+describe('While statement') {
+    it('should count to 10') {
+        var i = 0
+        while (i < 10) {
+            i = i + 1
+        }
+        expect(i).to_eq(10)
+    }
+
+    it('should count to 10 with break') {
+        var i = 0
+        while (true) {
+            i = i + 1
+            if (i == 10) {
+                break
+            }
+        }
+        expect(i).to_eq(10)
+    }
+}

@@ -1,0 +1,26 @@
+import(:tests)
+
+class Test
+{
+
+};
+
+class TestDerived extends Test
+{
+    
+};
+
+describe('Reflection') {
+    describe('::Class') {
+        it('should retrieve the class name') {
+            var c_test = new Class('Test');
+            expect(c_test.name).to_eq('Test');
+        }
+    }
+    describe('.subclasses') {
+        it('should retrieve the subclasses') {
+            var s = Test.subclasses();
+            expect(s[0].name).to_eq('TestDerived');
+        }
+    }
+}
