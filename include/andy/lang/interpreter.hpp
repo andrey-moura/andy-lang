@@ -45,16 +45,16 @@ namespace andy
 
             /// @brief Exeuctes a syntax tree into the interpreter. Note that if the code has while loops with no exit condition, this method will never return.
             /// @param cls The syntax tree to exeuctes. All its childs (not recursively) will be executed.
-            std::shared_ptr<andy::lang::object> execute(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object);
+            std::shared_ptr<andy::lang::object> execute(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object);
 
             /// @brief Exeuctes a class declaration into the interpreter.
             /// @param source_code The class declaration.
             std::shared_ptr<andy::lang::structure> execute_classdecl(andy::lang::parser::ast_node source_code);
 
             std::shared_ptr<andy::lang::object> execute_all(std::vector<andy::lang::parser::ast_node>::const_iterator begin, std::vector<andy::lang::parser::ast_node>::const_iterator end, std::shared_ptr<andy::lang::object>& object);
-            std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code, std::shared_ptr<andy::lang::object>& object);
+            std::shared_ptr<andy::lang::object> execute_all(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object);
 
-            std::shared_ptr<andy::lang::object> execute_all(andy::lang::parser::ast_node source_code)
+            std::shared_ptr<andy::lang::object> execute_all(const andy::lang::parser::ast_node& source_code)
             {
                 std::shared_ptr<andy::lang::object> tmp;
                 return execute_all(source_code, tmp);
