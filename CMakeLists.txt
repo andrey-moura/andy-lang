@@ -75,6 +75,8 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/parser.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
+    ${BUILTIN_LIBS}
     $<TARGET_OBJECTS:uva-file>
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
