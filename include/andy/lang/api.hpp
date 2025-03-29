@@ -47,6 +47,21 @@ namespace andy
             /// @param cls The class.
             /// @param contained The contained class.
             void contained_class(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::structure> contained);
+            /// @brief Call a function.
+            /// @param interpreter The interpreter.
+            /// @param object The object.
+            /// @param fn The function name.
+            /// @return Returns a shared pointer to the object.
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> object, std::string_view fn);
+            template<typename T>
+            T& call(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> object, std::string_view fn)
+            {
+                std::shared_ptr<andy::lang::object> obj = call(interpreter, object, fn);
+
+                if constexpr(std::is_same_v<T, std::string>) {
+                    return obj->as<std::string>();
+                }
+            }
         };
     };
 };
