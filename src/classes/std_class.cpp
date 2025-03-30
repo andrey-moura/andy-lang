@@ -55,8 +55,10 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
 
         { "system", andy::lang::method("system",andy::lang::method_storage_type::class_method, {"command"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> command = params[0]->cls->instance_methods["to_string"].call(params[0]);
-            int code = ((std::system(command->as<std::string>().c_str())) & 0xff00) >> 8;
-
+            int code = std::system(command->as<std::string>().c_str());
+#ifdef __linux__
+            code = WEXITSTATUS(code);
+#endif
             return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, code);
         })},
 
