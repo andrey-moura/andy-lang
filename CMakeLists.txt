@@ -23,7 +23,6 @@ project(andy-lang VERSION ${ANDYLANG_VERSION})
 
 option(BUILD_ANDY_CPP "Build andyc++" OFF)
 option(BUILD_ANDY_ANALYZER "Build andy-analyzer" OFF)
-option(BUILD_TESTS "Build tests" OFF)
 
 # Get the parent directory
 get_filename_component(ANDYLANG_PARENT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
@@ -33,10 +32,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
-
-if(BUILD_TESTS)
-    include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
 
 # Find all files under ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs
 file(GLOB BUILTIN_LIBS "${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/*")
@@ -191,7 +187,5 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     endforeach()
 endif()
 
-if(BUILD_TESTS)
-    andy_tests_configure(andy)
-    andy_tests_configure(andy-lang)
-endif()
+andy_tests_configure(andy)
+andy_tests_configure(andy-lang)
