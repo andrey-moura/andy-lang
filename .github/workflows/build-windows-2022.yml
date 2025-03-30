@@ -22,6 +22,14 @@ jobs:
         path: 'andy-lang'
         submodules: 'recursive'
 
+    - name: Cache CMake
+      uses: actions/cache@v3
+      with:
+        path: andy-lang/build
+        key: build-cache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+        restore-keys: |
+          build-cache-${{ runner.os }}-
+
     - name: Configure CMake for andy-lang
       run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
       working-directory: andy-lang
@@ -50,8 +58,8 @@ jobs:
           andy-lang/build/Release/andy.exe
           andy-lang/build/Release/andy-lang-installer.exe
 
-    - name: Build lexer_spec.exe
-      run: cmake --build build --config Release --target lexer_spec.exe
+    - name: Build lexer_spec
+      run: cmake --build build --config Release --target lexer_spec
       working-directory: andy-lang
 
     - name: Run tests for andy-lang
