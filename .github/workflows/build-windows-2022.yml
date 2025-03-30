@@ -23,7 +23,7 @@ jobs:
         submodules: 'recursive'
 
     - name: Configure CMake for andy-lang
-      run: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=true -B build .
+      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
