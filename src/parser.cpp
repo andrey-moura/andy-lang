@@ -166,6 +166,9 @@ andy::lang::parser::ast_node andy::lang::parser::parse_delimiter(andy::lang::lex
                     lexer.consume_token();
                     continue;
                 }
+            } else if(next_token.type() == andy::lang::lexer::token_comment) {
+                lexer.consume_token();
+                continue;
             }
             
             ast_node context_child = parse_node(lexer);
