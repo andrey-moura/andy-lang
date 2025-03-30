@@ -3,8 +3,11 @@ import(:tests);
 describe('Standard') {
     describe('::system') {
         it('should adquire the exit code') {
-            var exit_code = system('exit 10');
-            expect(exit_code).to_eq(10);
+            if(System.Windows?) {
+                expect(system('exit /b 13')).to_eq(13);
+            } else {
+                expect(system('exit 13')).to_eq(13);
+            }
         }
     }
 }
