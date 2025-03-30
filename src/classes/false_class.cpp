@@ -22,6 +22,11 @@ std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interprete
         {"!", andy::lang::method("!", andy::lang::method_storage_type::instance_method, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
         })},
+        {"==", andy::lang::method("==", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            auto other = params[0];
+            return std::make_shared<andy::lang::object>(other->cls == FalseClass ? interpreter->TrueClass : interpreter->FalseClass);
+        })},
+
     };
     
     return FalseClass;
