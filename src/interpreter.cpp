@@ -118,7 +118,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 params.push_back(std::string(param.token().content()));
             }
 
-            current_context.functions[method_name] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, source_code);
+            current_context().functions[method_name] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, source_code);
         }
         break;
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
@@ -138,7 +138,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
 
             std::shared_ptr<andy::lang::structure> class_to_call = nullptr;
 
-            if(auto it = current_context.functions.find(source_code.decname()); it != current_context.functions.end()) {
+            if(auto it = current_context().functions.find(source_code.decname()); it != current_context().functions.end()) {
                 method_to_call = &it->second;
             }
 
@@ -361,13 +361,30 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     } 
                     
                     if(!method_to_call) {
-                        auto it = StdClass->class_methods.find(function_name);
+                        auto it = current_context().functions.find(function_name);
 
-                        if(it == StdClass->class_methods.end()) {
-                            throw std::runtime_error("function '" + std::string(function_name) + "' not found");
+                        if(it == current_context().functions.end()) {
+                            if(!is_global_context()) {
+                                auto it = global_context.functions.find(function_name);
+
+                                if(it != global_context.functions.end()) {
+                                    method_to_call = &it->second;
+                                    class_to_call = nullptr;
+                                }
+                            }
+                            
+                            if(!method_to_call) {
+                                auto it = StdClass->class_methods.find(function_name);
+
+                                if(it == StdClass->class_methods.end()) {
+                                    throw std::runtime_error("function '" + std::string(function_name) + "' not found");
+                                } else {
+                                    method_to_call = &it->second;
+                                    class_to_call = StdClass;
+                                }
+                            }
                         } else {
                             method_to_call = &it->second;
-                            class_to_call = StdClass;
                         }
                     }
                 }
@@ -432,7 +449,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 cls = object->cls;
             }
             std::shared_ptr<andy::lang::object> value = node_to_object(source_code.childrens()[1], cls, object);
-            current_context.variables[var_name] = value;
+            current_context().variables[var_name] = value;
             return value;
         }
         break;
@@ -462,8 +479,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             while(execute(*source_code.condition(), object)->is_present()) {
                 ret = execute(*source_code.context(), object);
 
-                if(current_context.has_returned) {
-                    return current_context.return_value;
+                if(current_context().has_returned) {
+                    return current_context().return_value;
                 }
             }
 
@@ -471,7 +488,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
         }
         break;
         case andy::lang::parser::ast_node_type::ast_node_break: {
-            current_context.has_returned = true;
+            current_context().has_returned = true;
             return nullptr;
         }
         case andy::lang::parser::ast_node_type::ast_node_context:
@@ -499,7 +516,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             if(array_or_dictionary->cls == ArrayClass) {
                 std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
                 for(auto& value : array_values) {
-                    current_context.variables[vardecl->decname()] = value;
+                    current_context().variables[vardecl->decname()] = value;
                     execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context), object);
                 }
             } else if(array_or_dictionary->cls == DictionaryClass) {
@@ -508,7 +525,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
                     std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
 
-                    current_context.variables[vardecl->decname()] = params_object;
+                    current_context().variables[vardecl->decname()] = params_object;
 
                     execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context), object);
                 }
@@ -545,7 +562,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
         case andy::lang::parser::ast_node_type::ast_node_yield: {
             andy::lang::method method;
             method.name = "yield";
-            method.block_ast = *current_context.given_block;
+            method.block_ast = *current_context().given_block;
             andy::lang::function_call __call = {
                 "yield",
                 nullptr,
@@ -553,7 +570,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 method,
                 {},
                 {},
-                current_context.given_block
+                current_context().given_block
             };
             return call(__call);
         }
@@ -579,11 +596,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(std::ve
         result = execute(node, object);
 
         if(it->type() == andy::lang::parser::ast_node_type::ast_node_fn_return) {
-            current_context.has_returned = true;
-            current_context.return_value = result;
+            current_context().has_returned = true;
+            current_context().return_value = result;
             return result;
-        } else if(current_context.has_returned) {
-            return current_context.return_value;
+        } else if(current_context().has_returned) {
+            return current_context().return_value;
         }
     }
 
@@ -599,7 +616,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
 {
     push_context();
 
-    current_context.given_block = call.given_block;
+    current_context().given_block = call.given_block;
 
     bool is_constructor = call.name == "new";
 
@@ -632,11 +649,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
 
     if(call.method.block_ast.childrens().size()) {
         for(size_t i = 0; i < call.method.positional_params.size(); i++) {
-            current_context.variables[call.method.positional_params[i].name] = call.positional_params[i];
+            current_context().variables[call.method.positional_params[i].name] = call.positional_params[i];
         }
 
         for(auto& [name, value] : call.named_params) {
-            current_context.variables[name] = value;
+            current_context().variables[name] = value;
         }
         
         if(call.method.block_ast.type() == andy::lang::parser::ast_node_type::ast_node_context) {
@@ -656,10 +673,10 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
         ret = call.object;
     }
 
-    for (auto& [name, value] : current_context.variables) {
+    for (auto& [name, value] : current_context().variables) {
         if(value->base_instance) {
             if(value.use_count() == 2) {
-                // used by base_instance and current_context.variables
+                // used by base_instance and current_context().variables
                 value->base_instance = nullptr;
                 // Now the use count is 1, it will be destroyed when the current_context is destroyed
             }
@@ -739,9 +756,9 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         }
     }
 
-    auto it = current_context.variables.find(node.token().content());
+    auto it = current_context().variables.find(node.token().content());
 
-    if(it != current_context.variables.end()) {
+    if(it != current_context().variables.end()) {
         return it->second;
     }
 

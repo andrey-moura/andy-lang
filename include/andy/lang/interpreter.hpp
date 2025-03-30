@@ -126,29 +126,39 @@ namespace andy
             /// @brief The global context stack.
             interpreter_context global_context;
 
-            /// @brief The current context.
-            interpreter_context current_context;
-
             /// @brief The call stack.
             std::vector<interpreter_context> stack;
 
             std::vector<andy::lang::extension*> extensions;
 
+            bool is_global_context() const
+            {
+                return stack.empty();
+            }
+
+            interpreter_context& current_context()
+            {
+                if(stack.empty()) {
+                    return global_context;
+                }
+
+                return stack.back();
+            }
+
             void push_context(bool inherit = false) {
-                stack.push_back(std::move(current_context));
-                current_context = interpreter_context();
+                auto ccontext = current_context();
+                stack.push_back(interpreter_context());
 
                 if(inherit) {
-                    current_context.variables = stack.back().variables;
-                    current_context.functions = stack.back().functions;
+                    stack.back() = ccontext;
                 }
             }
+
             void pop_context() { 
                 if(stack.empty()) {
                     throw std::runtime_error("interpreter: unexpected end of file");
                 }
 
-                current_context = std::move(stack.back());
                 stack.pop_back();
             }
         protected:
