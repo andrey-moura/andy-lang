@@ -22,10 +22,12 @@ jobs:
         path: 'andy-lang'
         submodules: 'recursive'
 
-    - name: Cache CMake
+    - name: Cache CMake build
       uses: actions/cache@v3
       with:
-        path: andy-lang/build
+        path: |
+          andy-lang/build
+          andy-lang/build/CMakeFiles
         key: build-cache-${{ runner.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
         restore-keys: |
           build-cache-${{ runner.os }}-
