@@ -59,7 +59,7 @@ jobs:
           andy-lang/build/Release/andy-lang-installer.exe
 
     - name: Build lexer_spec
-      run: cmake --build build --target lexer_spec.exe -- -j 4 
+      run: cmake --build build --target lexer_spec
       working-directory: andy-lang
 
     - name: Run tests for andy-lang
