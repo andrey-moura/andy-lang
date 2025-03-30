@@ -78,7 +78,7 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "/home/andrey/Moonslate/andy-lang/tests/andy/cases/interpolation/1.andy"
+            "${workspaceFolder}/tests/high-level/std_spec.andy"
         ],
         "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
