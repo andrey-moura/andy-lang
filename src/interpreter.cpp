@@ -261,6 +261,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                                 break;
                             }
                         }
+
+                        throw std::runtime_error("class or variable " + std::string(class_or_object_name) + " not found");
                     }
                 } else if (object_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
                     object_to_call = execute(*object_node, object);
@@ -429,7 +431,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 *method_to_call,
                 std::move(positional_params),
                 std::move(named_params),
-                source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
+                source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context),
             };
 
             std::shared_ptr<andy::lang::object> ret = call(__call);
@@ -616,7 +618,14 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
 {
     push_context();
 
-    current_context().given_block = call.given_block;
+    if(call.given_block) {
+        current_context().given_block = call.given_block;
+        current_context().parent = &previous_context();
+
+        if(current_context().parent->variables.size()) {
+            std::cout << "gotta from parent context" << std::endl;
+        }
+    }
 
     bool is_constructor = call.name == "new";
 

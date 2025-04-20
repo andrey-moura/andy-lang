@@ -13,3 +13,6 @@
 [submodule "modules/andy-file"]
 	path = modules/andy-file
 	url = https://github.com/andrey-moura/andy-file.git
+[submodule "andy-net"]
+	path = modules/andy-net
+	url = https://www.github.com/andrey-moura/andy-net

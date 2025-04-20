@@ -33,6 +33,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-net/CMakeLists.txt)
 
 # Find all files under ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs
 file(GLOB BUILTIN_LIBS "${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/*")
@@ -76,6 +77,7 @@ add_library(andy-lang
     $<TARGET_OBJECTS:uva-file>
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
+    $<TARGET_OBJECTS:andy-net>
 )
 
 add_executable(andy
@@ -172,20 +174,20 @@ install(TARGETS andy-lang
 )
 
 # Only for debug build
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(EXTENSIONS_FOLDER "${ANDYLANG_PARENT_DIRECTORY}/andylang-extensions")
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     set(EXTENSIONS_FOLDER "${ANDYLANG_PARENT_DIRECTORY}/andylang-extensions")
 
-    file(GLOB EXTENSIONS "${EXTENSIONS_FOLDER}/*")
+#     file(GLOB EXTENSIONS "${EXTENSIONS_FOLDER}/*")
 
-    foreach(EXTENSION ${EXTENSIONS})
-        if(IS_DIRECTORY ${EXTENSION})
-            # Get name from extension from the folder
-            get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
-            include("${EXTENSION}/CMakeLists.txt")
-            target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
-        endif()
-    endforeach()
-endif()
+#     foreach(EXTENSION ${EXTENSIONS})
+#         if(IS_DIRECTORY ${EXTENSION})
+#             # Get name from extension from the folder
+#             get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
+#             include("${EXTENSION}/CMakeLists.txt")
+#             target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
+#         endif()
+#     endforeach()
+# endif()
 
 andy_tests_configure(andy)
 andy_tests_configure(andy-lang)

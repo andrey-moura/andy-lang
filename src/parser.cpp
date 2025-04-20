@@ -424,7 +424,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
             node_type = ast_node_type::ast_node_declname;
         }
 
-        identifier_or_literal_node = andy::lang::parser::ast_node(std::move(identifier_or_literal), ast_node_type::ast_node_declname);
+        identifier_or_literal_node = andy::lang::parser::ast_node(std::move(identifier_or_literal), node_type);
     }
 
     if(identifier_or_literal_node.token().type() == andy::lang::lexer::token_type::token_literal &&

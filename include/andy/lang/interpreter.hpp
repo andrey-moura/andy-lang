@@ -21,7 +21,9 @@ namespace andy
             std::shared_ptr<andy::lang::object> self;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
             std::map<std::string_view, andy::lang::method> functions;
+
             const andy::lang::parser::ast_node* given_block = nullptr;
+            interpreter_context* parent = nullptr;
 
             bool has_returned = false;
             std::shared_ptr<andy::lang::object> return_value;
@@ -143,6 +145,15 @@ namespace andy
                 }
 
                 return stack.back();
+            }
+
+            interpreter_context& previous_context()
+            {
+                if(stack.size() < 2) {
+                    return global_context;
+                }
+
+                return stack[stack.size() - 2];
             }
 
             void push_context(bool inherit = false) {

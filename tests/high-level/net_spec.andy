@@ -1,0 +1,23 @@
+import(:net)
+import(:tests)
+
+function status_tester(status_code) {
+    describe('/status/' + status_code.to_string()) {
+        var url = 'http://httpbin.org/status/' + status_code.to_string();
+        it('should return status code ' + status_code.to_string()) {
+            var res = Net.HTTP.get(url);
+            expect(res.status_code).to_eq(res.status_code);
+        };
+    };
+};
+
+describe('Net') {
+    describe('HTTP') {
+        describe('::get') {
+            status_tester(200);
+            status_tester(400);
+            status_tester(404);
+            status_tester(500);
+        }
+    }
+}
