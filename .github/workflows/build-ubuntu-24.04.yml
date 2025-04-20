@@ -82,3 +82,4 @@ jobs:
           -H "Password: $ADMIN_PASSWORD" \
           -H "Content-Type: application/json"
           -F "executable=@build/andy"
+      working-directory: andy-lang
