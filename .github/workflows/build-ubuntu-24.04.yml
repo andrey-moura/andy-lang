@@ -65,3 +65,19 @@ jobs:
         path: andy_tests.xml
         reporter: java-junit
         working-directory: andy-lang
+
+    - name: Get andy-lang version
+      id: get_version
+      run: |
+        VERSION=$(andy-lang --version)
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+    - name: Publish andy-lang version
+      env:
+        ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      run: |
+        curl -X PATCH "https://www.andy-lang.org/api/v1/packages/andy-lang/${{ steps.get_version.outputs.version }}" \
+          -H "Email: $ADMIN_EMAIL" \
+          -H "Password: $ADMIN_PASSWORD" \
+          -H "Content-Type: application/json"
