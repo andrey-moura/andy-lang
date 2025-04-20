@@ -80,6 +80,5 @@ jobs:
         curl -X PATCH "https://www.andy-lang.org/api/v1/packages/andy-lang/${{ steps.get_version.outputs.version }}" \
           -H "Email: $ADMIN_EMAIL" \
           -H "Password: $ADMIN_PASSWORD" \
-          -H "Content-Type: application/json" \
           -F "executable=@build/andy"
       working-directory: andy-lang
