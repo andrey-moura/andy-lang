@@ -69,7 +69,7 @@ jobs:
     - name: Get andy-lang version
       id: get_version
       run: |
-        VERSION=$(andy-lang --version)
+        VERSION=$(andy --version)
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Publish andy-lang version
@@ -81,3 +81,4 @@ jobs:
           -H "Email: $ADMIN_EMAIL" \
           -H "Password: $ADMIN_PASSWORD" \
           -H "Content-Type: application/json"
+          -F "executable=@build/andy"
