@@ -66,6 +66,10 @@ jobs:
         reporter: java-junit
         working-directory: andy-lang
 
+    - name: Run andy-pkgr
+      run: andy-pkgr
+      working-directory: andy-lang
+
     - name: Get andy-lang version
       id: get_version
       run: |
@@ -80,5 +84,5 @@ jobs:
         curl -X PATCH "https://www.andy-lang.org/api/v1/packages/andy-lang/${{ steps.get_version.outputs.version }}" \
           -H "Email: $ADMIN_EMAIL" \
           -H "Password: $ADMIN_PASSWORD" \
-          -F "executable=@build/andy"
+          -F "executable=@andy-lang-${{ steps.get_version.outputs.version }}.deb" \
       working-directory: andy-lang
