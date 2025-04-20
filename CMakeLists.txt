@@ -172,20 +172,20 @@ install(TARGETS andy-lang
 )
 
 # Only for debug build
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(EXTENSIONS_FOLDER "${ANDYLANG_PARENT_DIRECTORY}/andylang-extensions")
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     set(EXTENSIONS_FOLDER "${ANDYLANG_PARENT_DIRECTORY}/andylang-extensions")
 
-    file(GLOB EXTENSIONS "${EXTENSIONS_FOLDER}/*")
+#     file(GLOB EXTENSIONS "${EXTENSIONS_FOLDER}/*")
 
-    foreach(EXTENSION ${EXTENSIONS})
-        if(IS_DIRECTORY ${EXTENSION})
-            # Get name from extension from the folder
-            get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
-            include("${EXTENSION}/CMakeLists.txt")
-            target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
-        endif()
-    endforeach()
-endif()
+#     foreach(EXTENSION ${EXTENSIONS})
+#         if(IS_DIRECTORY ${EXTENSION})
+#             # Get name from extension from the folder
+#             get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
+#             include("${EXTENSION}/CMakeLists.txt")
+#             target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
+#         endif()
+#     endforeach()
+# endif()
 
 andy_tests_configure(andy)
 andy_tests_configure(andy-lang)
