@@ -67,7 +67,7 @@ jobs:
         working-directory: andy-lang
 
     - name: Run andy-pkgr
-      run: andy-pkgr
+      run: build/andy-pkgr
       working-directory: andy-lang
 
     - name: Get andy-lang version
