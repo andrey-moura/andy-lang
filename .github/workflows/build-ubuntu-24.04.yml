@@ -71,12 +71,14 @@ jobs:
       working-directory: andy-lang
 
     - name: Get andy-lang version
+      if: github.ref == 'refs/heads/master'
       id: get_version
       run: |
         VERSION=$(andy --version)
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
     - name: Publish andy-lang version
+      if: github.ref == 'refs/heads/master'
       env:
         ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
         ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
