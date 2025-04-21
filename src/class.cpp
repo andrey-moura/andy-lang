@@ -1,22 +1,23 @@
-#include <andy/lang/class.hpp>
+#include <andy/lang/lang.hpp>
+#include <andy/lang/interpreter.hpp>
 
 #include <uva/console.hpp>
 
-#include "classes/false_class.cpp"
-#include "classes/true_class.cpp"
-#include "classes/string_class.cpp"
-#include "classes/integer_class.cpp"
-#include "classes/double_class.cpp"
-#include "classes/float_class.cpp"
-#include "classes/file_class.cpp"
-#include "classes/std_class.cpp"
-#include "classes/array_class.cpp"
-#include "classes/null_class.cpp"
-#include "classes/dictionary_class.cpp"
-#include "classes/system_class.cpp"
-#include "classes/path_class.cpp"
-#include "classes/andy_config_class.cpp"
-#include "classes/class_class.cpp"
+extern std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_integer_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_double_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_andy_config_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_class_class(andy::lang::interpreter*);
 
 void andy::lang::structure::create_structures(andy::lang::interpreter* interpreter)
 {

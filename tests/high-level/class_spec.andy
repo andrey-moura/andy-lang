@@ -10,6 +10,27 @@ class Test {
     }
 }
 
+class Base {
+    var base_var = null;
+    function new(value) {
+        base_var = value;
+    }
+    function base_fn() {
+        return base_var;
+    }
+}
+
+class Derived extends Base {
+    var derived_var = null;
+    function new() {
+        derived_var = Random.integer();
+        super(derived_var);
+    }
+    function derived_fn() {
+        return derived_var;
+    }
+}
+
 describe('Class') {
     describe('instance methods') {
         it('should call an instance method') {
@@ -20,6 +41,16 @@ describe('Class') {
     describe('static methods') {
         it('should call a static method') {
             expect(Test.static_fn()).to_eq(1);
+        }
+    }
+    describe('inheritance') {
+        it('should call a base class method') {
+            var test = new Derived();
+            expect(test.base_fn()).to_eq(test.derived_var);
+        }
+        it('should call a derived class method') {
+            var test = new Derived();
+            expect(test.derived_fn()).to_eq(test.derived_var);
         }
     }
 }

@@ -41,7 +41,7 @@ namespace andy {
             std::string_view                                           name;
             std::shared_ptr<andy::lang::structure>                     cls;
             std::shared_ptr<andy::lang::object>                        object;
-            const andy::lang::method&                                  method;
+            const andy::lang::method*                                  method = nullptr;
             std::vector<std::shared_ptr<andy::lang::object>>           positional_params;
             std::map<std::string, std::shared_ptr<andy::lang::object>> named_params = {};
             const andy::lang::parser::ast_node*                        given_block = nullptr;

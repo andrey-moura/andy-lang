@@ -14,7 +14,7 @@ std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interprete
                 "present?",
                 FalseClass,
                 object,
-                object->cls->instance_methods["present?"],
+                &object->cls->instance_methods["present?"],
                 {}
             };
             return params[0]->cls->instance_methods["present?"].function(call);

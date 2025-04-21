@@ -7,6 +7,8 @@
 
 #include <uva/var.hpp>
 
+#include <andy/lang/method.hpp>
+
 namespace andy
 {
     namespace lang {
@@ -43,7 +45,7 @@ namespace andy
             // The object move ptr.
             void (*native_move)(object* obj, object&& other) = nullptr;
             
-            void initialize(andy::lang::interpreter* interpreter, std::vector<std::shared_ptr<andy::lang::object>> params = {});
+            void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call = {});
         public:
             object& operator=(object&& other)
             {
@@ -66,6 +68,16 @@ namespace andy
             }
         public:
             /// @brief Initialize the object with a value.
+            /// @param cls The class of the object.
+            /// @return Returns a shared pointer to the object.
+            static auto instantiate(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, andy::lang::function_call new_call = {})
+            {
+                auto obj = std::make_shared<andy::lang::object>(cls);
+                obj->initialize(interpreter, std::move(new_call));
+
+                return obj;
+            }
+            /// @brief Initialize the object with a value.
             /// @tparam T The type of the value.
             /// @param cls The class of the object.
             /// @param value The pointer to the value. This will be deleted when the object is destroyed.
@@ -80,7 +92,6 @@ namespace andy
 
                 return obj;
             }
-
             /// @brief Initialize the object with a value.
             /// @tparam T The type of the value.
             /// @param cls The class of the object.
@@ -95,7 +106,10 @@ namespace andy
                     obj->set_native<T>(std::move(value));
                 }
 
-                obj->initialize(interpreter, params);
+                andy::lang::function_call new_call;
+                new_call.positional_params = std::move(params);
+
+                obj->initialize(interpreter, std::move(new_call));
 
                 return obj;
             }

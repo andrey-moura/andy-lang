@@ -32,7 +32,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-drawing/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-ui/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/include/uva/xml/CMakeLists.txt)
 
 # Find all files under ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs
 file(GLOB BUILTIN_LIBS "${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/*")
@@ -71,16 +76,42 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/parser.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp
+
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/true_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/string_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/double_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/std_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/dictionary_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/system_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/andy_config_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/class_class.cpp
+
     ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
     ${BUILTIN_LIBS}
+    $<TARGET_OBJECTS:uva-xml>
     $<TARGET_OBJECTS:uva-file>
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
+    $<TARGET_OBJECTS:uva-drawing>
+    $<TARGET_OBJECTS:uva-widgets>
+    $<TARGET_OBJECTS:uva-binary>
+    $<TARGET_OBJECTS:andy-ui>
 )
+
+target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
+
+andy_ui_properties(andy-lang)
 
 if(BUILD_ANDY_CPP)
     find_package(Clang REQUIRED)
@@ -108,9 +139,9 @@ if(UNIX)
     target_link_libraries(andy-lang PRIVATE ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
     target_link_options(andy PRIVATE -Wl,--export-dynamic)
 
-    set_target_properties(andy PROPERTIES LINK_SEARCH_START_STATIC ON)
-    set_target_properties(andy PROPERTIES LINK_SEARCH_END_STATIC ON)
-    target_link_options(andy PRIVATE -static-libgcc -static-libstdc++ -static)
+    # set_target_properties(andy PROPERTIES LINK_SEARCH_START_STATIC ON)
+    # set_target_properties(andy PROPERTIES LINK_SEARCH_END_STATIC ON)
+    # target_link_options(andy PRIVATE -static-libgcc -static-libstdc++ -static)
 elseif(WIN32)
     add_executable(andy-lang-installer WIN32 ${CMAKE_CURRENT_LIST_DIR}/win32/installer.cpp)
     if(EXISTS "${CMAKE_BINARY_DIR}/Release/andy.exe")

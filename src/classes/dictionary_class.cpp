@@ -37,7 +37,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "==",
                     key->cls,
                     key,
-                    operator_it->second,
+                    &operator_it->second,
                     { pair.first }
                 };
                 auto result = interpreter->call(__call);
