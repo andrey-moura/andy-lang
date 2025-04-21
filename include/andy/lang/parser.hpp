@@ -37,6 +37,7 @@ namespace andy
                 ast_node_fn_object,
 
                 ast_node_valuedecl,
+                ast_node_pair,
                 ast_node_interpolated_string,
                 ast_node_arraydecl,
                 ast_node_dictionarydecl,
@@ -192,7 +193,10 @@ namespace andy
             /// @param lexer The lexer.
             /// @return A function call node.
             andy::lang::parser::ast_node extract_fn_call(andy::lang::lexer& lexer);
-
+            /// @brief Extract a pair
+            /// @param lexer The lexer.
+            /// @return The pair node.
+            andy::lang::parser::ast_node extract_pair(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_identifier_or_literal(andy::lang::lexer& lexer, bool chain = true);
         // Parsers functions
         protected:

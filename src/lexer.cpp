@@ -414,13 +414,13 @@ andy::lang::lexer::token &andy::lang::lexer::next_token()
     return token;
 }
 
-const andy::lang::lexer::token &andy::lang::lexer::see_next()
+const andy::lang::lexer::token &andy::lang::lexer::see_next(int offset) const
 {
-    if(!has_next_token()) {
+    if(iterator + offset >= m_tokens.size()) {
         throw std::runtime_error("unexpected end of file");
     }
 
-    return m_tokens[iterator];
+    return m_tokens[iterator + offset];
 }
 
 const andy::lang::lexer::token& andy::lang::lexer::previous_token()
@@ -508,7 +508,9 @@ std::string_view andy::lang::lexer::token::human_start_position() const
 
 void andy::lang::lexer::token::merge(const token &other)
 {
-    string_literal = m_content;
+    if(string_literal.empty()) {
+        string_literal = m_content;
+    }
     string_literal += other.m_content;
 
     end = other.end;

@@ -111,11 +111,20 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             
             std::string_view method_name = source_code.decname();
 
-            std::vector<std::string> params;
+            std::vector<andy::lang::fn_parameter> params;
             params.reserve(source_code.childrens().size());
 
             for(auto& param : source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params)->childrens()) {
-                params.push_back(std::string(param.token().content()));
+                if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
+                    std::string_view name = param.decname();
+                    const andy::lang::parser::ast_node* value = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+
+                    params.push_back(andy::lang::fn_parameter(std::string(name), true, value));
+                } else if(param.type() == andy::lang::parser::ast_node_type::ast_node_declname) {
+                    params.push_back(andy::lang::fn_parameter(param.token().content()));
+                } else {
+                    param.token().error_message_at_current_position("unexpected token in function declaration");
+                }
             }
 
             current_context().functions[method_name] = andy::lang::method(std::string(method_name), method_storage_type::instance_method, params, source_code);
@@ -640,7 +649,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
 
         if(it == call.named_params.end()) {
             if(param.has_default_value) {
-                call.named_params[param.name] = var_to_object(param.default_value);
+                if(param.default_value_node) {
+                    call.named_params[param.name] = node_to_object(*param.default_value_node, call.cls, call.object);
+                } else {
+                    call.named_params[param.name] = var_to_object(param.default_value);
+                }
             } else {
                 throw std::runtime_error("function " + call.method.name + " called without parameter " + param.name);
             }
