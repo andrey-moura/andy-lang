@@ -21,7 +21,7 @@ inline static void add_describe_like(andy::lang::interpreter* interpreter, std::
                 "yield",
                 nullptr,
                 nullptr,
-                yield_method,
+                &yield_method,
                 {},
                 {},
                 nullptr
@@ -54,11 +54,15 @@ public:
                 auto actul_object = object->as<std::shared_ptr<andy::lang::object>>();
                 auto eq_method = actul_object->cls->instance_methods.find("==");
 
+                if(eq_method == actul_object->cls->instance_methods.end()) {
+                    throw std::runtime_error("object of class " + actul_object->cls->name + " does not have a function called '=='");
+                }
+
                 andy::lang::function_call eq_call = {
                     "==",
                     actul_object->cls,
                     actul_object,
-                    eq_method->second,
+                    &eq_method->second,
                     { params[0] },
                     {},
                     nullptr
