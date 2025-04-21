@@ -97,6 +97,27 @@ andy::lang::parser::ast_node andy::lang::parser::extract_fn_call(andy::lang::lex
     return method_node;
 }
 
+andy::lang::parser::ast_node andy::lang::parser::extract_pair(andy::lang::lexer &lexer)
+{
+    // If this function has been called, we are sure the next tokens are a pair. No need to check for errors.
+
+    // Parse the key
+    ast_node pair_node(ast_node_type::ast_node_pair);
+    ast_node key_node = parse_identifier_or_literal(lexer);
+    key_node.set_type(ast_node_type::ast_node_declname);
+    pair_node.add_child(std::move(key_node));
+    
+    // Consume the ':' token
+    lexer.next_token();
+
+    // Extract the value
+    ast_node value_node = parse_identifier_or_literal(lexer);
+    value_node.set_type(ast_node_type::ast_node_valuedecl);
+    pair_node.add_child(std::move(value_node));
+
+    return pair_node;
+}
+
 andy::lang::parser::ast_node andy::lang::parser::extract_fn_call_params(andy::lang::lexer &lexer)
 {
     ast_node params_node(ast_node_type::ast_node_fn_params);
@@ -126,6 +147,7 @@ after_extracted_param:
                 params_node.childrens().pop_back();
 
                 ast_node value_node = parse_identifier_or_literal(lexer);
+                value_node.set_type(ast_node_type::ast_node_valuedecl);
                 named_param.add_child(std::move(value_node));
 
                 params_node.add_child(std::move(named_param));
@@ -680,34 +702,26 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_function(andy::la
         const andy::lang::lexer::token& identifier_or_parenthesis = lexer.see_next();
 
         if(identifier_or_parenthesis.type() == lexer::token_type::token_identifier) {
-            params_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_declname));
+            auto next_token = lexer.see_next(1);
+            if (next_token.type() == lexer::token_type::token_delimiter && next_token.content() == ":") {
+                params_node.add_child(extract_pair(lexer));
+                continue;
+            } else {
+                params_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_declname));
+            }
+
+            auto possible_comma = lexer.see_next();
+
+            if(possible_comma.type() == lexer::token_type::token_delimiter && possible_comma.content() == ",") {
+                lexer.consume_token(); // Consume the ',' token
+                continue;
+            }
         } else if(identifier_or_parenthesis.type() == lexer::token_type::token_delimiter && identifier_or_parenthesis.content() == ")") {
             lexer.consume_token(); // Consume the ')' token
             break;
         }
         else {
             throw std::runtime_error(identifier_or_parenthesis.error_message_at_current_position("Expected parameter name"));
-        }
-
-        const andy::lang::lexer::token& comma = lexer.see_next();
-
-        switch(comma.type())
-        {
-            case lexer::token_type::token_delimiter:
-                if(comma.content() == ",") {
-                    lexer.consume_token(); // Consume the ',' token
-                } else if(comma.content() == ":") {
-                    params_node.childrens().back().token().merge(comma);
-                    lexer.consume_token(); // Consume the ':' token
-
-                    const andy::lang::lexer::token& default_value = lexer.see_next();
-
-                    if(default_value.type() == lexer::token_type::token_literal) {
-                        params_node.childrens().back().token().merge(default_value);
-                        lexer.consume_token(); // Consume the default value
-                    }
-                }
-            break;
         }
     }
 

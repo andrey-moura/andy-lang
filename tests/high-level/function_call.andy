@@ -1,0 +1,68 @@
+import(:tests)
+
+function test_named_null(result: null) {
+    return result;
+}
+
+function test_named_integer(result: 1) {
+    return result;
+}
+
+function test_simple_call() {
+    return 1;
+}
+
+function test_call_with_parameter(result) {
+    return result;
+}
+
+describe('Function Call') {
+    context('Simple call') {
+        it('should evaluate to 1') {
+            var result = test_simple_call();
+            expect(result).to_eq(1);
+        }
+    }
+
+    context('Call with parameter') {
+        it('should evaluate to provided value') {
+            var value = Random.integer();
+            var result = test_call_with_parameter(value);
+            expect(result).to_eq(value);
+        }
+    }
+
+    context('Named parameters') {
+        context('with default to null') {
+            context('when not provided') {
+                it('should evaluate to default null') {
+                    var result = test_named_null();
+                    expect(result).to_eq(null);
+                }
+            }
+
+            context('when provided') {
+                it('should evaluate to provided value') {
+                    var result = test_named_null(result: 42);
+                    expect(result).to_eq(42);
+                }
+            }
+        }
+
+        context('with default to literal') {
+            context('when not provided') {
+                it('should evaluate to literal') {
+                    var result = test_named_integer();
+                    expect(result).to_eq(1);
+                }
+            }
+
+            context('when provided') {
+                it('should evaluate to provided value') {
+                    var result = test_named_integer(result: 99);
+                    expect(result).to_eq(99);
+                }
+            }
+        }
+    }
+}

@@ -19,17 +19,21 @@ namespace andy {
         struct fn_parameter
         {
             fn_parameter() = default;
-            fn_parameter(std::string __name)
-                : name(std::move(__name))
+            fn_parameter(std::string_view __name)
+                : name(std::string(__name))
             {
 
             }
             fn_parameter(std::string __name, bool __named, var __default_value)
                 : name(std::move(__name)), named(__named), default_value(std::move(__default_value)), has_default_value(true) {
             }
+            fn_parameter(std::string __name, bool __named, const andy::lang::parser::ast_node* __default_value_node)
+                : name(std::move(__name)), named(__named), default_value_node(__default_value_node), has_default_value(true) {
+            }
             std::string name;
             bool has_default_value = false;
             var default_value;
+            const andy::lang::parser::ast_node* default_value_node = nullptr;
             bool named = false;
         };
         struct function_call
@@ -58,6 +62,17 @@ namespace andy {
             method(const std::string& __name, method_storage_type __storage_type, std::vector<std::string> __params, andy::lang::parser::ast_node __block)
                 : name(__name), block_ast(std::move(__block)), storage_type(__storage_type) {
                 init_params(__params);
+            };
+
+            method(const std::string& __name, method_storage_type __storage_type, std::vector<fn_parameter> __params, andy::lang::parser::ast_node __block)
+                : name(__name), block_ast(std::move(__block)), storage_type(__storage_type) {
+                for(auto& param : __params) {
+                    if(param.named) {
+                        named_params.push_back(std::move(param));
+                    } else {
+                        positional_params.push_back(std::move(param));
+                    }
+                }
             };
 
             method(const std::string& name, method_storage_type __storage_type, std::initializer_list<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params)> fn)

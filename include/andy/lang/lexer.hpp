@@ -185,7 +185,7 @@ namespace andy
             /// @return The next token.
             andy::lang::lexer::token& next_token();
             /// @brief Return the next token without incrementing the iterator.
-            const andy::lang::lexer::token& see_next();
+            const andy::lang::lexer::token& see_next(int offset = 0) const;
             /// @brief Decrement the iterator and return the next token.
             /// @return The previous token.
             const andy::lang::lexer::token& previous_token();
