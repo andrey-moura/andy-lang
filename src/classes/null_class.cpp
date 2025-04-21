@@ -13,6 +13,13 @@ std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter
             std::string str = "null";
             return andy::lang::object::instantiate( interpreter, interpreter->StringClass, std::move(str) );
         })},
+        {"==", andy::lang::method("==", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            if(params[0]->cls == interpreter->NullClass) {
+                return std::make_shared<andy::lang::object>( interpreter->TrueClass );
+            } else {
+                return std::make_shared<andy::lang::object>( interpreter->FalseClass );
+            }
+        })},
     };
     
     return NullClass;
