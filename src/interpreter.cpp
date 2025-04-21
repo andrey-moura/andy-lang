@@ -509,7 +509,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
         break;
         case andy::lang::parser::ast_node_type::ast_node_fn_return: {
             if(source_code.childrens().size()) {
-                return node_to_object(source_code.childrens().front());
+                return node_to_object(source_code.childrens().front(), object ? object->cls : nullptr, object);
             } else {
                 return std::make_shared<andy::lang::object>(NullClass);
             }
