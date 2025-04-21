@@ -8,7 +8,7 @@ std::shared_ptr<andy::lang::object> andy::lang::method::call(std::shared_ptr<and
         name,
         nullptr,
         o,
-        *this,
+        this,
         {},
         {},
         nullptr

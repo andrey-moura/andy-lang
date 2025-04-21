@@ -55,7 +55,7 @@ namespace andy
                     method->second.name,
                     object->cls,
                     object,
-                    method->second,
+                    &method->second,
                     {},
                     {},
                     nullptr

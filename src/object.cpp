@@ -25,7 +25,7 @@ andy::lang::object::~object()
     }
 }
 
-void andy::lang::object::initialize(andy::lang::interpreter *interpreter, std::vector<std::shared_ptr<andy::lang::object>> params)
+void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::lang::function_call new_call)
 {
     for(auto& instance_variable : cls->instance_variables) {
         instance_variables[instance_variable.first] = andy::lang::object::instantiate(interpreter, instance_variable.second, nullptr);
@@ -33,12 +33,12 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, std::v
 
     instance_variables["this"] = shared_from_this();
 
-    if(cls->base) {
+    //if(cls->base) {
         //base_instance = andy::lang::object::instantiate(interpreter, cls->base, nullptr);
-        base_instance = std::make_shared<andy::lang::object>(cls->base);
-        base_instance->derived_instance = shared_from_this();
-        base_instance->initialize(interpreter);
-    }
+    //     base_instance = std::make_shared<andy::lang::object>(cls->base);
+    //     base_instance->derived_instance = shared_from_this();
+    //     base_instance->initialize(interpreter);
+    // }
 
     auto new_it = cls->instance_methods.find("new");
 
@@ -46,14 +46,12 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, std::v
         auto new_it = cls->instance_methods.find("new");
 
         if(new_it != cls->instance_methods.end()) {
-            andy::lang::function_call __call = {
-                "new",
-                cls,
-                shared_from_this(),
-                new_it->second,
-                params
-            };
-            interpreter->call(__call);
+            new_call.name = "new";
+            new_call.cls = cls;
+            new_call.object = shared_from_this();
+            new_call.method = &new_it->second;
+
+            interpreter->call(new_call);
         }
     }
 }
