@@ -13,3 +13,15 @@
 [submodule "modules/andy-file"]
 	path = modules/andy-file
 	url = https://github.com/andrey-moura/andy-file.git
+[submodule "modules/andy-ui"]
+	path = modules/andy-ui
+	url = https://github.com/andrey-moura/andy-ui.git
+[submodule "modules/andy-drawing"]
+	path = modules/andy-drawing
+	url = https://github.com/andrey-moura/andy-drawing.git
+[submodule "modules/andy-widgets"]
+	path = modules/andy-widgets
+	url = https://github.com/andrey-moura/andy-widgets.git
+[submodule "modules/binary"]
+	path = modules/binary
+	url = https://github.com/andrey-moura/binary.git

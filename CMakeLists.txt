@@ -32,7 +32,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-drawing/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-ui/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/include/uva/xml/CMakeLists.txt)
 
 # Find all files under ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs
 file(GLOB BUILTIN_LIBS "${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/*")
@@ -90,14 +95,23 @@ add_library(andy-lang
 
     ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
     ${BUILTIN_LIBS}
+    $<TARGET_OBJECTS:uva-xml>
     $<TARGET_OBJECTS:uva-file>
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
+    $<TARGET_OBJECTS:uva-drawing>
+    $<TARGET_OBJECTS:uva-widgets>
+    $<TARGET_OBJECTS:uva-binary>
+    $<TARGET_OBJECTS:andy-ui>
 )
+
+target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
+
+andy_ui_properties(andy-lang)
 
 if(BUILD_ANDY_CPP)
     find_package(Clang REQUIRED)

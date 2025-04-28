@@ -80,7 +80,7 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "${workspaceFolder}/tests/high-level/std_spec.andy"
+            "/home/andrey/Moonslate/LCT-Paint/application.andy"
         ],
         "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
