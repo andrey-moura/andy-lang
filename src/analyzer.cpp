@@ -108,6 +108,8 @@ int main(int argc, char** argv) {
         std::filesystem::path file_path = std::filesystem::absolute(arg0);
         std::filesystem::path temp_file_path = std::filesystem::absolute(arg1);
 
+        std::filesystem::path file_directory = file_path.parent_path();
+
         auto start = std::chrono::high_resolution_clock::now();
 
         if(!std::filesystem::exists(file_path)) {
@@ -282,6 +284,63 @@ int main(int argc, char** argv) {
                 }
 
                 std::cout << "\n\t\t\t]";
+                std::cout << "\n\t\t}";
+            }
+        }
+        
+        std::cout << "\n\t],\n";
+
+        std::cout << "\t\"errors\": [\n";
+
+        for(const auto& node : root_node.childrens()) {
+            node_i = 0;
+            if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
+                const andy::lang::parser::ast_node* fn_declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                const andy::lang::lexer::token& fn_declname_token = fn_declname_node->token();
+                std::string_view fn_declname = fn_declname_token.content();
+                
+                if(fn_declname != "import") {
+                    continue;
+                }
+
+                auto* params_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+
+                if(!params_node || params_node->childrens().size() != 1) {
+                    continue;
+                }
+
+                auto* import_node = params_node->childrens().data();
+
+                if(import_node->type() != andy::lang::parser::ast_node_type::ast_node_declname) {
+                    continue;
+                }
+
+                const andy::lang::lexer::token& import_declname_token = import_node->token();
+                std::string_view import_declname = import_declname_token.content();
+
+                if(andy::lang::extension::exists(file_directory, import_declname)) {
+                    continue;
+                }
+
+                if(node_i) {
+                    std::cout << ",";
+                }
+                std::cout << "\t\t{\n\t\t\t\"message\": \"";
+                std::cout << "Cannot find import '" << import_declname << "'\",";
+                std::cout << "\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
+                write_path(fn_declname_token.m_file_name);
+                std::cout << "\",\n";
+                std::cout << "\t\t\t\t\"line\": ";
+                std::cout << fn_declname_token.start.line;
+                std::cout << ",\n\t\t\t\t\"column\": ";
+                std::cout << fn_declname_token.start.column;
+                std::cout << ",\n\t\t\t\t\"offset\": ";
+                std::cout << fn_declname_token.start.offset;
+                std::cout << ",\n\t\t\t\t\"length\": ";
+                size_t start = fn_declname_token.start.offset;
+                size_t end = params_node->childrens().back().token().end.offset;
+                std::cout << end - start;
+                std::cout << "\n\t\t\t}";
                 std::cout << "\n\t\t}";
             }
         }

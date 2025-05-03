@@ -218,5 +218,18 @@ install(TARGETS andy-lang
 #     endforeach()
 # endif()
 
+
+add_executable(read-file-experiment
+    ${CMAKE_CURRENT_LIST_DIR}/experiments/read_file.cpp
+)
+
+add_executable(is-alpha-experiment
+    ${CMAKE_CURRENT_LIST_DIR}/experiments/is_alpha.cpp
+)
+
+add_executable(is-alnum-or-underscore
+    ${CMAKE_CURRENT_LIST_DIR}/experiments/is_alnum_or_underscore.cpp
+)
+
 andy_tests_configure(andy)
 andy_tests_configure(andy-lang)

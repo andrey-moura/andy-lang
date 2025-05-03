@@ -7,44 +7,43 @@
 #include <uva/file.hpp>
 
 // TODO: move to uva::file
+std::vector<std::string> list_files_with_wildcard(const std::filesystem::path& base_path, std::string_view pattern) {
+    std::vector<std::string> files;
+    std::filesystem::path path = base_path;
 
-std::string wildcard_to_regex(const std::string& wildcard) {
-    std::string regex_pattern = "^";
-    for (char ch : wildcard) {
-        switch (ch) {
-            case '*':
-                regex_pattern += ".*"; // '*' corresponde a qualquer sequência de caracteres
-                break;
-            case '?':
-                regex_pattern += ".";  // '?' corresponde a um único caractere
-                break;
-            case '.':
-                regex_pattern += "\\."; // Escape do ponto, pois em regex, '.' é um caractere especial
-                break;
-            default:
-                regex_pattern += ch;    // Adiciona o caractere literal
-                break;
+    while(pattern.size() && !pattern.starts_with("*")) {
+        size_t pos = pattern.find_first_of("/\\");
+        if(pos == std::string::npos) {
+            break;
+        }
+        std::string_view dir = pattern.substr(0, pos);
+        path /= dir;
+        pattern.remove_prefix(pos);
+        while(pattern.size() && (pattern.front() == '/' || pattern.front() == '\\')) {
+            pattern.remove_prefix(1);
         }
     }
-    regex_pattern += "$"; // Final da expressão regular
-    return regex_pattern;
-}
 
-// Função para listar arquivos com base em um wildcard
-std::vector<std::string> list_files_with_wildcard(const std::filesystem::path& base_path, std::string pattern) {
-    std::vector<std::string> files;
-    pattern = "*/" + pattern; // Adiciona um coringa para buscar em subdiretórios
-    std::regex regex_pattern(wildcard_to_regex(pattern));  // Converte o padrão para regex
-
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(base_path)) {
-        if (std::filesystem::is_regular_file(entry.path())) {
-            std::string filename = entry.path().string();
-#ifdef __UVA_WIN__
-            std::replace(filename.begin(), filename.end(), '\\', '/');
-#endif
-            // Verifica se o arquivo corresponde ao padrão
-            if (std::regex_match(filename, regex_pattern)) {
-                files.push_back(filename);
+    if(pattern.size()) {
+        pattern.remove_prefix(1);
+        if(pattern.size() && pattern.front() == '/') {
+            pattern.remove_prefix(1);
+            // Directory wildcard
+            if(pattern.starts_with('*')) {
+                pattern.remove_prefix(1);
+                std::string_view match_end = pattern;
+                for(auto& d : std::filesystem::directory_iterator(path)) {
+                    if(d.is_directory()) {
+                        for(auto& f : std::filesystem::directory_iterator(d.path())) {
+                            if(f.is_regular_file()) {
+                                std::string file_name = f.path().filename().string();
+                                if(file_name.ends_with(pattern)) {
+                                    files.push_back(f.path().string());
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -107,7 +106,7 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
 
     std::filesystem::path file_path = __lexer.path();
 
-    auto files = list_files_with_wildcard(file_path.parent_path(), std::string(file_path_string));
+    auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
 
     __lexer.erase_tokens(2); // Remove the directive and the file name token
 

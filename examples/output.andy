@@ -1,2 +1,2 @@
-print("Hello from ");
-puts("output!");
+print 'Hello from '
+out 'output!'

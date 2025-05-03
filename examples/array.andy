@@ -1,4 +1,4 @@
-var array = ["Hello", "from", "an", "array!"];
-var message = array.join(" ");
+var array = ['Hello', 'from', 'an', 'array!']
+var message = array.join(' ')
 
-puts(message);
+out message

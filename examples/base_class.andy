@@ -1,21 +1,22 @@
 // You can declare a base class in a separate file and #include it in your main file
-class Base
-{
-    function new() {
+type Speaker
+    fn new
+    end
+end
 
-    }
+// You can use 'extends', ':' or '<' to declare a base class
+type Person extends Speaker
+    fn new
+        super
+    end
 
-    function say_hello() {
-        puts("Hello from base class!");
-    }
-}
+    fn speak(arg)
+        out arg
+    end
+end
 
-// You can use 'extends', ':' and '<' to declare a base class
-class Derived extends Base {
-    function new() {
-        super();
-    }
-}
+var person = new Person(test: '123');
 
-var derived = new Derived();
-derived.say_hello();
+within person
+    speak 'Hello, world!'
+end

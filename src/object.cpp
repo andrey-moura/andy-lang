@@ -25,20 +25,18 @@ andy::lang::object::~object()
     }
 }
 
-void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::lang::function_call new_call)
+void andy::lang::object::initialize(andy::lang::interpreter* interpreter)
 {
     for(auto& instance_variable : cls->instance_variables) {
         instance_variables[instance_variable.first] = andy::lang::object::instantiate(interpreter, instance_variable.second, nullptr);
     }
 
     instance_variables["this"] = shared_from_this();
+}
 
-    //if(cls->base) {
-        //base_instance = andy::lang::object::instantiate(interpreter, cls->base, nullptr);
-    //     base_instance = std::make_shared<andy::lang::object>(cls->base);
-    //     base_instance->derived_instance = shared_from_this();
-    //     base_instance->initialize(interpreter);
-    // }
+void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::lang::function_call new_call)
+{
+    initialize(interpreter);
 
     auto new_it = cls->instance_methods.find("new");
 

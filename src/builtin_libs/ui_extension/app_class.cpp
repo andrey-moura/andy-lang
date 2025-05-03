@@ -18,7 +18,7 @@ public:
         auto run_it = application_instance->cls->instance_methods.find("run");
 
         if(run_it == application_instance->cls->instance_methods.end()) {
-            throw std::runtime_error("run method not defined in class Application");
+            throw std::runtime_error("function 'run' not defined in class Application");
         }
 
         andy::lang::function_call run_it_call = {

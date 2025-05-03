@@ -1,1 +1,1 @@
-puts('Hello from minimal!');
+out 'Hello from minimal!'
