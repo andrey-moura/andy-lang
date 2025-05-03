@@ -59,24 +59,29 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
         base_class->deriveds.push_back(cls);
     }
 
-    for(auto& class_child : source_code.context()->childrens()) {
+    for(size_t i = 2; i < source_code.childrens().size(); i++) {
+        auto& class_child = source_code.childrens()[i];
         switch (class_child.type())
         {
         case andy::lang::parser::ast_node_type::ast_node_fn_decl: {
             std::string_view method_name = class_child.decname();
 
-            std::vector<std::string> params;
-            params.reserve(class_child.childrens().size());
+            auto* params_node = class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
 
-            for(auto& param : class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params)->childrens()) {
-                params.push_back(std::string(param.token().content()));
+            std::vector<std::string> params;
+            if(params_node) {
+                params.reserve(class_child.childrens().size());
+
+                for(auto& param : params_node->childrens()) {
+                    params.push_back(std::string(param.token().content()));
+                }
             }
 
             auto static_node = class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declstatic);
 
             auto method = andy::lang::method(std::move(std::string(method_name)), method_storage_type::instance_method, params, class_child);
 
-            if(static_node || source_code.decl_type() == "namespace") {
+            if(static_node || source_code.decl_type() == "module") {
                 cls->class_methods[method_name] = std::move(method);
             } else {
                 cls->instance_methods[method_name] = std::move(method);
@@ -338,7 +343,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     }
 
                     method_to_call = &it->second;
-                    object_to_call = object->base_instance;
+                    object_to_call = std::make_shared<andy::lang::object>(object->cls->base);
+                    object_to_call->derived_instance = object;
+                    object->base_instance = object_to_call;
                     class_to_call = object->cls->base;
                 } else {
                     if(object) {
@@ -424,7 +431,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     }
 
                     if(name) {
-                        named_params[std::string(name->token().content())] = value;
+                        std::string content = std::string(name->token().content());
+                        named_params[content] = value;
                     } else {
                         positional_params.push_back(value);
                     }
@@ -442,11 +450,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             };
 
             std::shared_ptr<andy::lang::object> ret = call(__call);
-
-            if(is_super) {
-                object->base_instance = ret;
-                return nullptr;
-            }
 
             return ret;
         }
@@ -500,8 +503,22 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             current_context().has_returned = true;
             return nullptr;
         }
-        case andy::lang::parser::ast_node_type::ast_node_context:
+        case andy::lang::parser::ast_node_type::ast_node_context: {
+            if(source_code.childrens().size() == 0) {
+                return nullptr;
+            }
+
+            if(source_code.childrens().size() > 1) {
+                if(source_code.childrens().front().type() == andy::lang::parser::ast_node_type::ast_node_fn_object) {
+                    auto* fn_object = source_code.childrens().data();
+                    std::shared_ptr<andy::lang::object> context_object = node_to_object(fn_object->childrens().front(), object ? object->cls : nullptr, object);
+                    push_context(true);
+                    return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end(), context_object);
+                    pop_context();
+                }
+            }
             return execute_all(source_code, object);
+        }
         break;
         case andy::lang::parser::ast_node_type::ast_node_condition: {
             return node_to_object(source_code.childrens().front());
@@ -627,17 +644,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
 
     current_context().given_block = call.given_block;
 
-    bool is_constructor = call.method->name == "new";
-
-    if(is_constructor) {
-        // Special case
-        // The object is created before the method is called
-        // If the object was instantiated in from native code, it will be passed as a parameter
-        if(!call.object) {
-            return andy::lang::object::instantiate(this, call.cls, call);
-        }
-    }
-
     std::shared_ptr<andy::lang::object> ret = nullptr;
 
     if(call.positional_params.size() != call.method->positional_params.size()) {
@@ -659,7 +665,20 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
             }
         }
     }
+   
+    bool is_constructor = call.method->name == "new";
 
+    if(is_constructor) {
+        // Special case
+        // The object is created before the method is called
+        // If the object was instantiated in from native code, it will be passed as a parameter
+        if(!call.object) {
+            return andy::lang::object::instantiate(this, call.cls, call);
+        } else {
+            call.object->initialize(this);
+        }
+    }
+   
     if(call.method->block_ast.childrens().size()) {
         for(size_t i = 0; i < call.method->positional_params.size(); i++) {
             current_context().variables[call.method->positional_params[i].name] = call.positional_params[i];
@@ -708,26 +727,29 @@ void andy::lang::interpreter::init()
 
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_from_declname(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)
 {
-    if(object) {
-        auto it = object->instance_variables.find(node.token().content());
-
-        if(it != object->instance_variables.end()) {
-            return it->second;
-        }
-
-        if(object->cls == ClassClass) {
-            auto cls = object->as<std::shared_ptr<andy::lang::structure>>();
-            auto it = cls->class_variables.find(node.token().content());
-
-            if(it != cls->class_variables.end()) {
-                return it->second;
-            }
-        }
-    }
-
     auto* fn_object = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
 
     if(fn_object) {
+        if(fn_object->token().type() == andy::lang::lexer::token_type::token_literal) {
+            auto literal = node_to_object(*fn_object);
+            auto it = literal->instance_variables.find(node.token().content());
+            if(it != literal->instance_variables.end()) {
+                return it->second;
+            }
+            auto method_it = literal->cls->instance_methods.find(node.token().content());
+            if(method_it != literal->cls->instance_methods.end()) {
+                auto __call = andy::lang::function_call{
+                    node.token().content(),
+                    literal->cls,
+                    literal,
+                    &method_it->second,
+                    {},
+                    {},
+                    fn_object
+                };
+                return call(__call);
+            }
+        }
         auto* fn_object_decname = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
         
         if(fn_object_decname) {
@@ -765,6 +787,23 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 } else {
                     throw std::runtime_error("Cannot read property '" + std::string(node.token().content()) + "' of void");
                 }
+            }
+        }
+    }
+
+    if(object) {
+        auto it = object->instance_variables.find(node.token().content());
+
+        if(it != object->instance_variables.end()) {
+            return it->second;
+        }
+
+        if(object->cls == ClassClass) {
+            auto cls = object->as<std::shared_ptr<andy::lang::structure>>();
+            auto it = cls->class_variables.find(node.token().content());
+
+            if(it != cls->class_variables.end()) {
+                return it->second;
             }
         }
     }

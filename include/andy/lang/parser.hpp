@@ -198,6 +198,7 @@ namespace andy
             /// @return The pair node.
             andy::lang::parser::ast_node extract_pair(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_identifier_or_literal(andy::lang::lexer& lexer, bool chain = true);
+            void extract_context(andy::lang::lexer& lexer, andy::lang::parser::ast_node& output);
         // Parsers functions
         protected:
             /// @brief Parse a keyword.
@@ -229,6 +230,7 @@ namespace andy
             andy::lang::parser::ast_node parse_keyword_break(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_static(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_yield(andy::lang::lexer& lexer);
+            andy::lang::parser::ast_node parse_keyword_within(andy::lang::lexer& lexer);
         };
     }
 }; // namespace andy

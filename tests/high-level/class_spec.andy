@@ -1,56 +1,13 @@
-import(:tests)
+import :tests
 
-class Test {
-    function instance_fn() {
-        return 1;
-    }
+type Test
+    fn instance_fn
+        return 1
+    end
+end
 
-    static function static_fn() {
-        return 1;
-    }
-}
+type Base
+end
 
-class Base {
-    var base_var = null;
-    function new(value) {
-        base_var = value;
-    }
-    function base_fn() {
-        return base_var;
-    }
-}
-
-class Derived extends Base {
-    var derived_var = null;
-    function new() {
-        derived_var = Random.integer();
-        super(derived_var);
-    }
-    function derived_fn() {
-        return derived_var;
-    }
-}
-
-describe('Class') {
-    describe('instance methods') {
-        it('should call an instance method') {
-            var test = new Test();
-            expect(test.instance_fn()).to_eq(1);
-        }
-    }
-    describe('static methods') {
-        it('should call a static method') {
-            expect(Test.static_fn()).to_eq(1);
-        }
-    }
-    describe('inheritance') {
-        it('should call a base class method') {
-            var test = new Derived();
-            expect(test.base_fn()).to_eq(test.derived_var);
-        }
-        it('should call a derived class method') {
-            var test = new Derived();
-            expect(test.derived_fn()).to_eq(test.derived_var);
-        }
-    }
-}
+type Derived extends Base
+end

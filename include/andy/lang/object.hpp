@@ -43,10 +43,10 @@ namespace andy
             // The object destructor ptr.
             void (*native_destructor)(object* obj) = nullptr;
             // The object move ptr.
-            void (*native_move)(object* obj, object&& other) = nullptr;
-            
-            void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call = {});
+            void (*native_move)(object* obj, object&& other) = nullptr;    
         public:
+            void initialize(andy::lang::interpreter* interpreter);
+            void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call);
             object& operator=(object&& other)
             {
                 cls = other.cls;
