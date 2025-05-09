@@ -1,5 +1,6 @@
+#include <memory>
+
 #include <andy/lang/api.hpp>
-#include <andy/ui/app.hpp>
 
 class uvalang_ui_app : public andy::ui::app
 {

@@ -32,37 +32,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-drawing/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-ui/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/include/uva/xml/CMakeLists.txt)
 
-# Find all files under ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs
-file(GLOB BUILTIN_LIBS "${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/*")
-# Write src/builtin_libs.cpp file
-file(WRITE ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "// This file is auto-generated. Changes will be lost.\n\n")
-# Includes
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "#include <memory>\n\n")
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "#include <andy/lang/extension.hpp>\n\n")
-
-foreach(BUILTIN_LIB ${BUILTIN_LIBS})
-    # Get stem from extension from the folder
-    get_filename_component(BUILTIN_LIB_NAME ${BUILTIN_LIB} NAME_WE)
-    # Write extern declaration
-    file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "extern std::shared_ptr<andy::lang::extension> create_${BUILTIN_LIB_NAME}();\n")
-endforeach()
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "\n")
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "void create_builtin_libs() {\n")
-foreach(BUILTIN_LIB ${BUILTIN_LIBS})
-    # Get stem from extension from the folder
-    get_filename_component(BUILTIN_LIB_NAME ${BUILTIN_LIB} NAME_WE)
-    # Write creation
-    file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "    andy::lang::extension::add_builtin(create_${BUILTIN_LIB_NAME}());\n")
-    
-endforeach(BUILTIN_LIB ${BUILTIN_LIBS})
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "}")
+include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
 
 add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
@@ -94,15 +68,16 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/class_class.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
-    ${BUILTIN_LIBS}
+    
+    ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/tests_extension.cpp
+
+    ${ANDY_UI_EXTENSION_SOURCES}
+
     $<TARGET_OBJECTS:uva-xml>
     $<TARGET_OBJECTS:uva-file>
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
-    $<TARGET_OBJECTS:uva-drawing>
-    $<TARGET_OBJECTS:uva-widgets>
     $<TARGET_OBJECTS:uva-binary>
-    $<TARGET_OBJECTS:andy-ui>
 )
 
 target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES})
@@ -111,7 +86,7 @@ add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
 
-andy_ui_properties(andy-lang)
+target_link_libraries(andy PRIVATE andy-lang ${wxWidgets_LIBRARIES})
 
 if(BUILD_ANDY_CPP)
     find_package(Clang REQUIRED)

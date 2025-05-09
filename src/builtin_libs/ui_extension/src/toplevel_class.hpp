@@ -98,7 +98,7 @@ namespace andy
             {
                 //TODO: move to a specific library combining uva-widgets and uva-ui
                 if(root_layout.childreans.empty()) {
-                    std::string_view class_name = object->cls->name;
+                    std::string_view class_name = object->derived_instance->cls->name;
                     std::string view_name;
                     view_name.reserve(class_name.size() + 10);
 

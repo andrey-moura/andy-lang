@@ -181,10 +181,11 @@ namespace andy
 
                 if constexpr(!std::is_arithmetic<T>::value) {
                     obj->native_move = [](object* obj, object&& other) {
-                        if(!obj->native_ptr) {
-                            new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
+                        throw std::runtime_error("not implemented");
+                        //if(!obj->native_ptr) {
+                            //new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
                             // Let the destructor of the other object to be called
-                        }
+                        //}
                     };
                 }
             }
