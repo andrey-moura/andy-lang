@@ -45,6 +45,16 @@ std::vector<std::string> list_files_with_wildcard(const std::filesystem::path& b
                     }
                 }
             }
+        } else {
+            std::string_view match_end = pattern;
+            for(auto& f : std::filesystem::directory_iterator(path)) {
+                if(f.is_regular_file()) {
+                    std::string file_name = f.path().filename().string();
+                    if(file_name.ends_with(pattern)) {
+                        files.push_back(f.path().string());
+                    }
+                }
+            }
         }
     }
 

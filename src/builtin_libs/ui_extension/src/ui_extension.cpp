@@ -3,12 +3,11 @@
 #include <vector>
 #include <memory>
 
-#include <andy/lang/api.hpp>
-#include <andy/lang/extension.hpp>
+#include "andy/lang/api.hpp"
+#include "andy/lang/extension.hpp"
 
-#include "ui_extension/app_class.cpp"
-#include "ui_extension/frame_class.cpp"
-#include "ui_extension/dialog_class.cpp"
+extern std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter* interpreter);
+extern std::shared_ptr<andy::lang::structure> create_frame_class(andy::lang::interpreter* interpreter);
 
 class ui_extension : public andy::lang::extension
 {
@@ -26,20 +25,20 @@ public:
 
         auto AppClass = create_app_class(interpreter);
         auto FrameClass = create_frame_class(interpreter);
-        auto DialogClass = create_dialog_class(interpreter);
+        // auto DialogClass = create_dialog_class(interpreter);
 
         auto app_obj    = andy::lang::object::create(interpreter, interpreter->ClassClass, AppClass);
         auto frame_obj  = andy::lang::object::create(interpreter, interpreter->ClassClass, FrameClass);
-        auto dialog_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, DialogClass);
+        // auto dialog_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, DialogClass);
 
         app_obj->cls->instance_methods["new"].call(app_obj);
         app_obj->cls->instance_methods["new"].call(frame_obj);
-        app_obj->cls->instance_methods["new"].call(dialog_obj);
+        // app_obj->cls->instance_methods["new"].call(dialog_obj);
 
         UIClass->class_variables = {
             { "Application", app_obj    },
             { "Frame",       frame_obj  },
-            { "Dialog",      dialog_obj },
+            // { "Dialog",      dialog_obj },
         };
 
         interpreter->load(UIClass);
@@ -60,6 +59,8 @@ public:
         }
 
         application_instance = andy::lang::object::instantiate(interpreter, AppClass->deriveds.front(), nullptr);
+
+        andy::lang::api::call(interpreter, application_instance, "init");
     }
 };
 
