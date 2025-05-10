@@ -88,7 +88,7 @@ add_executable(andy
 
 target_link_libraries(andy PRIVATE andy-lang ${wxWidgets_LIBRARIES})
 
-if(BUILD_ANDY_CPP)
+if(FALSE)
     find_package(Clang REQUIRED)
 
     include_directories(${CLANG_INCLUDE_DIRS})
