@@ -1,4 +1,6 @@
-if(WIN32 OR UNIX)
+find_package(SDL3 QUIET)
+
+if(SDL3_FOUND)
     set(ANDY_UI_EXTENSION_SOURCES   
         ${CMAKE_CURRENT_LIST_DIR}/src/ui_extension.cpp
         ${CMAKE_CURRENT_LIST_DIR}/src/app_class.cpp

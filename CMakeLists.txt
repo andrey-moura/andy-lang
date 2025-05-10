@@ -35,6 +35,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/include/uva/xml/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-ui/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-drawing/CMakeLists.txt)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
 
