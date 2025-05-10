@@ -37,7 +37,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/include/uva/xml/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-ui/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-drawing/CMakeLists.txt)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
 
@@ -81,9 +80,10 @@ add_library(andy-lang
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
     $<TARGET_OBJECTS:uva-binary>
+    $<TARGET_OBJECTS:andy-ui>
 )
 
-target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES})
+target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${SDL3_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp

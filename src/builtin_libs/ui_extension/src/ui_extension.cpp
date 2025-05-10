@@ -3,6 +3,8 @@
 #include <vector>
 #include <memory>
 
+#include <andy/ui/app.hpp>
+
 #include "andy/lang/api.hpp"
 #include "andy/lang/extension.hpp"
 
@@ -60,7 +62,11 @@ public:
 
         application_instance = andy::lang::object::instantiate(interpreter, AppClass->deriveds.front(), nullptr);
 
-        andy::lang::api::call(interpreter, application_instance, "init");
+        auto app = application_instance->base_instance->as<std::shared_ptr<andy::ui::app>>();
+        if(!app) {
+            throw std::runtime_error("UI.Application is not a valid application");
+        }
+        app->run(0, nullptr);
     }
 };
 
