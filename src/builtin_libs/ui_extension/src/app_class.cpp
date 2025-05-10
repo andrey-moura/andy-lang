@@ -1,11 +1,12 @@
 #include <memory>
 
 #include <andy/lang/api.hpp>
+#include <andy/ui/app.hpp>
 
-class uvalang_ui_app : public andy::ui::app
+class andylang_ui_app : public andy::ui::app
 {
 public:
-    uvalang_ui_app(andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __application_instance)
+    andylang_ui_app(andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __application_instance)
         : andy::ui::app("uva", "uva"), interpreter(__interpreter)
     {
         application_instance = __application_instance;
@@ -42,11 +43,8 @@ std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter*
 
     AppClass->instance_methods = {
         { "new", andy::lang::method("new", andy::lang::method_storage_type::instance_method, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params){
-            uvalang_ui_app* app = new uvalang_ui_app(interpreter, object->derived_instance);
+            andylang_ui_app* app = new andylang_ui_app(interpreter, object->derived_instance);
             object->set_native_ptr(app);
-
-            app->run(0, nullptr);
-
             return nullptr;
         })},
     };
