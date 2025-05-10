@@ -74,9 +74,7 @@
         "variant": "cpp"
     },
     "cmake.configureArgs": [
-        "-DBUILD_ANDY_CPP=true",
-        "-DBUILD_ANDY_ANALYZER=true",
-        "-DBUILD_TESTS=true",
+
     ],
     "cmake.debugConfig": {
         "args": [
