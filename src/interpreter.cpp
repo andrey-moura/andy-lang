@@ -265,7 +265,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                                     auto it = cls->class_methods.find(function_name);
 
                                     if(it == cls->class_methods.end()) {
-                                        throw std::runtime_error("class " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
+                                        throw std::runtime_error("Type " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
                                     }
 
                                     method_to_call = &it->second;
@@ -274,6 +274,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
 
                                 break;
                             }
+                        }
+                        if(!class_to_call) {
+                            throw std::runtime_error("Type or variable '" + std::string(class_or_object_name) + "' not found");
                         }
                     }
                 } else if (object_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
