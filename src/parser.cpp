@@ -837,53 +837,6 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_for(andy::lang::l
         throw std::runtime_error(for_context.token().error_message_at_current_position("Expected context after 'for'"));
     }
 
-    // Optimization:
-    // If the var_node is an integer declaration, the codition is a comparison
-    // with a literal and the increment is a simple increment, the we can
-    // extract these literals and do a for loop. This will exclude 2 functions
-    // calls (which is expensive) per iteration.
-
-    // auto value = var_node.child_from_type(ast_node_valuedecl);
-
-    // if(value && value->token().type() == lexer::token_type::token_literal && value->token().kind() == lexer::token_kind::token_integer)
-    // {
-    //     auto condition_fn = condition_node.child_from_type(ast_node_fn_call);
-    //     if(condition_fn)
-    //     {
-    //         auto condition_fn_declname = condition_fn->child_from_type(ast_node_declname);
-
-    //         if(condition_fn_declname->token().op() != lexer::operator_type::operator_null)
-    //         {
-    //             auto condition_fn_params = condition_fn->child_from_type(ast_node_fn_params);
-
-    //             if(condition_fn_params && condition_fn_params->childrens().size() == 1)
-    //             {
-    //                 auto condition_fn_param = condition_fn_params->childrens().front();
-
-    //                 if(condition_fn_param.type() == ast_node_type::ast_node_valuedecl && condition_fn_param.token().type() == lexer::token_type::token_literal && condition_fn_param.token().kind() == lexer::token_kind::token_integer)
-    //                 {
-    //                     auto increment_fn = increment_node.child_from_type(ast_node_fn_call);
-
-    //                     if(increment_fn)
-    //                     {
-    //                         auto increment_fn_declname = increment_fn->child_from_type(ast_node_declname);
-
-    //                         if(increment_fn_declname->token().op() != lexer::operator_type::operator_null)
-    //                         {
-    //                             auto increment_fn_params = increment_fn->child_from_type(ast_node_fn_params);
-
-    //                             // Unary de/increment
-    //                             if(increment_fn_params && increment_fn_params->childrens().size() == 0)
-    //                             {
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }      
-    //         }
-    //     }
-    // }
-
     for_node.add_child(std::move(var_node));
     for_node.add_child(std::move(condition_node));
     for_node.add_child(std::move(increment_node));
