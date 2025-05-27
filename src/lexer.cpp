@@ -293,11 +293,11 @@ void andy::lang::lexer::read_next_token()
                 return isdigit(c);
             });
 
-            kind = token_kind::token_float;
+            kind = token_kind::token_double;
             
             if(m_current.front() == 'f') {
                 discard();
-                kind = token_kind::token_double;
+                kind = token_kind::token_float;
             }
         }
 
