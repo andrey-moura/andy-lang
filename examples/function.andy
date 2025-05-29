@@ -1,6 +1,5 @@
-function say_hello()
-{
-    puts("Hello from a function!");
-}
+fn say_hello
+    out 'Hello from a function!'
+end
 
-say_hello();
+say_hello

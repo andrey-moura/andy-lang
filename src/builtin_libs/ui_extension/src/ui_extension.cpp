@@ -3,13 +3,22 @@
 #include <vector>
 #include <memory>
 
-#include <andy/ui/app.hpp>
-
 #include "andy/lang/api.hpp"
 #include "andy/lang/extension.hpp"
+#include "andy/ui/app.hpp"
+// It is actually andy/
+#include "uva/file.hpp"
+#include "uva/xml.hpp"
 
 extern std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter* interpreter);
 extern std::shared_ptr<andy::lang::structure> create_frame_class(andy::lang::interpreter* interpreter);
+
+std::filesystem::path view_folder;
+uva::xml::schema schema;
+
+#if ANDY_USE_SDL3
+#   include <SDL3/SDL.h>
+#endif
 
 class ui_extension : public andy::lang::extension
 {
@@ -42,6 +51,27 @@ public:
             { "Frame",       frame_obj  },
             // { "Dialog",      dialog_obj },
         };
+
+        view_folder = std::filesystem::absolute("views");
+        std::string schema_content = uva::file::read_all_text<char>(view_folder / "schema.xsd");
+        schema = uva::xml::decode(std::move(schema_content));
+
+#if ANDY_USE_SDL3
+        // Get the OS theme name (ie. "dark" or "light")
+        SDL_SystemTheme theme = SDL_GetSystemTheme();
+        theme = theme == SDL_SYSTEM_THEME_UNKNOWN ? SDL_SYSTEM_THEME_DARK : theme;
+        switch(theme) {
+            case SDL_SYSTEM_THEME_DARK:
+                for(auto& element : schema.elements) {
+                    for(auto& attribute : element.attributes) {
+                        if(attribute.name == "background-color") {
+                            attribute.default_value = "#121212";
+                        }
+                    }
+                }
+                break;
+        }
+#endif
 
         interpreter->load(UIClass);
     }

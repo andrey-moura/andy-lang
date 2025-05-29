@@ -78,12 +78,10 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "/home/andrey/Moonslate/HM-Studio/application.andy"
+            "/home/andrey/Moonslate/andy-lang/examples/system.andy"
         ],
-        "cwd": "/home/andrey/Moonslate/HM-Studio",
+        "cwd": "/home/andrey/Moonslate/andy-lang",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
-        "type": "lldb",
-        "request": "launch",
     }
 }

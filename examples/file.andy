@@ -1,2 +1,2 @@
-var message = File.read("examples/hello.txt");
-puts(message);
+var message = File.read 'examples/hello.txt'
+out message

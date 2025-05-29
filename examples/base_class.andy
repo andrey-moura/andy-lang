@@ -1,22 +1,29 @@
-// You can declare a base class in a separate file and #include it in your main file
-type Speaker
-    fn new
-    end
+// This is a simple example demonstrating base class usage in Andy.
+
+// Base class (superclass)
+type Animal
+  fn speak
+    out 'Makes a sound...'
+  end
 end
 
-// You can use 'extends', ':' or '<' to declare a base class
-type Person extends Speaker
-    fn new
-        super
-    end
-
-    fn speak(arg)
-        out arg
-    end
+// Subclass that overrides the method
+type Dog extends Animal
+  fn speak
+    out 'Barks!'
+  end
 end
 
-var person = new Person(test: '123');
-
-within person
-    speak 'Hello, world!'
+// Subclass that inherits the method without overriding
+type Cat extends Animal
 end
+
+// Testing the classes
+var animal = Animal.new
+animal.speak    // => Makes a sound...
+
+var dog = Dog.new
+dog.speak       // => Barks!
+
+var cat = Cat.new
+cat.speak       // => Makes a sound... (inherited from Animal)

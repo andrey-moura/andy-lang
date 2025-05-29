@@ -10,17 +10,15 @@ const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x10
 const static std::vector<std::string_view> keywords_lookup = {
     "break",
     "else",
+    "extends",
     "fn",
-    "for",
-    "foreach",
     "if",
+    "loop",
     "module",
-    "new",
     "return",
     "static",
     "type",
     "var",
-    "while",
     "within",
     "yield"
 };
@@ -161,6 +159,8 @@ void andy::lang::lexer::push_token(token_position start, token_type type, token_
 {
     token t(start, m_start, m_buffer, type, kind, m_file_name, m_source, op);
 
+    t.index = m_tokens.size();
+
     m_buffer = "";
 
     if(t.type() == token_type::token_literal) {
@@ -240,8 +240,8 @@ void andy::lang::lexer::read_next_token()
         discard();
         discard();
 
-        read_while([](const char& c) {
-            return c != '\n';
+        read_while([this](const char& c) {
+            return m_current.size() && c != '\n';
         });
 
         push_token(start, token_type::token_comment);

@@ -1,2 +1,0 @@
-var message = "Hello from a variable!";
-puts(message);

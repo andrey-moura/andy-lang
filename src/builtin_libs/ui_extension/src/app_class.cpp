@@ -6,27 +6,28 @@
 class andylang_ui_app : public andy::ui::app
 {
 public:
-    andylang_ui_app(andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __application_instance)
+    andylang_ui_app(andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __app_instance)
         : andy::ui::app("andy", "andy"), interpreter(__interpreter)
     {
-        application_instance = __application_instance;
+        app_instance = __app_instance.get();
     }
 protected:
     andy::lang::interpreter* interpreter = nullptr;
-    std::shared_ptr<andy::lang::object> application_instance;
+    // Do not use shared_ptr here, as it will cause a circular reference and app_instance will never be released.
+    andy::lang::object* app_instance;
 public:
     virtual void on_init(int argc, char** argv) override
     {
-        auto run_it = application_instance->cls->instance_methods.find("init");
+        auto run_it = app_instance->cls->instance_methods.find("init");
 
-        if(run_it == application_instance->cls->instance_methods.end()) {
-            throw std::runtime_error("function 'init' is not defined in type " + application_instance->cls->name);
+        if(run_it == app_instance->cls->instance_methods.end()) {
+            throw std::runtime_error("function 'init' is not defined in type " + app_instance->cls->name);
         }
 
         andy::lang::function_call run_it_call = {
             "init",
-            application_instance->cls,
-            application_instance,
+            app_instance->cls,
+            app_instance->shared_from_this(),
             &run_it->second,
             {},
             {},

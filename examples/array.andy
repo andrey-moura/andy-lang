@@ -1,3 +1,4 @@
+// This is a simple example of using an array in Andy
 var array = ['Hello', 'from', 'an', 'array!']
 var message = array.join(' ')
 

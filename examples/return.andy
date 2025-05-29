@@ -1,3 +1,0 @@
-out 'Hello from return!'
-return 7;
-out 'This should not be printed.'
