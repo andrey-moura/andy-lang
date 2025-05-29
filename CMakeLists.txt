@@ -22,7 +22,7 @@ endif()
 project(andy-lang VERSION ${ANDYLANG_VERSION})
 
 option(BUILD_ANDY_CPP "Build andyc++" OFF)
-option(BUILD_ANDY_ANALYZER "Build andy-analyzer" OFF)
+option(BUILD_ANDY_ANALYZER "Build andy-analyzer" ON)
 
 # Get the parent directory
 get_filename_component(ANDYLANG_PARENT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
@@ -50,21 +50,22 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp
 
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/true_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/string_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/double_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/std_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/dictionary_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/system_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/andy_config_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/class_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/dictionary_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/directory_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/double_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/std_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/string_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/system_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/true_class.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
     

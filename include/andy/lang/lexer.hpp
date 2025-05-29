@@ -85,6 +85,7 @@ namespace andy
                 std::string string_literal;
             public:
                 std::string_view m_file_name;
+                size_t index;
             public:
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op = operator_type::operator_max);
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);

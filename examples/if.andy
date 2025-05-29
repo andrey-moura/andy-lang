@@ -1,7 +1,19 @@
-if(false) {
-    puts("This should not be printed");
-} 
+if false || true
+    print 'Hello '
+end
 
-if(true) {
-    puts("Hellow from an if!")
-}
+if false.present? || true.present?
+    print 'from '
+end
+
+if true && true.present?
+    print 'an '
+end
+
+if true && true.present? && true
+    print 'if '
+end
+
+if true && true.present? && true && true
+    out 'expression!'
+end

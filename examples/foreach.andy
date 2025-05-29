@@ -1,9 +1,0 @@
-var array = ["Hello", "from", "a", "foreach!"];
-
-// You can use 'in', ':' or 'of'
-foreach(var element in array) {
-    print(element);
-    print(" ");
-}
-
-puts("");

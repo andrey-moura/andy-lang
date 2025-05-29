@@ -49,7 +49,7 @@ namespace andy
 
             /// @brief Exeuctes a class declaration into the interpreter.
             /// @param source_code The class declaration.
-            std::shared_ptr<andy::lang::structure> execute_classdecl(andy::lang::parser::ast_node source_code);
+            std::shared_ptr<andy::lang::structure> execute_classdecl(const andy::lang::parser::ast_node& source_code);
 
             std::shared_ptr<andy::lang::object> execute_all(std::vector<andy::lang::parser::ast_node>::const_iterator begin, std::vector<andy::lang::parser::ast_node>::const_iterator end, std::shared_ptr<andy::lang::object>& object);
             std::shared_ptr<andy::lang::object> execute_all(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object);
@@ -115,6 +115,7 @@ namespace andy
 
                 return nullptr;
             }
+
             const std::shared_ptr<andy::lang::object> try_object_from_declname(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls = nullptr, std::shared_ptr<andy::lang::object> object = nullptr);
             const std::shared_ptr<andy::lang::object> node_to_object(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls = nullptr, std::shared_ptr<andy::lang::object> object = nullptr);
             std::shared_ptr<andy::lang::object> var_to_object(var v);
@@ -164,7 +165,7 @@ namespace andy
         protected:
             /// @brief Initialize the interpreter. This method will create the global classes and objects. It also load extensions.
             void init();
-        private:
+        public:
             std::vector<std::shared_ptr<andy::lang::structure>> classes;
         };
     }  
