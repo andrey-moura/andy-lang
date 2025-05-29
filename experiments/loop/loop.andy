@@ -1,0 +1,9 @@
+var acc = 0
+var i = 0
+
+loop times 101
+    i += 1
+    acc = acc + i
+end
+
+out acc

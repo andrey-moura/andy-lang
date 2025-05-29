@@ -1,7 +1,0 @@
-class Application
-{
-    function run()
-    {
-        return 0;
-    }
-}
