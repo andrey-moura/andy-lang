@@ -91,7 +91,11 @@ namespace andy
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);
                 token(token&& other) = default;
                 token(const token&) = default;
-                token() = default;
+                token() 
+                    : m_type(token_type::token_undefined), m_kind(token_kind::token_null)
+                    {
+
+                    }
                 ~token() = default;
             public:
             public:

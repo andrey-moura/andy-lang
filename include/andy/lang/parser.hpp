@@ -197,7 +197,7 @@ namespace andy
             andy::lang::parser::ast_node parse_all(andy::lang::lexer& lexer);
 
         // Commons extract functions used by parsers
-        protected:
+        public:
             /// @brief Extract a function call parameters. You must consume the ')' token.
             /// @param lexer The lexer.
             /// @return A function call parameters node.
@@ -207,7 +207,6 @@ namespace andy
             /// @return The pair node.
             andy::lang::parser::ast_node extract_pair(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_identifier_or_literal(andy::lang::lexer& lexer, bool chain = true);
-            andy::lang::parser::ast_node extract_context(andy::lang::lexer& lexer);
         // Parsers functions
         protected:
             /// @brief Parse a keyword.

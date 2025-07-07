@@ -40,6 +40,15 @@ namespace andy
                     auto obj = std::make_shared<andy::lang::object>(interpreter->DoubleClass);
                     obj->set_native<double>(value);
                     return obj;
+                } else if constexpr(std::is_same_v<T, std::vector<std::shared_ptr<andy::lang::object>>>) {
+                    auto obj = std::make_shared<andy::lang::object>(interpreter->ArrayClass);
+                    obj->set_native<std::vector<std::shared_ptr<andy::lang::object>>>(std::move(value));
+                    return obj;
+                } else if constexpr(std::is_same_v<T, const char*>) {
+                    return to_object(interpreter, std::string(value));
+                }
+                else {
+                    throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
                 }
             }
             /// @brief Adds a class to another class.

@@ -10,11 +10,10 @@ const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x10
 const static std::vector<std::string_view> keywords_lookup = {
     "break",
     "else",
-    "extends",
     "fn",
     "if",
     "loop",
-    "module",
+    "namespace",
     "return",
     "static",
     "type",

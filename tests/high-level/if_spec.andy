@@ -1,129 +1,108 @@
-import(:tests)
+import :tests
 
-function test() {
-    return 1;
-}
+describe 'if/else' do
+    context 'when condition is true' do
+        it 'executes the true branch and skips the else branch' do
+            var result = null
+            if true
+                result = 'yes'
+            else
+                result = 'no'
+            end
+            expect(result).to eq('yes')
+        end
+    end
 
-describe('if') {
-    it('should execute the if block on literal true condition') {
-        var test = 0;
-        if (true) {
-            test = 1;
-        }
-        expect(test).to_eq(1);
-    }
-    it('should execute the if block on variable true condition') {
-        var test = 0;
-        var condition = true;
-        if (condition) {
-            test = 1;
-        }
-        expect(test).to_eq(1);
-    }
-    it('should execute the if block on true expression condition') {
-        var test = 0;
-        var condition = true;
-        if (condition == true) {
-            test = 1;
-        }
-        expect(test).to_eq(1);
-    }
-    it('should execute the if block on true integer literal condition') {
-        var test = 0;
-        if (1) {
-            test = 1;
-        }
-        expect(test).to_eq(1);
-    }
-    it('should execute the if block on true function result') {
-        var test = 0;
-        if (test()) {
-            test = 1;
-        }
-        expect(test).to_eq(1);
-    }
-    it('should not execute the if block on literal false condition') {
-        var test = 0;
-        if (false) {
-            test = 1;
-        }
-        expect(test).to_eq(0);
-    }
-    it('should not execute the if block on variable false condition') {
-        var test = 0;
-        var condition = false;
-        if (condition) {
-            test = 1;
-        }
-        expect(test).to_eq(0);
-    }
-    it('should not execute the if block on false expression condition') {
-        var test = 0;
-        var condition = false;
-        if (condition == true) {
-            test = 1;
-        }
-        expect(test).to_eq(0);
-    }
-    it('should not execute the if block on false integer literal condition') {
-        var test = 0;
-        if (0) {
-            test = 1;
-        }
-        expect(test).to_eq(0);
-    }
-    it('should not execute the if block on false function result') {
-        var test = 0;
-        if (test() == 0) {
-            test = 1;
-        }
-        expect(test).to_eq(0);
-    }
-    it('should execute the else block on literal false condition') {
-        var test = 0;
-        if (false) {
-            test = 1;
-        } else {
-            test = 2;
-        }
-        expect(test).to_eq(2);
-    }
-    it('should execute the else block on variable false condition') {
-        var test = 0;
-        var condition = false;
-        if (condition) {
-            test = 1;
-        } else {
-            test = 2;
-        }
-        expect(test).to_eq(2);
-    }
-    it('should execute the else block on false expression condition') {
-        var test = 0;
-        var condition = false;
-        if (condition == true) {
-            test = 1;
-        } else {
-            test = 2;
-        }
-        expect(test).to_eq(2);
-    }
-    it('should execute the else block on false integer literal condition') {
-        var test = 0;
-        if (0) {
-            test = 1;
-        } else {
-            test = 2;
-        }
-        expect(test).to_eq(2);
-    }
-    it('should execute the else block on false function result') {
-        var test = 0;
-        if (test() == 0) {
-            test = 1;
-        } else {
-            test = 2;
-        }
-        expect(test).to_eq(2);
-    }
-}
+    context 'when condition is false' do
+        it 'skips the if branch and executes the else branch' do
+            var result = null
+            if false
+                result = 'yes'
+            else
+                result = 'no'
+            end
+            expect(result).to eq('no')
+        end
+    end
+
+    context 'when using expressions in the condition' do
+        it 'evaluates the expression to decide the branch' do
+            var x = 5
+            var result = null
+            if x > 3
+                result = 'greater'
+            else
+                result = 'less_or_equal'
+            end
+            expect(result).to eq('greater')
+        end
+    end
+
+    context 'when the condition is a variable' do
+        it 'uses the variable truthiness to determine the branch' do
+            var condition = false
+            var result = 0
+            if condition
+                result = 1
+            else
+                result = 2
+            end
+            expect(result).to eq(2)
+        end
+    end
+
+    context 'when using else if with multiple conditions' do
+        it 'evaluates conditions in order and runs the first true branch' do
+            var x = 5
+            var result = null
+
+            if x < 0
+                result = 'negative'
+            else if x == 0
+                result = 'zero'
+            else if x < 10
+                result = 'small'
+            else
+                result = 'large'
+            end
+
+            expect(result).to eq('small')
+        end
+    end
+
+    context 'when none of the if/else if conditions are true' do
+        it 'executes the final else block' do
+            var x = 20
+            var result = null
+
+            if x < 0
+                result = 'negative'
+            else if x == 0
+                result = 'zero'
+            else if x < 10
+                result = 'small'
+            else
+                result = 'large'
+            end
+
+            expect(result).to eq('large')
+        end
+    end
+
+    context 'when an earlier condition is true' do
+        it 'skips all following else if and else blocks' do
+            var x = 0
+            var result = null
+
+            if x == 0
+                result = 'first'
+            else if x == 0
+                result = 'second'
+            else
+                result = 'third'
+            end
+
+            expect(result).to eq('first')
+        end
+    end
+end

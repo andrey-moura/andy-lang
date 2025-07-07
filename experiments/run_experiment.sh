@@ -2,7 +2,6 @@
 
 if [ $# -ne 1 ]; then
     echo "Usage: $0 <basename>"
-    echo "Example: $0 loop  (will use experiments/loop/loop.py, etc)"
     exit 1
 fi
 
@@ -23,32 +22,17 @@ run_and_time() {
     shift 2
     local cmd=("$@")
 
-    if ! command_exists "${cmd[0]}"; then
-        RESULTS+=("$lang|$file|${cmd[*]}|COMMAND NOT FOUND|N/A")
-        echo "$lang: command not found (${cmd[0]})"
+    if ! command_exists "${cmd[0]}" || [ ! -f "$file" ]; then
+        RESULTS+=("$lang|${cmd[*]} $file|N/A|N/A")
         return
     fi
 
-    if [ ! -f "$file" ]; then
-        RESULTS+=("$lang|$file|${cmd[*]}|FILE NOT FOUND|N/A")
-        echo "$lang: source file not found ($file)"
-        return
-    fi
+    local output elapsed
+    output=$({ /usr/bin/time -f "%e" "${cmd[@]}" "$file" 2> time.txt; } 2>&1)
+    elapsed=$(cat time.txt)
+    rm -f time.txt
 
-    local output
-    local elapsed
-
-    if command_exists /usr/bin/time; then
-        output=$({ /usr/bin/time -f "%e" "${cmd[@]}" "$file" 2> time.txt; } 2>&1)
-        elapsed=$(cat time.txt)
-        rm time.txt
-    else
-        output=$("${cmd[@]}" "$file")
-        elapsed="N/A"
-    fi
-
-    RESULTS+=("$lang|$file|${cmd[*]}|$output|$elapsed")
-    echo "$lang ($file) ran in $elapsed seconds."
+    RESULTS+=("$lang|${cmd[*]} $file|$output|$elapsed")
 }
 
 run_c() {
@@ -56,53 +40,38 @@ run_c() {
     local base="$(basename "$file" .c)"
     local bin="$BUILD_DIR/$base"
 
-    if ! command_exists gcc; then
-        RESULTS+=("C|$file|gcc|COMMAND NOT FOUND|N/A")
-        echo "gcc not found, skipping C."
-        return
-    fi
-
-    if [ ! -f "$file" ]; then
-        RESULTS+=("C|$file|gcc|FILE NOT FOUND|N/A")
-        echo "C source file not found: $file"
+    if ! command_exists gcc || [ ! -f "$file" ]; then
+        RESULTS+=("C|gcc $file && $bin|N/A|N/A")
         return
     fi
 
     mkdir -p "$BUILD_DIR"
 
-    local compile_time
+    local compile_time run_time run_output
+
     /usr/bin/time -f "%e" gcc "$file" -o "$bin" 2> time_compile.txt
     compile_time=$(cat time_compile.txt)
-    rm time_compile.txt
+    rm -f time_compile.txt
 
-    if [ ! -x "$bin" ]; then
-        RESULTS+=("C|$file|gcc|COMPILATION FAILED|N/A")
-        echo "Compilation failed for $file"
-        return
-    fi
-
-    local run_output
-    local run_time
     run_output=$({ /usr/bin/time -f "%e" "$bin" 2> time_run.txt; } 2>&1)
     run_time=$(cat time_run.txt)
-    rm time_run.txt
+    rm -f time_run.txt
 
-    RESULTS+=("C|$file|gcc|$run_output|${run_time} (compile: $compile_time)")
-    echo "C ($file) compiled in $compile_time s and ran in $run_time s."
+    local time_combined="${run_time} (compiled in ${compile_time})"
+    RESULTS+=("C|gcc $file && $bin|$run_output|$time_combined")
 }
 
 print_results() {
-    while IFS='|' read -r lang file cmd result time; do
+    while IFS='|' read -r lang cmd result time; do
         local res_disp="$result"
         if [ ${#res_disp} -gt 10 ]; then
             res_disp="${res_disp:0:10}..."
         fi
-        printf "%-10s | %-40s | %-30s | %-10s | %-20s\n" "$lang" "$file" "$cmd" "$res_disp" "$time"
+        printf "%-10s | %-70s | %-10s | %-20s\n" "$lang" "$cmd" "$res_disp" "$time"
     done
 }
 
-echo "Running tests for base: $BASE"
-echo
+echo "Running $BASE experiment"
 
 run_and_time "Andy" "$SRC_DIR/$BASE.andy" andy
 run_and_time "Python3" "$SRC_DIR/$BASE.py" python3
@@ -110,11 +79,11 @@ run_and_time "Ruby" "$SRC_DIR/$BASE.rb" ruby
 run_c "$SRC_DIR/$BASE.c"
 
 echo
-echo "=== Results (sorted by descending time) ==="
+echo "=== Results (sorted by ascending time) ==="
 echo
-printf "%-10s | %-40s | %-30s | %-10s | %-20s\n" "Language" "File" "Command" "Result" "Time (s)"
-echo "--------------------------------------------------------------------------------------------------------------"
+printf "%-10s | %-70s | %-10s | %-20s\n" "Language" "Command" "Result" "Time (seconds)"
+echo "-----------------------------------------------------------------------------------------------------------------------------"
 
 for row in "${RESULTS[@]}"; do
     echo "$row"
-done | sort -t'|' -k5,5nr | print_results
+done | sort -t'|' -k4,4n | print_results

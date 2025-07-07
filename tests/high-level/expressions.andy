@@ -1,9 +1,0 @@
-import(:tests)
-
-describe('Expressions') {
-    describe('1+1') {
-        it('should evaluate to 2') {
-            expect(1 + 1).to_eq(2);
-        }
-    }
-}

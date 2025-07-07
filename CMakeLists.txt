@@ -176,34 +176,5 @@ install(TARGETS andy-lang
     EXPORT andy-langTargets
 )
 
-# Only for debug build
-# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     set(EXTENSIONS_FOLDER "${ANDYLANG_PARENT_DIRECTORY}/andylang-extensions")
-
-#     file(GLOB EXTENSIONS "${EXTENSIONS_FOLDER}/*")
-
-#     foreach(EXTENSION ${EXTENSIONS})
-#         if(IS_DIRECTORY ${EXTENSION})
-#             # Get name from extension from the folder
-#             get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
-#             include("${EXTENSION}/CMakeLists.txt")
-#             target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
-#         endif()
-#     endforeach()
-# endif()
-
-
-add_executable(read-file-experiment
-    ${CMAKE_CURRENT_LIST_DIR}/experiments/read_file.cpp
-)
-
-add_executable(is-alpha-experiment
-    ${CMAKE_CURRENT_LIST_DIR}/experiments/is_alpha.cpp
-)
-
-add_executable(is-alnum-or-underscore
-    ${CMAKE_CURRENT_LIST_DIR}/experiments/is_alnum_or_underscore.cpp
-)
-
 andy_tests_configure(andy)
 andy_tests_configure(andy-lang)

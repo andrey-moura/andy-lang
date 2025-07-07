@@ -1,0 +1,55 @@
+import :tests
+
+fn count_up_to(limit)
+    var i = 0
+    var result = []
+
+    loop while i < limit
+        result.push(i)
+        i += 1
+    end
+
+    return result
+end
+
+fn count_down_from(start)
+    var i = start
+    var result = []
+
+    loop until i == 0
+        result.push(i)
+        i -= 1
+    end
+
+    return result
+end
+
+fn iterate_list()
+    var result = []
+
+    loop for i in [1, 2, 3]
+        result.push(i)
+    end
+
+    return result
+end
+
+describe 'loop' do
+    context 'when using while' do
+        it 'should collect numbers from 0 to 9' do
+            expect(count_up_to(10)).to eq([0,1,2,3,4,5,6,7,8,9])
+        end
+    end
+
+    context 'when using until' do
+        it 'should count down from a number until zero' do
+            expect(count_down_from(5)).to eq([5,4,3,2,1])
+        end
+    end
+
+    context 'when using for' do
+        it 'should iterate over a fixed array' do
+            expect(iterate_list()).to eq([1, 2, 3])
+        end
+    end
+end
