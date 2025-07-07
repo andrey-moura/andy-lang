@@ -1,4 +1,3 @@
-
 #include <filesystem>
 
 #include <uva/file.hpp>
@@ -11,6 +10,22 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
     auto FileClass = std::make_shared<andy::lang::structure>("File");
 
     FileClass->class_methods = {
+        { "exists?", andy::lang::method("exists?", andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            std::filesystem::path path;
+            std::shared_ptr<andy::lang::object> path_object = params[0];
+            if(path_object->cls == interpreter->StringClass) {
+                path = path_object->as<std::string>();
+            } else if(path_object->cls == interpreter->PathClass) {
+                path = path_object->as<std::filesystem::path>();
+            } else {
+                throw std::runtime_error("invalid path");
+            }
+            if(std::filesystem::exists(path) && std::filesystem::is_regular_file(path)) {
+                return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+            } else {
+                return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+            }
+        })},
         { "read", andy::lang::method("read",andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::filesystem::path path;
             std::shared_ptr<andy::lang::object> path_object = params[0];

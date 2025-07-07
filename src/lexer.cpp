@@ -3,23 +3,22 @@
 #include <algorithm>
 
 // Permitted delimiters: (){};:,
-const static uint64_t is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const static uint64_t __is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+const static bool* is_delimiter_lookup = (bool*)__is_delimiter_lookup;
 const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x101010001010000, 0, 0x101010100000000, 0, 0, 0, 0x10001000000, 0, 0, 0, 0x100000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 // Keep ordered as it is used in binary search
 const static std::vector<std::string_view> keywords_lookup = {
     "break",
-    "class",
     "else",
-    "for",
-    "foreach",
-    "function",
+    "fn",
     "if",
+    "loop",
     "namespace",
-    "new",
     "return",
     "static",
+    "type",
     "var",
-    "while",
+    "within",
     "yield"
 };
 const static std::map<std::string_view, andy::lang::lexer::operator_type> string_to_operator_lookup = {
@@ -42,9 +41,12 @@ const static std::map<std::string_view, andy::lang::lexer::operator_type> string
     { "--", andy::lang::lexer::operator_type::operator_decrement     },
 };
 
-static bool is_delimiter(const char& c)
+static size_t is_delimiter(std::string_view str)
 {
-   return ((bool*)is_delimiter_lookup)[(uint8_t)c];
+    if(str.starts_with("end")) {
+        return 3;
+    }
+    return (size_t)((bool*)is_delimiter_lookup)[(uint8_t)str.front()];
 }
 
 static bool is_operator(const char& c) {
@@ -130,29 +132,33 @@ void andy::lang::lexer::discard_whitespaces()
     });
 }
 
-void andy::lang::lexer::read()
+void andy::lang::lexer::read(size_t c)
 {
-    // If it needs to read a character, and the buffer is empty, it is an error.
-    if(m_current.empty()) {
-        throw std::runtime_error("lexer: unexpected end of file");
+    for(size_t i = 0; i < c; i++) {
+        // If it needs to read a character, and the buffer is empty, it is an error.
+        if(m_current.empty()) {
+            throw std::runtime_error("lexer: unexpected end of file");
+        }
+        
+        const char& c = m_current.front();
+
+        if(m_buffer.empty()) {
+            m_buffer = std::string_view(m_current.data(), 1);
+        } else {
+            m_buffer = std::string_view(m_buffer.data(), m_buffer.size() + 1);
+        }
+
+        update_start_position(c);
+
+        m_current.remove_prefix(1);
     }
-    
-    const char& c = m_current.front();
-
-    if(m_buffer.empty()) {
-        m_buffer = std::string_view(m_current.data(), 1);
-    } else {
-        m_buffer = std::string_view(m_buffer.data(), m_buffer.size() + 1);
-    }
-
-    update_start_position(c);
-
-    m_current.remove_prefix(1);
 }
 
 void andy::lang::lexer::push_token(token_position start, token_type type, token_kind kind, operator_type op)
 {
     token t(start, m_start, m_buffer, type, kind, m_file_name, m_source, op);
+
+    t.index = m_tokens.size();
 
     m_buffer = "";
 
@@ -228,9 +234,21 @@ void andy::lang::lexer::read_next_token()
 
     const char& c = m_current.front();
 
-    // Ordered by less expensive checks first
+    // The comment starts with /, which is the division operator. So we need to check if it is a comment first.
+    if(c == '/' && m_current.size() > 2 && m_current[1] == '/') {
+        discard();
+        discard();
 
-    if(is_delimiter(c)) {
+        read_while([this](const char& c) {
+            return m_current.size() && c != '\n';
+        });
+
+        push_token(start, token_type::token_comment);
+        return;
+    }
+
+    size_t delimiter_size = is_delimiter(m_current);
+    if(delimiter_size) {
         if(c == ':' && m_current.size() >= 1) {
             if(isalpha(m_current[1])) {
                 discard();
@@ -241,21 +259,8 @@ void andy::lang::lexer::read_next_token()
                 return;
             }
         }
-        read();
+        read(delimiter_size);
         push_token(start, token_type::token_delimiter);
-        return;
-    }
-
-    // The comment starts with /, which is the division operator. So we need to check if it is a comment first.
-    if(c == '/' && m_current.size() > 2 && m_current[1] == '/') {
-        discard();
-        discard();
-
-        read_while([](const char& c) {
-            return c != '\n';
-        });
-
-        push_token(start, token_type::token_comment);
         return;
     }
 
@@ -287,11 +292,11 @@ void andy::lang::lexer::read_next_token()
                 return isdigit(c);
             });
 
-            kind = token_kind::token_float;
+            kind = token_kind::token_double;
             
             if(m_current.front() == 'f') {
                 discard();
-                kind = token_kind::token_double;
+                kind = token_kind::token_float;
             }
         }
 
@@ -360,6 +365,13 @@ void andy::lang::lexer::read_next_token()
     if(m_buffer.empty()) {
         read();
         push_token(start, token_type::token_undefined);
+        return;
+    }
+
+    if(m_current.size() > 1 && (m_current.front() == '?' || m_current.front() == '!')) {
+        // It is identifier ended with ? or !
+        read();
+        push_token(start, token_type::token_identifier);
         return;
     }
 
@@ -432,6 +444,15 @@ const andy::lang::lexer::token& andy::lang::lexer::previous_token()
     --iterator;
 
     return m_tokens[iterator - 1];
+}
+
+const andy::lang::lexer::token& andy::lang::lexer::see_previous(int offset) const
+{
+    if(iterator - offset < 1) {
+        throw std::runtime_error("unexpected begin of file");
+    }
+
+    return m_tokens[iterator - offset - 1];
 }
 
 void andy::lang::lexer::rollback_token()

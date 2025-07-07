@@ -76,6 +76,7 @@ namespace andy
                 }
             protected:
                 andy::lang::lexer::token m_token;
+                andy::lang::lexer::token m_end_token;
                 ast_node_type m_type;
                 std::vector<ast_node> m_children;
             public:
@@ -95,6 +96,10 @@ namespace andy
                 {
                     m_token = std::move(__token);
                 }
+                void set_end_token(andy::lang::lexer::token __token)
+                {
+                    m_end_token = std::move(__token);
+                }
             // Getters
             public:
                 andy::lang::lexer::token& token() {
@@ -103,6 +108,14 @@ namespace andy
 
                 const andy::lang::lexer::token& token() const {
                     return m_token;
+                }
+
+                andy::lang::lexer::token& end_token() {
+                    return m_end_token;
+                }
+
+                const andy::lang::lexer::token& end_token() const {
+                    return m_end_token;
                 }
 
                 std::vector<ast_node>& childrens() {
@@ -184,15 +197,11 @@ namespace andy
             andy::lang::parser::ast_node parse_all(andy::lang::lexer& lexer);
 
         // Commons extract functions used by parsers
-        protected:
+        public:
             /// @brief Extract a function call parameters. You must consume the ')' token.
             /// @param lexer The lexer.
             /// @return A function call parameters node.
             andy::lang::parser::ast_node extract_fn_call_params(andy::lang::lexer& lexer);
-            /// @brief Extract a function call.
-            /// @param lexer The lexer.
-            /// @return A function call node.
-            andy::lang::parser::ast_node extract_fn_call(andy::lang::lexer& lexer);
             /// @brief Extract a pair
             /// @param lexer The lexer.
             /// @return The pair node.
@@ -223,12 +232,14 @@ namespace andy
             andy::lang::parser::ast_node parse_keyword_return(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_if(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_namespace(andy::lang::lexer& lexer);
+            andy::lang::parser::ast_node parse_keyword_loop(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_for(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_foreach(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_while(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_break(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_static(andy::lang::lexer& lexer);
             andy::lang::parser::ast_node parse_keyword_yield(andy::lang::lexer& lexer);
+            andy::lang::parser::ast_node parse_keyword_within(andy::lang::lexer& lexer);
         };
     }
 }; // namespace andy

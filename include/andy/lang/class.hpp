@@ -28,16 +28,10 @@ namespace andy {
             std::map<std::string_view, andy::lang::method> instance_methods;
             std::map<std::string_view, andy::lang::method> class_methods;
 
-            std::map<std::string_view, std::shared_ptr<andy::lang::structure>> instance_variables;
+            std::map<std::string_view, const andy::lang::parser::ast_node*> instance_variables;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> class_variables;
 
             var(*object_to_var)(std::shared_ptr<const andy::lang::object> obj) = nullptr;
-
-            // std::shared_ptr<andy::lang::object> call(const andy::lang::method& method, const var& params= null);
-            // std::shared_ptr<andy::lang::object> call(const std::string& method, const var& params = null)
-            // {
-            //     return call(methods[method], params);
-            // }
         public:
             static void create_structures(andy::lang::interpreter* interpreter);
         };

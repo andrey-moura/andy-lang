@@ -1,0 +1,62 @@
+import :tests
+
+fn add(a, b)
+    return a + b
+end
+
+fn is_even(n)
+    return (n % 2) == 0
+end
+
+fn greet(name)
+    return 'Hello, ' + name + '!'
+end
+
+describe 'fn' do
+    context 'when defining a function with parameters' do
+        it 'allows calling the function with arguments and returning a value' do
+            expect(add(2, 3)).to eq(5)
+            expect(add(-1, 1)).to eq(0)
+        end
+    end
+
+    context 'when using arithmetic and comparison inside a function' do
+        it 'supports modulo and equality operations in return expressions' do
+            expect(is_even(4)).to eq(true)
+            expect(is_even(3)).to eq(false)
+        end
+    end
+
+    context 'when returning strings and using concatenation' do
+        it 'supports string literals and concatenation in return statements' do
+            expect(greet('Alice')).to eq('Hello, Alice!')
+        end
+    end
+
+    context 'when a function with the same name is defined in a local scope' do
+        it 'prefers the inner function over the outer one' do
+            fn outer
+                fn add(a, b)
+                    return a * b
+                end
+
+                return add(3, 4)
+            end
+
+            expect(outer()).to eq(12)
+            expect(add(3, 4)).to eq(7)
+        end
+    end
+
+    context 'when returning from a function' do
+        it 'immediately terminates the function and returns the value' do
+            fn f
+                var x = 123
+                return x
+                x = 456 
+            end
+
+            expect(f()).to eq(123)
+        end
+    end
+end

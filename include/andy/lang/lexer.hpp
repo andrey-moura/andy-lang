@@ -85,12 +85,17 @@ namespace andy
                 std::string string_literal;
             public:
                 std::string_view m_file_name;
+                size_t index;
             public:
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op = operator_type::operator_max);
                 token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);
                 token(token&& other) = default;
                 token(const token&) = default;
-                token() = default;
+                token() 
+                    : m_type(token_type::token_undefined), m_kind(token_kind::token_null)
+                    {
+
+                    }
                 ~token() = default;
             public:
             public:
@@ -151,8 +156,9 @@ namespace andy
             /// @brief Discard all whitespaces from the m_current.
             void discard_whitespaces();
 
-            /// @brief Read the first character from the m_current, stores it in m_buffer and update the start position.
-            void read();
+            /// @brief Read the specifed number of characters from the m_current, stores it in m_buffer and update the start position.
+            /// @param c The number of characters to read.
+            void read(size_t c = 1);
 
             template<typename T>
             void discard_while(T&& condition) {
@@ -163,8 +169,15 @@ namespace andy
 
             template<typename T>
             void read_while(T&& condition) {
-                while(m_current.size() && condition(m_current.front())) {
+                // Read while should not throw exceptions. It's OK to have an identifier in the end of the file.
+                //if(m_current.empty()) {
+                    //throw std::runtime_error("lexer: unexpected end of file");
+                //}
+                while(condition(m_current.front())) {
                     read();
+                    //if(m_current.empty()) {
+                        //throw std::runtime_error("lexer: unexpected end of file");
+                    //}
                 }
             }
 
@@ -186,13 +199,17 @@ namespace andy
             andy::lang::lexer::token& next_token();
             /// @brief Return the next token without incrementing the iterator.
             const andy::lang::lexer::token& see_next(int offset = 0) const;
+            /// @brief Return the previous token without incrementing the iterator.
+            /// @param offset The offset from the current iterator.
+            /// @return The previous token.
+            const andy::lang::lexer::token& see_previous(int offset = 0) const;
             /// @brief Decrement the iterator and return the next token.
             /// @return The previous token.
             const andy::lang::lexer::token& previous_token();
             /// @brief The current token.
             /// @return The current token.
             const andy::lang::lexer::token& current_token() const { return m_tokens[iterator-1]; }
-            bool has_previous_token() const { return iterator > 0; }
+            bool has_previous_token(int offset = 0) const { return iterator > offset; }
             /// @brief Rollback the token iterator. The next call to next_token will return the same token.
             void rollback_token();
             /// @brief Check if there is a next token.

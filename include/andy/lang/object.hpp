@@ -44,9 +44,12 @@ namespace andy
             void (*native_destructor)(object* obj) = nullptr;
             // The object move ptr.
             void (*native_move)(object* obj, object&& other) = nullptr;
-            
-            void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call = {});
+#ifdef __UVA_DEBUG__
+            int* native_int = (int*)native;
+#endif
         public:
+            void initialize(andy::lang::interpreter* interpreter);
+            void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call);
             object& operator=(object&& other)
             {
                 cls = other.cls;
@@ -181,10 +184,11 @@ namespace andy
 
                 if constexpr(!std::is_arithmetic<T>::value) {
                     obj->native_move = [](object* obj, object&& other) {
-                        if(!obj->native_ptr) {
-                            new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
+                        throw std::runtime_error("not implemented");
+                        //if(!obj->native_ptr) {
+                            //new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
                             // Let the destructor of the other object to be called
-                        }
+                        //}
                     };
                 }
             }

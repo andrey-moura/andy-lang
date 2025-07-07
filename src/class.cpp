@@ -1,23 +1,25 @@
-#include <andy/lang/lang.hpp>
-#include <andy/lang/interpreter.hpp>
+#include "andy/lang/lang.hpp"
+#include "andy/lang/interpreter.hpp"
 
 #include <uva/console.hpp>
 
 extern std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_integer_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_double_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_andy_config_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_class_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_double_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_integer_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpreter*);
+extern std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter*);
 
 void andy::lang::structure::create_structures(andy::lang::interpreter* interpreter)
 {
@@ -36,6 +38,10 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
     interpreter->load(interpreter->PathClass        = create_path_class        (interpreter) );
     interpreter->load(interpreter->AndyConfigClass  = create_andy_config_class (interpreter) );
     interpreter->load(interpreter->ClassClass       = create_class_class       (interpreter) );
+
+    // These are not named on Interpreter because they are not used too often
+    // Some of the one which are named should be moved to here soon.
+    interpreter->load(create_directory_class(interpreter));
 }
 
 andy::lang::structure::structure(const std::string& __name, std::vector<andy::lang::method> __methods)

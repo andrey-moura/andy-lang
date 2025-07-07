@@ -1,1 +1,2 @@
-puts('Hello from minimal!');
+// This is a minimal Andy program
+out 'Hello from minimal!'

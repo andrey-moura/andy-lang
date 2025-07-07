@@ -1,0 +1,21 @@
+
+var condition = true
+
+loop while condition
+    out 'This should be printed one time'
+    condition = false // Change the condition to exit the loop
+end
+
+loop until condition
+    out 'This also should be printed one time'
+    condition = true // Change the condition to exit the loop
+end
+
+out 'The following should count till 3'
+loop for i in [1, 2, 3]
+    out i
+end
+
+loop times 5
+    out 'This should be printed 5 times'
+end

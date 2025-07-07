@@ -22,7 +22,7 @@ endif()
 project(andy-lang VERSION ${ANDYLANG_VERSION})
 
 option(BUILD_ANDY_CPP "Build andyc++" OFF)
-option(BUILD_ANDY_ANALYZER "Build andy-analyzer" OFF)
+option(BUILD_ANDY_ANALYZER "Build andy-analyzer" ON)
 
 # Get the parent directory
 get_filename_component(ANDYLANG_PARENT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
@@ -33,31 +33,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
 
-# Find all files under ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs
-file(GLOB BUILTIN_LIBS "${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/*")
-# Write src/builtin_libs.cpp file
-file(WRITE ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "// This file is auto-generated. Changes will be lost.\n\n")
-# Includes
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "#include <memory>\n\n")
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "#include <andy/lang/extension.hpp>\n\n")
-
-foreach(BUILTIN_LIB ${BUILTIN_LIBS})
-    # Get stem from extension from the folder
-    get_filename_component(BUILTIN_LIB_NAME ${BUILTIN_LIB} NAME_WE)
-    # Write extern declaration
-    file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "extern std::shared_ptr<andy::lang::extension> create_${BUILTIN_LIB_NAME}();\n")
-endforeach()
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "\n")
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "void create_builtin_libs() {\n")
-foreach(BUILTIN_LIB ${BUILTIN_LIBS})
-    # Get stem from extension from the folder
-    get_filename_component(BUILTIN_LIB_NAME ${BUILTIN_LIB} NAME_WE)
-    # Write creation
-    file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "    andy::lang::extension::add_builtin(create_${BUILTIN_LIB_NAME}());\n")
-    
-endforeach(BUILTIN_LIB ${BUILTIN_LIBS})
-file(APPEND ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp "}")
+include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
 
 add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
@@ -72,34 +50,44 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp
 
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/true_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/string_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/double_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/std_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/dictionary_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/system_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/andy_config_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/class_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/dictionary_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/directory_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/double_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/std_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/string_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/system_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/true_class.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
-    ${BUILTIN_LIBS}
+    
+    ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/tests_extension.cpp
+
+    ${ANDY_UI_EXTENSION_SOURCES}
+
     $<TARGET_OBJECTS:uva-file>
     $<TARGET_OBJECTS:uva-core>
     $<TARGET_OBJECTS:uva-console>
+    $<TARGET_OBJECTS:uva-binary>
 )
+
+target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${SDL3_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
 
-if(BUILD_ANDY_CPP)
+target_link_libraries(andy PRIVATE andy-lang ${wxWidgets_LIBRARIES})
+
+if(FALSE)
     find_package(Clang REQUIRED)
 
     include_directories(${CLANG_INCLUDE_DIRS})
@@ -187,22 +175,6 @@ install(FILES
 install(TARGETS andy-lang
     EXPORT andy-langTargets
 )
-
-# Only for debug build
-# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-#     set(EXTENSIONS_FOLDER "${ANDYLANG_PARENT_DIRECTORY}/andylang-extensions")
-
-#     file(GLOB EXTENSIONS "${EXTENSIONS_FOLDER}/*")
-
-#     foreach(EXTENSION ${EXTENSIONS})
-#         if(IS_DIRECTORY ${EXTENSION})
-#             # Get name from extension from the folder
-#             get_filename_component(EXTENSION_NAME ${EXTENSION} NAME)
-#             include("${EXTENSION}/CMakeLists.txt")
-#             target_link_libraries(andy-lang PRIVATE ${EXTENSION_NAME})
-#         endif()
-#     endforeach()
-# endif()
 
 andy_tests_configure(andy)
 andy_tests_configure(andy-lang)

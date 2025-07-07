@@ -28,15 +28,21 @@ void andy::lang::extension::add_builtin(std::shared_ptr<andy::lang::extension> e
     builtins.insert({ extension->name(), extension });
 }
 
-void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::string_view module)
+andy::lang::extension* find_builtin(std::map<std::string_view, std::shared_ptr<andy::lang::extension>>& builtins, std::string_view module)
 {
     auto it = builtins.find(module);
-
     if(it != builtins.end()) {
-        interpreter->load_extension(it->second.get());
-        return;
+        return it->second.get();
     }
+    return nullptr;
+}
 
+std::filesystem::path find_module_path(
+    std::map<std::string_view, std::shared_ptr<andy::lang::extension>>& builtins,
+    std::string_view module,
+    std::filesystem::path& current_path
+)
+{
     std::filesystem::path executable_path = uva::file::executable_path();
     std::filesystem::path module_path = executable_path;
 
@@ -58,17 +64,46 @@ void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::st
     module_path.replace_extension(module_extension);
 
     if(!std::filesystem::exists(module_path)) {
-        std::filesystem::path provided_extension_path = interpreter->input_file_path.parent_path();
+        std::filesystem::path provided_extension_path = current_path;
         provided_extension_path /= "lib";
         provided_extension_path /= "bin";
         provided_extension_path /= library_name;
         provided_extension_path.replace_extension(module_extension);
 
-        if(!std::filesystem::exists(provided_extension_path)) {
-            throw std::runtime_error("Module " + std::string(module) + " not found. Expect it to be builtin or to be located at " + module_path.string() + " or " + provided_extension_path.string());
-        }
+        return provided_extension_path;
+    }
 
-        module_path = provided_extension_path;
+    return module_path;
+}
+
+bool andy::lang::extension::exists(std::filesystem::path current_dir, std::string_view module)
+{
+    auto it = builtins.find(module);
+    if(it != builtins.end()) {
+        return true;
+    }
+
+    std::filesystem::path module_path = find_module_path(builtins, module, current_dir);
+
+    if(!std::filesystem::exists(module_path)) {
+        return false;
+    }
+
+    return true;
+}
+
+void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::string_view module)
+{
+    andy::lang::extension* builtin = find_builtin(builtins, module);
+    if(builtin) {
+        interpreter->load_extension(builtin);
+        return;
+    }
+
+    std::filesystem::path module_path = find_module_path(builtins, module, interpreter->input_file_path);
+
+    if(!std::filesystem::exists(module_path)) {
+        throw std::runtime_error("Module " + std::string(module) + " not found. Expect it to be builtin or to be located at " + module_path.string());
     }
 
     std::string module_path_str = module_path.string();

@@ -29,6 +29,7 @@ namespace andy {
         public:
             static void add_builtin(std::shared_ptr<andy::lang::extension> extension);
             static void import(andy::lang::interpreter* interpreter, std::string_view module);
+            static bool exists(std::filesystem::path current_dir, std::string_view module);
         public:
             const std::string& name() const { return m_name; }
         protected:

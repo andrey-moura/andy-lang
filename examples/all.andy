@@ -1,1 +1,1 @@
-system("for i in examples/*.andy; do if [ $i != examples/all.andy ]; then andy $i; fi; done");
+system('for i in examples/*.andy; do if [ $i != examples/all.andy ]; then andy $i; fi; done');

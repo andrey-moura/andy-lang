@@ -1,21 +1,29 @@
-// You can declare a base class in a separate file and #include it in your main file
-class Base
-{
-    function new() {
+// This is a simple example demonstrating base class usage in Andy.
 
-    }
+// Base class (superclass)
+type Animal
+  fn speak
+    out 'Makes a sound...'
+  end
+end
 
-    function say_hello() {
-        puts("Hello from base class!");
-    }
-}
+// Subclass that overrides the method
+type Dog extends Animal
+  fn speak
+    out 'Barks!'
+  end
+end
 
-// You can use 'extends', ':' and '<' to declare a base class
-class Derived extends Base {
-    function new() {
-        super();
-    }
-}
+// Subclass that inherits the method without overriding
+type Cat extends Animal
+end
 
-var derived = new Derived();
-derived.say_hello();
+// Testing the classes
+var animal = Animal.new
+animal.speak    // => Makes a sound...
+
+var dog = Dog.new
+dog.speak       // => Barks!
+
+var cat = Cat.new
+cat.speak       // => Makes a sound... (inherited from Animal)

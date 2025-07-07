@@ -1,9 +1,0 @@
-import(:tests)
-
-describe('Comment') {
-    it('should ignore the comment') {
-        var test = 0;
-        //test = 1;
-        expect(test).to_eq(0);
-    }
-}

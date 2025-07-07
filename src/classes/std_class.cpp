@@ -34,7 +34,7 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
             return nullptr;
         })},
 
-        { "puts", andy::lang::method("puts",andy::lang::method_storage_type::class_method, {"message"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        { "out", andy::lang::method("out",andy::lang::method_storage_type::class_method, {"message"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> obj = params[0];
             if(obj->cls == interpreter->StringClass) {
                 std::cout << obj->as<std::string>() << std::endl;

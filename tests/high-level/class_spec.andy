@@ -1,56 +1,92 @@
-import(:tests)
+import :tests
 
-class Test {
-    function instance_fn() {
-        return 1;
-    }
+describe 'type' do
+    context 'when creating a new instance' do
+        it 'should initialize instance variables by default value' do
+            type Foo
+                var x = 42
+            end
 
-    static function static_fn() {
-        return 1;
-    }
-}
+            var f = Foo.new
+            expect(f.x).to eq(42)
+        end
 
-class Base {
-    var base_var = null;
-    function new(value) {
-        base_var = value;
-    }
-    function base_fn() {
-        return base_var;
-    }
-}
+        it 'should initialize instance variables by the constructor' do
+            type Foo
+                var x = null
+                fn new
+                    x = 123
+                end
+            end
 
-class Derived extends Base {
-    var derived_var = null;
-    function new() {
-        derived_var = Random.integer();
-        super(derived_var);
-    }
-    function derived_fn() {
-        return derived_var;
-    }
-}
+            var f = Foo.new
+            expect(f.x).to eq(123)
+        end
+    end
 
-describe('Class') {
-    describe('instance methods') {
-        it('should call an instance method') {
-            var test = new Test();
-            expect(test.instance_fn()).to_eq(1);
-        }
-    }
-    describe('static methods') {
-        it('should call a static method') {
-            expect(Test.static_fn()).to_eq(1);
-        }
-    }
-    describe('inheritance') {
-        it('should call a base class method') {
-            var test = new Derived();
-            expect(test.base_fn()).to_eq(test.derived_var);
-        }
-        it('should call a derived class method') {
-            var test = new Derived();
-            expect(test.derived_fn()).to_eq(test.derived_var);
-        }
-    }
-}
+    context 'when defining methods on a type' do
+        it 'should allow modifying internal state via instance methods' do
+            type Counter
+                var count = 0
+
+                fn inc
+                    count += 1
+                end
+            end
+
+            var c = Counter.new
+            c.inc
+            c.inc
+            expect(c.count).to eq(2)
+        end
+    end
+
+    context 'when using method parameters' do
+        it 'should allow passing and using arguments in methods' do
+            type Multiplier
+                var result = 1
+
+                fn mul(n)
+                    result *= n
+                end
+            end
+
+            var m = Multiplier.new
+            m.mul 5
+            m.mul 2
+            expect(m.result).to eq(10)
+        end
+    end
+
+    context 'when using static methods' do
+        it 'should allow calling methods without instantiating the type' do
+            type Math
+                static fn double(n)
+                    return n * 2
+                end
+            end
+
+            expect(Math.double(4)).to eq(8)
+        end
+    end
+
+    context 'when accessing multiple instances' do
+        it 'should isolate state between instances' do
+            type Box
+                var value = null
+                fn set(v)
+                    value = v
+                end
+            end
+
+            var a = Box.new
+            var b = Box.new
+
+            a.set 10
+            b.set 20
+
+            expect(a.value).to eq(10)
+            expect(b.value).to eq(20)
+        end
+    end
+end

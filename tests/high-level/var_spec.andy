@@ -1,0 +1,70 @@
+import :tests
+
+describe 'var' do
+    context 'when declaring a variable with an initial value' do
+        it 'stores the value and allows reading it later' do
+            var x = 10
+            expect(x).to eq(10)
+        end
+    end
+
+    context 'when reassigning a variable' do
+        it 'updates the stored value' do
+            var x = 5
+            x = 20
+            expect(x).to eq(20)
+        end
+    end
+
+    context 'when declaring multiple variables' do
+        it 'stores and tracks each independently' do
+            var a = 1
+            var b = 2
+            expect(a).to eq(1)
+            expect(b).to eq(2)
+        end
+    end
+
+    context 'when using variables in expressions' do
+        it 'allows their values to be used in calculations' do
+            var x = 3
+            var y = 4
+            var z = (x * y) + 2
+            expect(z).to eq(14)
+        end
+    end
+
+    context 'when variables are declared inside a function' do
+        // There is no away to check if a variable is defined
+        pending 'limits their scope to the function body' do
+            fn test_scope
+                var inner = 99
+                return inner
+            end
+
+            expect(test_scope()).to eq(99)
+            expect(defined?(inner)).to eq(false)
+        end
+    end
+
+    context 'when shadowing an outer variable' do
+        it 'uses the inner variable within the inner scope' do
+            var value = 100
+
+            fn test_shadow
+                var value = 200
+                return value
+            end
+
+            expect(test_shadow()).to eq(200)
+            expect(value).to eq(100)
+        end
+    end
+
+    context 'when declaring without initialization (if allowed)' do
+        it 'defaults to null or undefined value' do
+            var a = null
+            expect(a).to eq(null)
+        end
+    end
+end

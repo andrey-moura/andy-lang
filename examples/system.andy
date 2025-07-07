@@ -1,9 +1,7 @@
-if(System.Linux?)
-{
-    puts('Hello from Linux!');
-}
+if System.Linux?
+    out 'Hello from Linux!'
+end
 
-if(System.Windows?)
-{
-    puts('Hello from Windows!');
-}
+if System.Windows?
+    out 'Hello from Windows!'
+end
