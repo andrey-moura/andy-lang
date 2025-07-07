@@ -52,6 +52,11 @@ public:
             // { "Dialog",      dialog_obj },
         };
 
+        interpreter->load(UIClass);
+    }
+
+    virtual void start(andy::lang::interpreter* interpreter) override
+    {
         view_folder = std::filesystem::absolute("views");
         std::string schema_content = uva::file::read_all_text<char>(view_folder / "schema.xsd");
         schema = uva::xml::decode(std::move(schema_content));
@@ -72,12 +77,6 @@ public:
                 break;
         }
 #endif
-
-        interpreter->load(UIClass);
-    }
-
-    virtual void start(andy::lang::interpreter* interpreter) override
-    {
         auto UI = interpreter->find_class("UI");
 
         if(!UI) {

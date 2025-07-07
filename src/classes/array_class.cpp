@@ -1,5 +1,5 @@
 #include <andy/lang/lang.hpp>
-
+#include <andy/lang/api.hpp>
 #include <andy/lang/interpreter.hpp>
 
 std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interpreter* interpreter)
@@ -70,15 +70,14 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
             return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, items.size());
         })},
 
-        {"pop_front!", andy::lang::method("pop_front!",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"push", andy::lang::method("push",andy::lang::method_storage_type::instance_method, {"item"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
 
-            if(items.size()) {
-                items.erase(items.begin());
-            }
+            items.push_back(params[0]);
 
             return nullptr;
         })},
+
 
         {"[]", andy::lang::method("[]",andy::lang::method_storage_type::instance_method, {"index"} , [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
@@ -87,6 +86,36 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
 
             return items[index];
         })},
+
+        {"==", andy::lang::method("==",andy::lang::method_storage_type::instance_method, {"other"} , [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+            if(params[0]->cls != interpreter->ArrayClass) {
+                return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+            }
+            auto& other_items = params[0]->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+            if(items.size() != other_items.size()) {
+                return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+            }
+            for(size_t i = 0; i < other_items.size(); ++i) {
+                auto it = items[i]->cls->instance_methods.find("==");
+                if(it == items[i]->cls->instance_methods.end()) {
+                    throw std::runtime_error("class " + items[i]->cls->name + " does not have a method '=='");
+                }
+                andy::lang::function_call call{
+                    "==",
+                    items[i]->cls,
+                    items[i],
+                    &it->second,
+                    { other_items[i] }
+                };
+                auto result = interpreter->call(call);
+                if(result->cls == interpreter->FalseClass) {
+                    result;
+                }
+            }
+            return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+        })},
+
     };
     
     return ArrayClass;

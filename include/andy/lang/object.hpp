@@ -43,7 +43,10 @@ namespace andy
             // The object destructor ptr.
             void (*native_destructor)(object* obj) = nullptr;
             // The object move ptr.
-            void (*native_move)(object* obj, object&& other) = nullptr;    
+            void (*native_move)(object* obj, object&& other) = nullptr;
+#ifdef __UVA_DEBUG__
+            int* native_int = (int*)native;
+#endif
         public:
             void initialize(andy::lang::interpreter* interpreter);
             void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call);

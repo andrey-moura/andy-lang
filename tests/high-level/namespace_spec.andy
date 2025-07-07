@@ -1,0 +1,99 @@
+import :tests
+
+describe 'namespace' do
+    context 'when defining a namespace' do
+        it 'should group definitions under the namespace' do
+            namespace Foo
+                type Bar
+                    var x = 42
+                end
+            end
+
+            var b = Foo.Bar.new
+            expect(b.x).to eq(42)
+        end
+
+        it 'should allow defining multiple items in a single namespace' do
+            namespace Foo
+                type A
+                    var value = 1
+                end
+
+                type B
+                    var value = 2
+                end
+            end
+
+            var a = Foo.A.new
+            var b = Foo.B.new
+
+            expect(a.value).to eq(1)
+            expect(b.value).to eq(2)
+        end
+    end
+
+    context 'when nesting namespaces' do
+        it 'should resolve types inside nested namespaces' do
+            namespace A
+                namespace B
+                    type T
+                        var msg = "ok"
+                    end
+                end
+            end
+
+            var t = A.B.T.new
+            expect(t.msg).to eq("ok")
+        end
+    end
+
+    context 'when accessing a type outside its namespace' do
+        // Andy does not have exceptions, so we can't use `expect do ... end.to raise_error`
+        pending 'should not resolve types without full qualification' do
+            namespace Alpha
+                type Hidden
+                    var data = 123
+                end
+            end
+
+            var h = Hidden.new
+        end
+    end
+
+    context 'when mixing namespaces with static methods' do
+        it 'should allow calling static methods via namespace path' do
+            namespace Utils
+                type Math
+                    static fn triple(n)
+                        return n * 3
+                    end
+                end
+            end
+
+            expect(Utils.Math.triple(3)).to eq(9)
+        end
+    end
+
+    context 'when reusing namespace names' do
+        // Not yet supported in Andy
+        pending 'should append definitions to existing namespaces' do
+            namespace MyLib
+                type A
+                    var v = "A"
+                end
+            end
+
+            namespace MyLib
+                type B
+                    var v = "B"
+                end
+            end
+
+            var a = MyLib.A.new
+            var b = MyLib.B.new
+
+            expect(a.v).to eq("A")
+            expect(b.v).to eq("B")
+        end
+    end
+end

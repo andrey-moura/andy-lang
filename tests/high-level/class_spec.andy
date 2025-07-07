@@ -1,13 +1,92 @@
 import :tests
 
-type Test
-    fn instance_fn
-        return 1
+describe 'type' do
+    context 'when creating a new instance' do
+        it 'should initialize instance variables by default value' do
+            type Foo
+                var x = 42
+            end
+
+            var f = Foo.new
+            expect(f.x).to eq(42)
+        end
+
+        it 'should initialize instance variables by the constructor' do
+            type Foo
+                var x = null
+                fn new
+                    x = 123
+                end
+            end
+
+            var f = Foo.new
+            expect(f.x).to eq(123)
+        end
     end
-end
 
-type Base
-end
+    context 'when defining methods on a type' do
+        it 'should allow modifying internal state via instance methods' do
+            type Counter
+                var count = 0
 
-type Derived extends Base
+                fn inc
+                    count += 1
+                end
+            end
+
+            var c = Counter.new
+            c.inc
+            c.inc
+            expect(c.count).to eq(2)
+        end
+    end
+
+    context 'when using method parameters' do
+        it 'should allow passing and using arguments in methods' do
+            type Multiplier
+                var result = 1
+
+                fn mul(n)
+                    result *= n
+                end
+            end
+
+            var m = Multiplier.new
+            m.mul 5
+            m.mul 2
+            expect(m.result).to eq(10)
+        end
+    end
+
+    context 'when using static methods' do
+        it 'should allow calling methods without instantiating the type' do
+            type Math
+                static fn double(n)
+                    return n * 2
+                end
+            end
+
+            expect(Math.double(4)).to eq(8)
+        end
+    end
+
+    context 'when accessing multiple instances' do
+        it 'should isolate state between instances' do
+            type Box
+                var value = null
+                fn set(v)
+                    value = v
+                end
+            end
+
+            var a = Box.new
+            var b = Box.new
+
+            a.set 10
+            b.set 20
+
+            expect(a.value).to eq(10)
+            expect(b.value).to eq(20)
+        end
+    end
 end
