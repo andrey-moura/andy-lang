@@ -5,8 +5,6 @@
 #include <map>
 #include <memory>
 
-#include <uva/var.hpp>
-
 #include <andy/lang/method.hpp>
 
 namespace andy
@@ -213,8 +211,6 @@ namespace andy
 
                 return *static_cast<T*>((void*)native);
             }
-
-            var to_var() const;
         };
     };
 };

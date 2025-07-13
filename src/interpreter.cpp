@@ -690,8 +690,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
             if(param.has_default_value) {
                 if(param.default_value_node) {
                     call.named_params[param.name] = node_to_object(*param.default_value_node, call.cls, call.object);
-                } else {
-                    call.named_params[param.name] = var_to_object(param.default_value);
                 }
             } else {
                 throw std::runtime_error("function " + std::string(call.method->name) + " called without parameter " + param.name);
@@ -1036,24 +1034,6 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
     }
 
     throw std::runtime_error("interpreter: unknown node type");
-
-    return nullptr;
-}
-
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::var_to_object(var v)
-{
-    switch(v.type)
-    {
-    case var::var_type::string:
-        return andy::lang::object::instantiate(this, StringClass, std::move(v.as<var::string>()));
-        break;
-    case var::var_type::integer:
-        return andy::lang::object::instantiate(this, IntegerClass, v.as<var::integer>());
-        break;
-    default:
-        throw std::runtime_error("interpreter: unknown var type");
-    break;
-    }
 
     return nullptr;
 }

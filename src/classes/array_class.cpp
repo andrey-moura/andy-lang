@@ -5,18 +5,6 @@
 std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interpreter* interpreter)
 {
     auto ArrayClass = std::make_shared<andy::lang::structure>("Array");
-    ArrayClass->object_to_var = [](std::shared_ptr<const andy::lang::object> obj) {
-        std::vector<std::shared_ptr<andy::lang::object>> objects = obj->as<std::vector<std::shared_ptr<andy::lang::object>>>();
-
-        var::array_type result;
-        result.reserve(objects.size());
-
-        for(auto& obj : objects) {
-            result.push_back(obj->to_var());
-        }
-
-        return var(std::move(result));
-    };
 
     ArrayClass->instance_methods = {
         {"to_string", andy::lang::method("to_string",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {

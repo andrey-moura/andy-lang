@@ -5,8 +5,6 @@
 #include <map>
 #include <memory>
 
-#include <uva/var.hpp>
-
 #include <andy/lang/method.hpp>
 
 namespace andy {
@@ -30,8 +28,6 @@ namespace andy {
 
             std::map<std::string_view, const andy::lang::parser::ast_node*> instance_variables;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> class_variables;
-
-            var(*object_to_var)(std::shared_ptr<const andy::lang::object> obj) = nullptr;
         public:
             static void create_structures(andy::lang::interpreter* interpreter);
         };

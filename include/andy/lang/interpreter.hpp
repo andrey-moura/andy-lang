@@ -3,7 +3,6 @@
 #include <vector>
 #include <memory>
 
-#include <uva/var.hpp>
 #include <andy/lang/parser.hpp>
 #include <andy/lang/class.hpp>
 #include <andy/lang/method.hpp>
@@ -125,7 +124,6 @@ namespace andy
                 std::shared_ptr<andy::lang::object>** object_to_call_ptr = nullptr
             );
             const std::shared_ptr<andy::lang::object> node_to_object(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls = nullptr, std::shared_ptr<andy::lang::object> object = nullptr);
-            std::shared_ptr<andy::lang::object> var_to_object(var v);
 
             void load_extension(andy::lang::extension* extension);
 
