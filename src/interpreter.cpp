@@ -195,7 +195,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                                     } else {
                                         method_to_call = &method_it->second;
                                         class_to_call = real_class;
-                                        object_to_call = andy::lang::object::instantiate(this, real_class, nullptr, { andy::lang::object::create(this, StringClass, object_to_call->cls->name) });
+                                        object_to_call = andy::lang::object::create(this, real_class, nullptr);
                                     }
                                 } else {
                                     method_it = object_to_call->cls->instance_methods.find(function_name);
