@@ -20,7 +20,7 @@ namespace andy
             std::shared_ptr<andy::lang::structure> cls;
             std::shared_ptr<andy::lang::object> self;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
-            std::map<std::string_view, andy::lang::method> functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::method>> functions;
             const andy::lang::parser::ast_node* given_block = nullptr;
 
             bool has_returned = false;
