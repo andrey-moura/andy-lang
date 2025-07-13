@@ -126,7 +126,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
     {
         case andy::lang::parser::ast_node_type::ast_node_fn_decl: {
             auto method = execute_method_definition(source_code);
-            current_context().functions[method.name] = std::move(method);
+            current_context().functions[method.name] = std::make_shared<andy::lang::method>(std::move(method));
         }
         break;
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
@@ -148,7 +148,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             std::shared_ptr<andy::lang::structure> class_to_call = nullptr;
 
             if(auto it = current_context().functions.find(source_code.decname()); it != current_context().functions.end()) {
-                method_to_call = &it->second;
+                method_to_call = it->second.get();
             }
 
             const andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
@@ -389,7 +389,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                             auto it = context.functions.find(function_name);
 
                             if(it != context.functions.end()) {
-                                method_to_call = &it->second;
+                                method_to_call = it->second.get();
                                 break;
                             }
 
@@ -893,12 +893,12 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         auto it = current_context().functions.find(node.token().content());
 
         if(it != current_context().functions.end()) {
-            auto& method = it->second;
+            auto method = it->second;
             andy::lang::function_call __call = {
-                method.name,
+                method->name,
                 nullptr,
                 nullptr,
-                &method,
+                method.get(),
                 {},
                 {},
                 node.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
