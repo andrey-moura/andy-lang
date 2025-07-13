@@ -4,17 +4,7 @@
 std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter* interpreter)
 {
     auto DictionaryClass = std::make_shared<andy::lang::structure>("Dictionary");
-    DictionaryClass->object_to_var = [](std::shared_ptr<const andy::lang::object> obj) {
-        andy::lang::dictionary data = obj->as<andy::lang::dictionary>();
 
-        var::dictionary_type result;
-
-        for(auto& pair : data) {
-            result[pair.first->to_var()] = pair.second->to_var();
-        }
-
-        return var(std::move(result));
-    };
     DictionaryClass->instance_methods = {
         {"present?", andy::lang::method("present?",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();

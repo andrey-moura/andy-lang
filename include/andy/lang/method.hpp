@@ -24,15 +24,11 @@ namespace andy {
             {
 
             }
-            fn_parameter(std::string __name, bool __named, var __default_value)
-                : name(std::move(__name)), named(__named), default_value(std::move(__default_value)), has_default_value(true) {
-            }
             fn_parameter(std::string __name, bool __named, const andy::lang::parser::ast_node* __default_value_node)
                 : name(std::move(__name)), named(__named), default_value_node(__default_value_node), has_default_value(true) {
             }
             std::string name;
             bool has_default_value = false;
-            var default_value;
             const andy::lang::parser::ast_node* default_value_node = nullptr;
             bool named = false;
         };

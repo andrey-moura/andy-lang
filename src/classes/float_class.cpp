@@ -6,9 +6,6 @@
 std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interpreter* interpreter)
 {
     std::shared_ptr<andy::lang::structure> FloatClass = std::make_shared<andy::lang::structure>("Float");
-    FloatClass->object_to_var = [](std::shared_ptr<const andy::lang::object> obj) {
-        return var(obj->as<float>());
-    };
 
     FloatClass->instance_methods = {
         {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {

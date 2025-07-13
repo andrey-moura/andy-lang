@@ -98,12 +98,3 @@ bool andy::lang::object::is_present() const
         }
     }
 }
-
-var andy::lang::object::to_var() const
-{
-    if(cls->object_to_var) {
-        return cls->object_to_var(shared_from_this());
-    }
-
-    return std::format("{}#{}", cls->name, (void*)this);
-}
