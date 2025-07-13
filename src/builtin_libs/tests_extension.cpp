@@ -62,7 +62,8 @@ public:
                 auto matcher_params = matcher->instance_variables["params"];
                 if(matcher->instance_variables["name"]->as<std::string>() == "eq") {
                     auto actual_object = object->as<std::shared_ptr<andy::lang::object>>();
-                    auto expected_object = matcher_params->as<std::vector<std::shared_ptr<andy::lang::object>>>()[0];
+                    auto matcher_params_object = matcher_params->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+                    auto expected_object = matcher_params_object[0];
                     auto eq_method = actual_object->cls->instance_methods.find("==");
 
                     if(eq_method == actual_object->cls->instance_methods.end()) {
@@ -108,7 +109,8 @@ public:
         interpreter->StdClass->class_methods["eq"] = andy::lang::method("eq", andy::lang::method_storage_type::class_method, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
-            auto matcher_params_object = andy::lang::object::create(interpreter, interpreter->ArrayClass, call.positional_params[0]);
+            matcher_params.push_back(call.positional_params[0]);
+            auto matcher_params_object = andy::lang::object::create(interpreter, interpreter->ArrayClass, std::move(matcher_params));
             matcher->instance_variables["name"] = andy::lang::api::to_object(interpreter, "eq");
             matcher->instance_variables["params"] = matcher_params_object;
             return matcher;
