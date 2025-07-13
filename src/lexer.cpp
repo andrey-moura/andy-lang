@@ -76,6 +76,23 @@ static andy::lang::lexer::operator_type to_operator(std::string_view str) {
     return it->second;
 }
 
+static bool is_alphanum(const char& c)
+{
+    return c >= 'a' && c <= 'z' ||
+           c >= 'A' && c <= 'Z' ||
+           c >= '0' && c <= '9';
+}
+
+static bool is_alpha(const char& c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+static bool is_digit(const char& c)
+{
+    return c >= '0' && c <= '9';
+}
+
 andy::lang::lexer::lexer(std::string_view __file_name, std::string_view __source)
 {
     tokenize(__file_name, __source);
@@ -128,7 +145,7 @@ const char &andy::lang::lexer::discard()
 void andy::lang::lexer::discard_whitespaces()
 {
     discard_while([](const char& c) {
-        return isspace(c);
+        return c == ' ' || c == '\t' || c == '\r' || c == '\n';
     });
 }
 
@@ -249,10 +266,10 @@ void andy::lang::lexer::read_next_token()
 
     size_t delimiter_size = is_delimiter(m_current);
     if(delimiter_size) {
-        if(c == ':' && m_current.size() >= 1) {
-            if(isalpha(m_current[1])) {
+        if(c == ':' && m_current.size() > 1) {
+            if(is_alpha(m_current[1])) {
                 discard();
-                while(m_current.size() && (isalnum(m_current.front()) || m_current.front() == '_')) { 
+                while(m_current.size() && (is_alphanum(m_current.front()) || m_current.front() == '_')) { 
                     read();
                 }
                 push_token(start, token_type::token_literal, token_kind::token_string);
@@ -264,7 +281,7 @@ void andy::lang::lexer::read_next_token()
         return;
     }
 
-    if(isdigit(c) || (c == '-' && isdigit(m_current[1]))) {
+    if(is_digit(c) || (c == '-' && m_current.size() > 1 && is_digit(m_current[1]))) {
         size_t index = m_current.data() - m_source.data();
         if(index > 0) {
             // Not beginning of the source code.
@@ -272,7 +289,7 @@ void andy::lang::lexer::read_next_token()
             // If the last immediate previous character is a digit, then we have a expression like
             // 1-1 which is not a negative number, but a subtraction.
 
-            if(isdigit(m_source[index - 1])) {
+            if(is_digit(m_source[index - 1])) {
                 read();
                 push_token(start, token_type::token_operator, token_kind::token_null, operator_type::operator_minus);
                 
@@ -283,13 +300,13 @@ void andy::lang::lexer::read_next_token()
         token_kind kind = token_kind::token_integer;
         // if a token starts with a digit or a minus sign followed by a digit, it is a number
         read_while([this](const char& c) {
-            return isdigit(c) || (m_buffer.empty() && c == '-');
+            return is_digit(c) || (m_buffer.empty() && c == '-');
         });
 
-        if(m_current.front() == '.') {
+        if(m_current.size() && m_current.front() == '.') {
             read();
             read_while([](const char& c) {
-                return isdigit(c);
+                return is_digit(c);
             });
 
             kind = token_kind::token_double;
@@ -359,7 +376,7 @@ void andy::lang::lexer::read_next_token()
 
     // It must be a identifier or a keyword
     read_while([](const char& c) {
-        return isalnum(c) || c == '_';
+        return is_alphanum(c) || c == '_';
     });
 
     if(m_buffer.empty()) {

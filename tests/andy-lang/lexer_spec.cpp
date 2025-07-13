@@ -42,6 +42,7 @@ describe of("lexer", []() {
               break;
               case '"':
               case '\'':
+              case '#':
               continue;
               default:
               {
