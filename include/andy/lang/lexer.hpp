@@ -169,15 +169,11 @@ namespace andy
 
             template<typename T>
             void read_while(T&& condition) {
-                // Read while should not throw exceptions. It's OK to have an identifier in the end of the file.
-                //if(m_current.empty()) {
-                    //throw std::runtime_error("lexer: unexpected end of file");
-                //}
                 while(condition(m_current.front())) {
                     read();
-                    //if(m_current.empty()) {
-                        //throw std::runtime_error("lexer: unexpected end of file");
-                    //}
+                    if(m_current.empty()) {
+                       break;
+                    }
                 }
             }
 
