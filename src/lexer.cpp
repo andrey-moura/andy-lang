@@ -1,6 +1,8 @@
-#include <andy/lang/lexer.hpp>
+#include "andy/lang/lexer.hpp"
 
 #include <algorithm>
+#include <stdexcept>
+#include <cstdint>
 
 // Permitted delimiters: (){};:,
 const static uint64_t __is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -65,6 +67,38 @@ static bool is_preprocessor(std::string_view str) {
     return false;
 }
 
+static bool utf8_is_multibyte_character_continuation(const char& c)
+{
+    return ((uint8_t)c & 0b11000000) == 0b10000000;
+}
+
+static size_t utf8_char_length(const char& c)
+{
+    if (((uint8_t)c & 0b10000000) == 0b00000000) return 1; // 0xxxxxxx
+    if (((uint8_t)c & 0b11100000) == 0b11000000) return 2; // 110xxxxx
+    if (((uint8_t)c & 0b11110000) == 0b11100000) return 3; // 1110xxxx
+    if (((uint8_t)c & 0b11111000) == 0b11110000) return 4; // 11110xxx
+
+    return 0;
+}
+
+
+static void update_position(andy::lang::lexer::token_position& position, const char& c)
+{
+    if(utf8_is_multibyte_character_continuation(c)) {
+        return;
+    }
+
+    if(c == '\n') {
+        position.line++;
+        position.column = 0;
+    } else {
+        position.column++;
+    }
+
+    position.offset++;
+}
+
 static andy::lang::lexer::operator_type to_operator(std::string_view str) {
 
     auto it = string_to_operator_lookup.find(str);
@@ -118,16 +152,15 @@ std::string_view andy::lang::lexer::source(const andy::lang::lexer::token& token
     throw std::runtime_error("lexer: cannot find source for token");
 }
 
-void andy::lang::lexer::update_start_position(const char &token)
+void andy::lang::lexer::update_start_position(const char &c)
 {
-    if(token == '\n') {
-        m_start.line++;
-        m_start.column = 0;
-    } else {
-        m_start.column++;
-    }
+    update_position(m_start, c);
+    m_end = m_start; // Reset the end position to the start position
+}
 
-    m_start.offset++;
+void andy::lang::lexer::update_end_position(const char &c)
+{
+    update_position(m_end, c);
 }
 
 const char &andy::lang::lexer::discard()
@@ -165,16 +198,17 @@ void andy::lang::lexer::read(size_t c)
             m_buffer = std::string_view(m_buffer.data(), m_buffer.size() + 1);
         }
 
-        update_start_position(c);
+        update_end_position(c);
 
         m_current.remove_prefix(1);
     }
 }
 
-void andy::lang::lexer::push_token(token_position start, token_type type, token_kind kind, operator_type op)
+void andy::lang::lexer::push_token(token_type type, token_kind kind, operator_type op)
 {
-    token t(start, m_start, m_buffer, type, kind, m_file_name, m_source, op);
-
+    token t(m_start, m_end, m_buffer, type, kind, m_file_name, m_source, op);
+    m_start = m_end;
+    
     t.index = m_tokens.size();
 
     m_buffer = "";
@@ -242,10 +276,8 @@ void andy::lang::lexer::read_next_token()
     // First, make sure we are at the beginning of the source code, not line breaks or spaces.
     discard_whitespaces();
 
-    token_position start = m_start;
-
     if(m_current.empty()) {
-        push_token(start, token_type::token_eof);
+        push_token(token_type::token_eof);
         return;
     }
 
@@ -260,7 +292,7 @@ void andy::lang::lexer::read_next_token()
             return m_current.size() && c != '\n';
         });
 
-        push_token(start, token_type::token_comment);
+        push_token(token_type::token_comment);
         return;
     }
 
@@ -272,12 +304,12 @@ void andy::lang::lexer::read_next_token()
                 while(m_current.size() && (is_alphanum(m_current.front()) || m_current.front() == '_')) { 
                     read();
                 }
-                push_token(start, token_type::token_literal, token_kind::token_string);
+                push_token(token_type::token_literal, token_kind::token_string);
                 return;
             }
         }
         read(delimiter_size);
-        push_token(start, token_type::token_delimiter);
+        push_token(token_type::token_delimiter);
         return;
     }
 
@@ -291,7 +323,7 @@ void andy::lang::lexer::read_next_token()
 
             if(is_digit(m_source[index - 1])) {
                 read();
-                push_token(start, token_type::token_operator, token_kind::token_null, operator_type::operator_minus);
+                push_token(token_type::token_operator, token_kind::token_null, operator_type::operator_minus);
                 
                 // Let the next digit be read as a number
             }
@@ -317,7 +349,7 @@ void andy::lang::lexer::read_next_token()
             }
         }
 
-        push_token(start, token_type::token_literal, kind);
+        push_token(token_type::token_literal, kind);
         return;
     }
 
@@ -336,7 +368,7 @@ void andy::lang::lexer::read_next_token()
 
         operator_type op = to_operator(m_buffer);
 
-        push_token(start, token_type::token_operator, token_kind::token_null, op);
+        push_token(token_type::token_operator, token_kind::token_null, op);
         return;
     }
 
@@ -344,7 +376,7 @@ void andy::lang::lexer::read_next_token()
     {
         case '\"':
             discard();
-            extract_and_push_string(start);
+            extract_and_push_string();
             return;
         break;
         case '\'':
@@ -360,7 +392,7 @@ void andy::lang::lexer::read_next_token()
 
             discard();
 
-            push_token(start, token_type::token_literal, token_kind::token_string);
+            push_token(token_type::token_literal, token_kind::token_string);
             return;
         break;
     }
@@ -370,7 +402,7 @@ void andy::lang::lexer::read_next_token()
             return !isspace(c);
         });
 
-        push_token(start, token_type::token_preprocessor);
+        push_token(token_type::token_preprocessor);
         return;
     }
 
@@ -381,34 +413,34 @@ void andy::lang::lexer::read_next_token()
 
     if(m_buffer.empty()) {
         read();
-        push_token(start, token_type::token_undefined);
+        push_token(token_type::token_undefined);
         return;
     }
 
     if(m_current.size() > 1 && (m_current.front() == '?' || m_current.front() == '!')) {
         // It is identifier ended with ? or !
         read();
-        push_token(start, token_type::token_identifier);
+        push_token(token_type::token_identifier);
         return;
     }
 
     // Todo: map
     if(m_buffer == "null") {
-        push_token(start, token_type::token_literal, token_kind::token_null);
+        push_token(token_type::token_literal, token_kind::token_null);
         return;
     } else if(m_buffer == "false") {
-        push_token(start, token_type::token_literal, token_kind::token_boolean);
+        push_token(token_type::token_literal, token_kind::token_boolean);
         return;
     } else if(m_buffer == "true") {
-        push_token(start, token_type::token_literal, token_kind::token_boolean);
+        push_token(token_type::token_literal, token_kind::token_boolean);
         return;
     }
 
     if(is_keyword(m_buffer)) {
-        push_token(start, token_type::token_keyword);
+        push_token(token_type::token_keyword);
         return;
     } else {
-        push_token(start, token_type::token_identifier);
+        push_token(token_type::token_identifier);
         return;
     }
 
@@ -580,7 +612,7 @@ std::string_view andy::lang::lexer::token::human_type() const
     return types[(int)m_type];
 }
 
-void andy::lang::lexer::extract_and_push_string(token_position start)
+void andy::lang::lexer::extract_and_push_string()
 {
     std::string output;
     while(m_current.size()) {
@@ -596,7 +628,7 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
             break;
             case '\"':
                 discard();
-                push_token(start, token_type::token_literal, token_kind::token_string);
+                push_token(token_type::token_literal, token_kind::token_string);
                 m_tokens.back().string_literal = std::move(output);
                 return;
             break;
@@ -606,7 +638,7 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     discard(); // Remove the opening curly brace open
 
                     // Push the string before the variable or expression
-                    push_token(start, token_type::token_literal, token_kind::token_interpolated_string);
+                    push_token(token_type::token_literal, token_kind::token_interpolated_string);
                     m_tokens.back().string_literal = std::move(output);
 
                     // Read the variable or expression
@@ -625,10 +657,10 @@ void andy::lang::lexer::extract_and_push_string(token_position start)
                     }
 
                     // Read the continuation of the string after the variable or expression
-                    extract_and_push_string(m_start);
+                    extract_and_push_string();
 
                     // So the parser knows where the string ends
-                    push_token(start, token_type::token_delimiter);
+                    push_token(token_type::token_delimiter);
                     return;
                 }
 
