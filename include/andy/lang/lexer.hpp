@@ -1,12 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 #include <map>
-#include <utility>
 #include <string>
-#include <stdexcept>
-#include <filesystem>
 
 namespace andy
 {
@@ -132,6 +128,7 @@ namespace andy
             std::vector<andy::lang::lexer::token> m_tokens;
 
             token_position m_start;
+            token_position m_end;
 
             // iterating
             size_t iterator = 0;
@@ -144,13 +141,12 @@ namespace andy
             /// @brief Return the root source code.
             std::string_view source() const { return m_source; }
         protected:
-            /// @brief Update a position (line, column, offset).
-            /// @param position The position to update.
-            void update_position(token_position& position, const char& token);
             /// @brief Update the start position (line, column, offset).
             /// @param token The token which should update the position.
-            void update_start_position(const char& token);
-
+            void update_start_position(const char& c);
+            /// @brief Update the end position (line, column, offset).
+            /// @param token The token which should update the position.
+            void update_end_position(const char& c);
             /// @brief Discard the first character from the m_current and update the start position.
             const char& discard();
             /// @brief Discard all whitespaces from the m_current.
@@ -177,7 +173,7 @@ namespace andy
                 }
             }
 
-            void push_token(token_position start, token_type type, token_kind kind = token_kind::token_null, operator_type op = operator_type::operator_max);
+            void push_token(token_type type, token_kind kind = token_kind::token_null, operator_type op = operator_type::operator_max);
             void read_next_token();
             public:
                 /// @brief Tokenize the source code. Equivalent to the constructor.
@@ -185,7 +181,7 @@ namespace andy
                 /// @param __source The source code.
                 void tokenize(std::string_view __file_name, std::string_view __source);
             public:
-                void extract_and_push_string(token_position start);
+                void extract_and_push_string();
         // iterating
         public:
             /// @brief Increment the iterator
