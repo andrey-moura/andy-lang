@@ -50,7 +50,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: andy
-        path: andy-lang/build/andy
+        path: |
+          andy-lang/build/andy
+          andy-lang/build/andy-analyzer
 
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
