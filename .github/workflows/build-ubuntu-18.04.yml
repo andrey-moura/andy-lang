@@ -50,3 +50,4 @@ jobs:
         name: Test Results
         path: andy-lang/andy-build/andy_tests.xml
         reporter: java-junit
+        working-directory: andy-lang
