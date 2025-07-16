@@ -28,3 +28,7 @@ jobs:
     - name: Build Docker image
       run: docker build -t andy-lang:latest .
       working-directory: andy-lang
+
+    - name: Run Docker container
+      run: docker run -v $(pwd)/andy-build:/andy-build andy-lang:latest
+      working-directory: andy-lang
