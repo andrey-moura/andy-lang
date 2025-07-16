@@ -19,7 +19,6 @@ COPY . /andy-lang
 
 ENTRYPOINT ["bash", "-c", "\
   cd /andy-lang && \
-  git pull && \
   cmake -DCMAKE_BUILD_TYPE=Release -B build . && \
   cmake --build build --config Release --parallel && \
   cp -r build ../andy-build"]
