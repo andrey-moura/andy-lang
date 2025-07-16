@@ -51,3 +51,26 @@ jobs:
         path: andy-build/andy_tests.xml
         reporter: java-junit
         working-directory: andy-lang
+
+    - name: Run andy-pkgr
+      run: build/andy-pkgr
+      working-directory: andy-lang
+
+    - name: Get andy-lang version
+      id: get_version
+      run: |
+        VERSION=$(build/andy --version)
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      working-directory: andy-lang
+
+    - name: Publish andy-lang version
+      if: github.ref == 'refs/heads/master'
+      env:
+        ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+        ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+      run: |
+        curl -X PATCH "https://www.andy-lang.org/api/v1/packages/andy-lang/${{ steps.get_version.outputs.version }}" \
+          -H "Email: $ADMIN_EMAIL" \
+          -H "Password: $ADMIN_PASSWORD" \
+          -F "executable=@andy-lang-${{ steps.get_version.outputs.version }}.deb" \
+      working-directory: andy-lang
