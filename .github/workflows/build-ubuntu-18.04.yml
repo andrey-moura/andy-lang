@@ -16,9 +16,6 @@ jobs:
       contents: read
       checks: write
     steps:
-    - name: Install dependencies
-      run: sudo apt-get install -y build-essential
-
     - name: Checkout andy-lang
       uses: actions/checkout@v3
       with:
@@ -32,3 +29,24 @@ jobs:
     - name: Run Docker container
       run: docker run -v $(pwd)/andy-build:/andy-build andy-lang:latest
       working-directory: andy-lang
+
+    - name: Generate artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: andy
+        path: |
+          andy-lang/andy-build/build/andy
+          andy-lang/andy-build/build/andy-analyzer
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: Test Results
+        path: andy-lang/andy-build/andy_tests.xml
+
+    - name: Report Test Results
+      uses: dorny/test-reporter@v1
+      with:
+        name: Test Results
+        path: andy-lang/andy-build/andy_tests.xml
+        reporter: java-junit
