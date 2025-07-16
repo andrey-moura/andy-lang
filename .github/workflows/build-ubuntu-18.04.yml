@@ -48,6 +48,6 @@ jobs:
       uses: dorny/test-reporter@v1
       with:
         name: Test Results
-        path: andy-lang/andy-build/andy_tests.xml
+        path: andy-build/andy_tests.xml
         reporter: java-junit
         working-directory: andy-lang
