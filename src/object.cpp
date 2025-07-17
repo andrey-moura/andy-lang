@@ -33,8 +33,6 @@ void andy::lang::object::initialize(andy::lang::interpreter* interpreter)
             instance_variables[instance_variable.first] = interpreter->execute(*instance_variable.second, self);
         }
     }
-
-    instance_variables["this"] = self;
 }
 
 void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::lang::function_call new_call)
