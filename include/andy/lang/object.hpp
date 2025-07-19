@@ -48,25 +48,6 @@ namespace andy
         public:
             void initialize(andy::lang::interpreter* interpreter);
             void initialize(andy::lang::interpreter* interpreter, andy::lang::function_call new_call);
-            object& operator=(object&& other)
-            {
-                cls = other.cls;
-                base_instance = other.base_instance;
-                derived_instance = other.derived_instance;
-                instance_variables = std::move(other.instance_variables);
-
-                if(other.native_ptr) {
-                    native_ptr = other.native_ptr;
-                    native_destructor = other.native_destructor;
-                } else if(native_move) {
-                    native_move(this, std::move(other));
-                } else {
-                    std::memcpy(native, other.native, max_native_size);
-                }
-                other.native_destructor = nullptr;
-
-                return *this;
-            }
         public:
             /// @brief Initialize the object with a value.
             /// @param cls The class of the object.
@@ -182,11 +163,10 @@ namespace andy
 
                 if constexpr(!std::is_arithmetic<T>::value) {
                     obj->native_move = [](object* obj, object&& other) {
-                        throw std::runtime_error("not implemented");
-                        //if(!obj->native_ptr) {
-                            //new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
+                        if(!obj->native_ptr) {
+                            new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
                             // Let the destructor of the other object to be called
-                        //}
+                        }
                     };
                 }
             }
