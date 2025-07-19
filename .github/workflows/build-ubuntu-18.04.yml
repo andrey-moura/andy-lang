@@ -27,7 +27,7 @@ jobs:
       working-directory: andy-lang
 
     - name: Run Docker container
-      run: docker run -v $(pwd)/andy-build:/andy-build andy-lang:latest
+      run: docker run -v $(pwd)/build:/andy-build andy-lang:latest
       working-directory: andy-lang
 
     - name: Generate artifacts
@@ -35,32 +35,32 @@ jobs:
       with:
         name: andy
         path: |
-          andy-lang/andy-build/andy
-          andy-lang/andy-build/andy-analyzer
-          andy-lang/andy-build/andy-pkgr
+          andy-lang/build/andy
+          andy-lang/build/andy-analyzer
+          andy-lang/build/andy-pkgr
 
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
       with:
         name: Test Results
-        path: andy-lang/andy-build/andy_tests.xml
+        path: andy-lang/build/andy_tests.xml
 
     - name: Report Test Results
       uses: dorny/test-reporter@v1
       with:
         name: Test Results
-        path: andy-build/andy_tests.xml
+        path: build/andy_tests.xml
         reporter: java-junit
         working-directory: andy-lang
 
     - name: Run andy-pkgr
-      run: andy-build/andy-pkgr
+      run: build/andy-pkgr
       working-directory: andy-lang
 
     - name: Get andy-lang version
       id: get_version
       run: |
-        VERSION=$(andy-build/andy --version)
+        VERSION=$(build/andy --version)
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       working-directory: andy-lang
 
