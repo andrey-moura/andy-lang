@@ -26,7 +26,7 @@ This file has the content:
 
 <pre style="background: #1e1e1e; color: #d4d4d4; padding: 1em; font-family: 'Fira Code', monospace; border-radius: 8px;">
 <code>
-<span style="color: #DCDCAA;">out</span> <span style="color: #CE9178;">'Hello from minimal!'</span>
+    <span style="color: #DCDCAA;">out</span> <span style="color: #CE9178;">'Hello from minimal!'</span>
 </code>
 </pre>
 
@@ -40,6 +40,7 @@ The result is:
 
 Environment | Build
 --- | --- |
+Ubuntu 18.04 | [![Ubuntu 18.04](https://github.com/andrey-moura/andy-lang/actions/workflows/build-ubuntu-18.04.yml/badge.svg)](https://github.com/andrey-moura/andy-lang/actions/workflows/build-ubuntu-18.04.yml)
 Ubuntu 22.04 | [![Ubuntu 22.04](https://github.com/andrey-moura/andy-lang/actions/workflows/build-ubuntu-22.04.yml/badge.svg?cache-control=no-cache)](https://github.com/andrey-moura/andy-lang/actions/workflows/build-ubuntu-22.04.yml)
 Ubuntu 24.04 | [![Ubuntu 24.04](https://github.com/andrey-moura/andy-lang/actions/workflows/build-ubuntu-24.04.yml/badge.svg?cache-control=no-cache)](https://github.com/andrey-moura/andy-lang/actions/workflows/build-ubuntu-24.04.yml)
 Windows Server 2022 | [![Windows Server 2022](https://github.com/andrey-moura/andy-lang/actions/workflows/build-windows-2022.yml/badge.svg?cache-control=no-cache)](https://github.com/andrey-moura/andy-lang/actions/workflows/build-windows-2022.yml)
