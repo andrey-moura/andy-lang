@@ -54,13 +54,13 @@ jobs:
         working-directory: andy-lang
 
     - name: Run andy-pkgr
-      run: build/andy-build/andy-pkgr
+      run: andy-build/andy-pkgr
       working-directory: andy-lang
 
     - name: Get andy-lang version
       id: get_version
       run: |
-        VERSION=$(build/andy --version)
+        VERSION=$(andy-build/andy --version)
         echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       working-directory: andy-lang
 
