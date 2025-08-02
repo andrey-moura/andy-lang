@@ -7,7 +7,6 @@
 
 #define UNARY_OPERATOR_INLINE(op, T) \
     [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) { \
-        const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params); \
         T& value = object->as<T>(); \
         value op; \
         return object; \

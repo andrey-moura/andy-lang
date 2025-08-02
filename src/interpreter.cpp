@@ -120,6 +120,11 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
     return cls;
 }
 
+static bool is_named_param(const andy::lang::parser::ast_node& param)
+{
+    return param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl && param.childrens().size();
+}
+
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object)
 {
     switch (source_code.type())
@@ -148,6 +153,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
 
             const andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
 
+            const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+
             if(is_super) {
                 if(!object || object_node) {
                     throw std::runtime_error("super can only be called from an instance object");
@@ -168,27 +175,50 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 object_to_call->derived_instance = object;
                 object->base_instance = object_to_call;
                 class_to_call = object->cls->base;
-                                    } else {
+            } else {
                 if(object_node) {
                     object_node = object_node->childrens().data();
                     object_to_call = execute(*object_node, object);
-                                            } else {
+                } else {
                     object_to_call = object;
                 }
                 if(object_to_call) {
-                                    class_to_call = object_to_call->cls;
-                                }
-                                if(function_name == "new") {
+                    class_to_call = object_to_call->cls;
+
+                    bool are_all_parameters_literals = true;
+                    if(params_node) {
+                        for(auto& param : params_node->childrens()) {
+                            if(is_named_param(param)) {
+                                are_all_parameters_literals = false;
+                                break;
+                            }
+                            if(param.token().type() != andy::lang::lexer::token_type::token_literal) {
+                                are_all_parameters_literals = false;
+                                break;
+                            }
+                        }
+                    }
+                    if(are_all_parameters_literals) {
+                        // We can inline!
+                        auto it = class_to_call->inline_functions.find(function_name);
+                        if(it != class_to_call->inline_functions.end()) {
+                            auto& inline_fn = it->second;
+                            return inline_fn(this, object_to_call, source_code);
+                        }
+                    }
+                }
+
+                if(function_name == "new") {
                     if(object_to_call->cls == ClassClass) {
                         class_to_call = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
-                                    } else {
+                    } else {
                         class_to_call = object_to_call->cls;
-                                    }
+                    }
                 } else if(is_assignment) {
                     if(!object_to_call) {
                         throw std::runtime_error("assignment operator '=' can only be used with a variable");
-                        }
                     }
+                }
             }
             if(!is_assignment) {
                 if(object_to_call) {
@@ -201,12 +231,12 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                             if(it != object_to_call->cls->base->instance_methods.end()) {
                                 if(!object_to_call->base_instance) {
                                     throw std::runtime_error("object has no base instance");
-                        }
+                                }
 
-                        method_to_call = &it->second;
+                                method_to_call = &it->second;
                                 class_to_call = object_to_call->cls->base;
                                 object_to_call = object_to_call->base_instance;
-                        }
+                            }
                         }
                     } else {
                         method_to_call = &it->second;
@@ -219,48 +249,47 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                         if(object_node) {
                             throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + object_to_call->cls->name);
                         }
-                        }
-                    } 
-                    
-                    if(!method_to_call) {
-                    // Yet not found, so we search in the current context.
-                        for(int i = stack.size() - 1; i >= 0; --i) {
-                            auto& context = stack[i];
-
-                            auto it = context.functions.find(function_name);
-
-                            if(it != context.functions.end()) {
-                                method_to_call = it->second.get();
-                                break;
-                            }
-
-                            // If the current context is not inherited, we can stop searching
-                            if(!context.inherited && i == stack.size() - 1) {
-                                break;
-                            }
-                        }
                     }
+                }
+                    
+                if(!method_to_call) {
+                // Yet not found, so we search in the current context.
+                    for(int i = stack.size() - 1; i >= 0; --i) {
+                        auto& context = stack[i];
 
-                    if(!method_to_call) {
-                        auto it = StdClass->class_methods.find(function_name);
+                        auto it = context.functions.find(function_name);
 
-                        if(it == StdClass->class_methods.end()) {
-                            throw std::runtime_error("function '" + std::string(function_name) + "' not found");
-                        } else {
-                            method_to_call = &it->second;
-                            class_to_call = StdClass;
+                        if(it != context.functions.end()) {
+                            method_to_call = it->second.get();
+                            break;
+                        }
+
+                        // If the current context is not inherited, we can stop searching
+                        if(!context.inherited && i == stack.size() - 1) {
+                            break;
                         }
                     }
                 }
+
+                if(!method_to_call) {
+                    auto it = StdClass->class_methods.find(function_name);
+
+                    if(it == StdClass->class_methods.end()) {
+                        throw std::runtime_error("function '" + std::string(function_name) + "' not found");
+                    } else {
+                        method_to_call = &it->second;
+                        class_to_call = StdClass;
+                    }
+                }
+            }
+
             std::vector<std::shared_ptr<andy::lang::object>> positional_params;
             std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
-
-            const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
 
             if(params_node) {
                 for(auto& param : params_node->childrens()) {
                     const andy::lang::parser::ast_node* value_node = &param;
-                    if(param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl && param.childrens().size()) {
+                    if(is_named_param(param)) {
                         // Named parameter
                         if(auto __value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl)) {
                             value_node = __value_node;
