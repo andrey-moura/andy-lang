@@ -39,29 +39,21 @@ namespace andy
             }
 
             void contained_class(andy::lang::interpreter *interpreter, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::structure> contained) {
-                auto cls_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, contained);
-                cls_obj->cls->instance_methods["new"].call(cls_obj);
+                auto cls_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, nullptr);
+                call(interpreter, andy::lang::function_call("new", cls_obj, { to_object(interpreter, cls->name) }));
                 cls->class_variables[contained->name] = cls_obj;
             }
 
-            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> object, std::string_view fn) {
-                auto method = object->cls->instance_methods.find(fn);
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
+                auto method = __call.object->cls->instance_methods.find(__call.name);
 
-                if(method == object->cls->instance_methods.end()) {
-                    throw std::runtime_error("Class " + object->cls->name + " does not have a instance funtion called '" + std::string(fn) + "'");
+                if(method == __call.object->cls->instance_methods.end()) {
+                    throw std::runtime_error("Class " + __call.object->cls->name + " does not have an instance function called '" + std::string(__call.name) + "'");
                 }
 
-                andy::lang::function_call call = {
-                    method->second.name,
-                    object->cls,
-                    object,
-                    &method->second,
-                    {},
-                    {},
-                    nullptr
-                };
+                __call.method = &method->second;
 
-                return interpreter->call(call);
+                return interpreter->call(__call);
             }
         };
     }; // namespace lang

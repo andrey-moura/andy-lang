@@ -12,6 +12,7 @@ namespace andy {
         class object;
         class method;
         class interpreter;
+        using inline_function = std::shared_ptr<andy::lang::object>(*)(andy::lang::interpreter*, std::shared_ptr<andy::lang::object>&, const andy::lang::parser::ast_node&);
         class structure
         {
         public:
@@ -25,6 +26,7 @@ namespace andy {
 
             std::map<std::string_view, andy::lang::method> instance_methods;
             std::map<std::string_view, andy::lang::method> class_methods;
+            std::map<std::string_view, inline_function> inline_functions;
 
             std::map<std::string_view, const andy::lang::parser::ast_node*> instance_variables;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> class_variables;

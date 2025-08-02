@@ -38,9 +38,12 @@ namespace andy
             void* native_ptr = nullptr;
             // The native object
             uint8_t native[max_native_size] = {0};
-            // The object destructor ptr.
+        private:
+            // The native object destructor function ptr.
             void (*native_destructor)(object* obj) = nullptr;
-            // The object move ptr.
+            // The native object copy function ptr.
+            void (*native_copy_to_ptr)(object* obj, object* other) = nullptr;
+            // The native object move function ptr.
             void (*native_move)(object* obj, object&& other) = nullptr;
 #ifdef __UVA_DEBUG__
             int* native_int = (int*)native;
@@ -146,6 +149,12 @@ namespace andy
                 this->native_destructor = nullptr;
                 return ptr;
             }
+
+            void native_copy_to(object* other) {
+                if(native_copy_to_ptr) {
+                    native_copy_to_ptr(this, other);
+                }
+            }
         private:
             template <typename T>
             static void set_destructor(object* obj) {
@@ -160,7 +169,13 @@ namespace andy
                         }
                     };
                 }
+                obj->native_copy_to_ptr = [](object* obj, object* other) {
+                    if(other->native_destructor) {
+                        other->native_destructor(other);
+                    }
 
+                    other->set_native<T>(obj->as<T>());
+                };
                 if constexpr(!std::is_arithmetic<T>::value) {
                     obj->native_move = [](object* obj, object&& other) {
                         if(!obj->native_ptr) {

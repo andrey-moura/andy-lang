@@ -5,3 +5,4 @@ logs/
 dependencies/
 release-build/
 andy_tests.xml
+.vscode/

@@ -637,7 +637,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_var(andy::lang::l
     ast_node var_node(ast_node_type::ast_node_vardecl);
     var_node.add_child(std::move(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_decltype)));
 
-    andy::lang::lexer::token identifier_token = std::move(lexer.next_token());
+    andy::lang::lexer::token identifier_token = lexer.see_next();
 
     if(identifier_token.type() != lexer::token_type::token_identifier) {
         throw std::runtime_error(identifier_token.error_message_at_current_position("Expected variable name after 'var'"));
@@ -645,15 +645,15 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_var(andy::lang::l
 
     var_node.add_child(std::move(ast_node(std::move(identifier_token), ast_node_type::ast_node_declname)));
 
-    const andy::lang::lexer::token& equal_token = lexer.next_token();
+    const andy::lang::lexer::token& equal_token = lexer.see_next(1);
 
-    if(equal_token.type() != lexer::token_type::token_operator || equal_token.content() != "=") {
-        throw std::runtime_error(equal_token.error_message_at_current_position("Expected '=' after variable name"));
+    if(equal_token.type() == lexer::token_type::token_operator && equal_token.content() == "=") {
+        // There is an '=' token, extract as a function call
+        var_node.add_child(parse_node(lexer));
+    } else {
+        // No '=' token, consume the name token.
+        lexer.consume_token();
     }
-
-    ast_node value_node = parse_identifier_or_literal(lexer);
-
-    var_node.add_child(std::move(value_node));
 
     return var_node;
 }

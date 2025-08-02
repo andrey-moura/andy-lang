@@ -51,6 +51,30 @@ namespace andy
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
                 }
             }
+            /// @brief Convert or cast the object to a specific type.
+            /// @tparam T The type to convert to.
+            /// @param interpreter The interpreter.
+            /// @param object The object to convert.
+            /// @return Returns a shared pointer to the object.
+            template<typename T>
+            T cast_object_to(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>&& object)
+            {
+                if constexpr(std::is_same_v<T, std::string>) {
+                    if(object->cls == interpreter->StringClass) {
+                        return std::move(object->as<std::string>());
+                    }
+                    throw std::runtime_error("Cannot cast " + object->cls->name + " to string");
+                } else if constexpr(std::is_same_v<T, bool>) {
+                    if(object->cls == interpreter->TrueClass) {
+                        return true;
+                    } else if(object->cls == interpreter->FalseClass) {
+                        return false;
+                    }
+                    throw std::runtime_error("Cannot cast " + object->cls->name + " to bool");
+                } else {
+                    throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
+                }
+            }
             /// @brief Adds a class to another class.
             /// @param interpreter The interpreter.
             /// @param cls The class.
@@ -61,15 +85,13 @@ namespace andy
             /// @param object The object.
             /// @param fn The function name.
             /// @return Returns a shared pointer to the object.
-            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> object, std::string_view fn);
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, andy::lang::function_call __call);
             template<typename T>
-            T& call(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> object, std::string_view fn)
+            T call(andy::lang::interpreter* interpreter, andy::lang::function_call __call)
             {
-                std::shared_ptr<andy::lang::object> obj = call(interpreter, object, fn);
+                std::shared_ptr<andy::lang::object> obj = call(interpreter, std::move(__call));
 
-                if constexpr(std::is_same_v<T, std::string>) {
-                    return obj->as<std::string>();
-                }
+                return cast_object_to<T>(interpreter, std::move(obj));
             }
         };
     };

@@ -34,6 +34,22 @@ namespace andy {
         };
         struct function_call
         {
+            function_call() = default;
+            function_call(
+                std::string_view __name,
+                std::shared_ptr<andy::lang::object> __object,
+                std::vector<std::shared_ptr<andy::lang::object>> __positional_params = {},
+                std::map<std::string, std::shared_ptr<andy::lang::object>> __named_params = {}
+            );
+            function_call(
+                std::string_view __name,
+                std::shared_ptr<andy::lang::structure> __cls,
+                std::shared_ptr<andy::lang::object> __object,
+                const andy::lang::method* method = nullptr,
+                std::vector<std::shared_ptr<andy::lang::object>> __positional_params = {},
+                std::map<std::string, std::shared_ptr<andy::lang::object>> __named_params = {},
+                const andy::lang::parser::ast_node* __given_block = nullptr
+            );
             std::string_view                                           name;
             std::shared_ptr<andy::lang::structure>                     cls;
             std::shared_ptr<andy::lang::object>                        object;
