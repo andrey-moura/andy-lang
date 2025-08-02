@@ -285,8 +285,8 @@ void andy::lang::lexer::read_next_token()
 
     // The comment starts with /, which is the division operator. So we need to check if it is a comment first.
     if(c == '/' && m_current.size() > 2 && m_current[1] == '/') {
-        discard();
-        discard();
+        read();
+        read();
 
         read_while([this](const char& c) {
             return m_current.size() && c != '\n';

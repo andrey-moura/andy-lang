@@ -67,4 +67,21 @@ describe 'var' do
             expect(a).to eq(null)
         end
     end
+
+    context 'when copying a variable' do
+        it 'creates a new variable with the same value' do
+            var original = 42
+            var copy = original
+            expect(copy).to eq(42)
+        end
+        context 'and modifying the copy' do
+            it 'does not affect the original variable' do
+                var original = 42
+                var copy = original
+                copy = 100
+                expect(original).to eq(42)
+                expect(copy).to eq(100)
+            end
+        end
+    end
 end

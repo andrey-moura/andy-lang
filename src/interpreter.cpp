@@ -102,7 +102,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
         break;
         case andy::lang::parser::ast_node_type::ast_node_vardecl: {
             std::string_view var_name = class_child.decname();
-            cls->instance_variables[var_name] = &class_child.childrens()[2];
+            cls->instance_variables[var_name] = class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call);
         }
         break;
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
@@ -139,250 +139,91 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
         }
         break;
         case andy::lang::parser::ast_node_fn_call: {
-            andy::lang::method* method_to_call = nullptr;
-
-            // And we have a shared_ptr in case the object is created, os it still alive in the current context
-            std::shared_ptr<andy::lang::object> object_to_call = nullptr;
-            std::shared_ptr<andy::lang::object>* object_to_call_ptr = nullptr;
-
-            std::shared_ptr<andy::lang::structure> class_to_call = nullptr;
-
-            if(auto it = current_context().functions.find(source_code.decname()); it != current_context().functions.end()) {
-                method_to_call = it->second.get();
-            }
-
-            const andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
-
             std::string_view function_name = source_code.decname();
             bool is_super = function_name == "super";
             bool is_assignment = function_name == "=";
-             std::vector<std::string_view> unary_assignment_operators = {
-               "%=", "*=", "++", "+=", "--", "-=", "/="
-            };
-            bool is_unary_assignment = std::binary_search(unary_assignment_operators.begin(), unary_assignment_operators.end(), function_name);
-            if(!method_to_call && object_node) {
-                // function call from a class/object/function return value
+            andy::lang::method* method_to_call = nullptr;
+            std::shared_ptr<andy::lang::object> object_to_call = nullptr;
+            std::shared_ptr<andy::lang::structure> class_to_call = nullptr;
 
-                object_node = object_node->childrens().data();
+            const andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
 
-                if(object_node->type() == andy::lang::parser::ast_node_type::ast_node_declname) {
-                    object_to_call = try_object_from_declname(
-                        *object_node,
-                        object ? object->cls : nullptr,
-                        object,
-                        &object_to_call_ptr
-                    );
+            if(is_super) {
+                if(!object || object_node) {
+                    throw std::runtime_error("super can only be called from an instance object");
+                }
 
-                    if(object_to_call) {
-                        if(is_assignment) {
-                            const auto& params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+                if(!object->cls->base) {
+                    throw std::runtime_error("class " + object->cls->name + " does not have a base class");
+                }
 
-                            std::shared_ptr<andy::lang::object> new_object = node_to_object(params_node->childrens().front());
-                            *object_to_call = std::move(*new_object);
+                auto it = object->cls->base->instance_methods.find("new");
 
-                            return object;
-                        } else {
-                            std::map<std::string_view, andy::lang::method>::iterator method_it;
-                            
-                            if(function_name == "new") {
-                                if(object_to_call->cls == ClassClass) {
-                                    auto real_class = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
-                                    method_it = real_class->instance_methods.find(function_name);
+                if(it == object->cls->base->instance_methods.end()) {
+                    throw std::runtime_error("base class " + object->cls->base->name + " does not have a constructor");
+                }
 
-                                    if(method_it == real_class->instance_methods.end()) {
-                                        // default constructor
-                                        return andy::lang::object::instantiate(this, real_class, nullptr);
+                method_to_call = &it->second;
+                object_to_call = std::make_shared<andy::lang::object>(object->cls->base);
+                object_to_call->derived_instance = object;
+                object->base_instance = object_to_call;
+                class_to_call = object->cls->base;
                                     } else {
-                                        method_to_call = &method_it->second;
-                                        class_to_call = real_class;
-                                        object_to_call = andy::lang::object::create(this, real_class, nullptr);
-                                    }
-                                } else {
-                                    method_it = object_to_call->cls->instance_methods.find(function_name);
-                                    if(method_it == object_to_call->cls->instance_methods.end()) {
-                                        // default constructor
-                                        return andy::lang::object::instantiate(this, object_to_call->cls, nullptr);
-                                    } else {
-                                        method_to_call = &method_it->second;
-                                        class_to_call = object_to_call->cls;
-                                    }
-                                }
-                            } else {
-                                method_it = object_to_call->cls->instance_methods.find(function_name);
-
-                                if(method_it == object_to_call->cls->instance_methods.end()) {
-                                    auto throw_exception = [&]() {
-                                        std::string message;
-                                        message.reserve(100);
-                                        message += "class ";
-                                        message += object_to_call->cls->name;
-                                        message += " does not have a function called ";
-                                        message += std::string(function_name);
-                                        throw std::runtime_error(message);
-                                    };
-                                    if(object_to_call->cls == ClassClass) {
-                                        auto real_class = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
-                                        method_it = real_class->class_methods.find(function_name);
-
-                                        if(method_it == real_class->class_methods.end()) {
-                                            throw_exception();
-                                        }
-
-                                        method_to_call = &method_it->second;
-                                        class_to_call = real_class;
-                                    } else {
-                                        if(object_to_call->cls->base) {
-                                            method_it = object_to_call->cls->base->instance_methods.find(function_name);
-
-                                            if(method_it != object_to_call->cls->base->instance_methods.end()) {
-                                                method_to_call = &method_it->second;
-                                                class_to_call = object_to_call->cls->base;
-                                                object_to_call = object_to_call->base_instance;
+                if(object_node) {
+                    object_node = object_node->childrens().data();
+                    object_to_call = execute(*object_node, object);
                                             } else {
-                                                throw_exception();
-                                            }
-                                        } else {
-                                            throw_exception();
-                                        }
-                                    }
-                                } else {
-                                    method_to_call = &method_it->second;
+                    object_to_call = object;
+                }
+                if(object_to_call) {
                                     class_to_call = object_to_call->cls;
                                 }
-                            }
-                        }
-                    } else {
-                        std::string_view class_or_object_name = object_node->token().content();
-                        for(auto& cls : classes) {
-                            if(cls->name == class_or_object_name) {
                                 if(function_name == "new") {
-                                    auto it = cls->instance_methods.find(function_name);
-                                    if(it == cls->instance_methods.end()) {
-                                        // default constructor
-                                        return andy::lang::object::instantiate(this, cls, nullptr);
+                    if(object_to_call->cls == ClassClass) {
+                        class_to_call = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
                                     } else {
-                                        method_to_call = &it->second;
-                                        class_to_call = cls;
+                        class_to_call = object_to_call->cls;
                                     }
-                                } else {
-                                    auto it = cls->class_methods.find(function_name);
-
-                                    if(it == cls->class_methods.end()) {
-                                        throw std::runtime_error("Type " + std::string(class_or_object_name) + " does not have a function called " + std::string(function_name));
-                                    }
-
-                                    method_to_call = &it->second;
-                                    class_to_call = cls;
-                                }
-
-                                break;
-                            }
-                        }
-                        if(!class_to_call) {
-                            throw std::runtime_error("Type or variable '" + std::string(class_or_object_name) + "' not found");
-                        }
-                    }
-                } else if (object_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
-                    object_to_call = execute(*object_node, object);
-
+                } else if(is_assignment) {
                     if(!object_to_call) {
-                        throw std::runtime_error(object_node->token().error_message_at_current_position("undefined operator '.' for null"));
+                        throw std::runtime_error("assignment operator '=' can only be used with a variable");
+                        }
                     }
-
-                    auto it = object_to_call->cls->instance_methods.find(std::string(function_name));
+            }
+            if(!is_assignment) {
+                if(object_to_call) {
+                    auto it = object_to_call->cls->instance_methods.find(function_name);
 
                     if(it == object_to_call->cls->instance_methods.end()) {
-                        throw std::runtime_error("class " + object_to_call->cls->name + " does not have a function called " + std::string(function_name));
-                    }
+                        if(object_to_call->cls->base) {
+                            it = object_to_call->cls->base->instance_methods.find(function_name);
 
-                    method_to_call = &it->second;
-                    class_to_call = object_to_call->cls;
-                } else if(object_node->type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
-                    for(auto& cls : classes) {
-                        if(cls->name == object_node->token().content()) {
-                            class_to_call = cls;
-                            break;
-                        }
-                    }
-
-                    if(class_to_call) {
-                        auto it = class_to_call->instance_methods.find(std::string(function_name));
-
-                        if(it == class_to_call->instance_methods.end()) {
-                            throw std::runtime_error("class " + class_to_call->name + " does not have a function called " + std::string(function_name));
+                            if(it != object_to_call->cls->base->instance_methods.end()) {
+                                if(!object_to_call->base_instance) {
+                                    throw std::runtime_error("object has no base instance");
                         }
 
                         method_to_call = &it->second;
+                                class_to_call = object_to_call->cls->base;
+                                object_to_call = object_to_call->base_instance;
+                        }
+                        }
                     } else {
-                        std::shared_ptr<andy::lang::structure> object_class = nullptr;
-
-                        if(object) {
-                            object_class = object->cls;
-                        }
-
-                        object_to_call = node_to_object(*object_node, object_class, object);
-
-                        auto it = object_to_call->cls->instance_methods.find(std::string(function_name));
-
-                        if(it == object_to_call->cls->instance_methods.end()) {
-                            throw std::runtime_error("class " + object_to_call->cls->name + " does not have a function called " + std::string(function_name));
-                        }
-
                         method_to_call = &it->second;
+                        object_to_call = object_to_call;
                         class_to_call = object_to_call->cls;
                     }
-                }
-            } else {
-                if(is_super) {
-                    if(!object) {
-                        throw std::runtime_error("super can only be called from an instance object");
-                    }
 
-                    if(!object->cls->base) {
-                        throw std::runtime_error("class " + object->cls->name + " does not have a base class");
-                    }
-
-                    auto it = object->cls->base->instance_methods.find("new");
-
-                    if(it == object->cls->base->instance_methods.end()) {
-                        throw std::runtime_error("base class " + object->cls->base->name + " does not have a constructor");
-                    }
-
-                    method_to_call = &it->second;
-                    object_to_call = std::make_shared<andy::lang::object>(object->cls->base);
-                    object_to_call->derived_instance = object;
-                    object->base_instance = object_to_call;
-                    class_to_call = object->cls->base;
-                } else {
-                    if(object) {
-                        auto it = object->cls->instance_methods.find(function_name);
-
-                        if(it == object->cls->instance_methods.end()) {
-                            if(object->cls->base) {
-                                it = object->cls->base->instance_methods.find(function_name);
-
-                                if(it != object->cls->base->instance_methods.end()) {
-                                    if(!object->base_instance) {
-                                        throw std::runtime_error("object has no base instance");
-                                    }
-
-                                    method_to_call = &it->second;
-                                    class_to_call = object->cls->base;
-                                    object_to_call = object->base_instance;
-                                } else {
-                                    // ?????
-                                    // Why was it throwing exceptions?
-                                    //throw std::runtime_error("function '" + function_name + "' not found in class " + object->cls->name);
-                                }
-                            }
-                        } else {
-                            method_to_call = &it->second;
-                            object_to_call = object;
-                            class_to_call = object->cls;
+                    if(!method_to_call) {
+                        // Calling directly on an object and the object does not have the method.
+                        if(object_node) {
+                            throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + object_to_call->cls->name);
+                        }
                         }
                     } 
                     
                     if(!method_to_call) {
+                    // Yet not found, so we search in the current context.
                         for(int i = stack.size() - 1; i >= 0; --i) {
                             auto& context = stack[i];
 
@@ -411,8 +252,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                         }
                     }
                 }
-            }
-
             std::vector<std::shared_ptr<andy::lang::object>> positional_params;
             std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
 
@@ -446,6 +285,17 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 }
             }
 
+            if(is_assignment) {
+                if(positional_params.size() != 1) {
+                    throw std::runtime_error("assignment operator '=' requires exactly one parameter");
+                }
+
+                auto other = positional_params.front();
+                object_to_call->cls = other->cls;
+                other->native_copy_to(object_to_call.get());
+                return object_to_call;
+            }
+
             andy::lang::function_call __call = {
                 function_name,
                 class_to_call,
@@ -457,12 +307,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             };
 
             std::shared_ptr<andy::lang::object> ret = call(__call);
-            if(is_unary_assignment) {
-                if(!object_to_call_ptr) {
-                    throw std::runtime_error("unary assignment operator '" + std::string(function_name) + "' can only be used with a variable");
-                }
-                *object_to_call_ptr = ret;
-            }
             return ret;
         }
         break;
@@ -472,8 +316,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             if(object) {
                 cls = object->cls;
             }
-            std::shared_ptr<andy::lang::object> value = node_to_object(source_code.childrens()[2], cls, object);
+            std::shared_ptr<andy::lang::object> value = std::make_shared<andy::lang::object>(NullClass);
             current_context().variables[var_name] = value;
+            if(auto fn_call = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call)) {
+                value = execute(*fn_call, object);
+            }
             return value;
         }
         break;
@@ -737,7 +584,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
     }
 
     for (auto& [name, value] : current_context().variables) {
-        if(value->base_instance) {
+        if(value && value->base_instance) {
             if(value.use_count() == 2) {
                 // used by base_instance and current_context().variables
                 value->base_instance = nullptr;
@@ -761,20 +608,12 @@ void andy::lang::interpreter::init()
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_from_declname(
     const andy::lang::parser::ast_node& node,
     std::shared_ptr<andy::lang::structure> cls,
-    std::shared_ptr<andy::lang::object> object,
-    std::shared_ptr<andy::lang::object>** object_to_call_ptr
+    std::shared_ptr<andy::lang::object> object
 )
 {
     auto* fn_object = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
     const andy::lang::parser::ast_node* fn_object_decname = nullptr;
     std::string_view var_name = node.token().content();
-
-    auto return_value = [object_to_call_ptr](std::shared_ptr<andy::lang::object>& obj) -> std::shared_ptr<andy::lang::object> {
-        if(object_to_call_ptr) {
-            *object_to_call_ptr = &obj;
-        }
-        return obj;
-    };
 
     if(fn_object) {
         fn_object_decname = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
@@ -792,7 +631,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 if(fn_object) {
                     auto it = fn_object->instance_variables.find(node.token().content());
                     if(it != fn_object->instance_variables.end()) {
-                        return return_value(it->second);
+                        return it->second;
                     }
                     throw std::runtime_error("Class " + fn_object->cls->name + " does not have a variable called " + std::string(node.token().content()));
                 } else {
@@ -808,7 +647,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         auto it = object->instance_variables.find(var_name);
 
         if(it != object->instance_variables.end()) {
-            return return_value(it->second);
+            return it->second;
         }
 
         if(object->cls == ClassClass) {
@@ -816,7 +655,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             auto it = cls->class_variables.find(var_name);
 
             if(it != cls->class_variables.end()) {
-                return return_value(it->second);
+                return it->second;
             }
         }
 
@@ -865,7 +704,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                     }
                     throw std::runtime_error("class " + std::string(class_name) + " does not have a variable or function called '" + std::string(var_name) + "'");
                 } else {
-                    return return_value(it->second);
+                    return it->second;
                 }
             }
         }
@@ -876,7 +715,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
     auto it = current_context().variables.find(node.token().content());
 
     if(it != current_context().variables.end()) {
-        return return_value(it->second);
+        return it->second;
     } else {
         // Todo make a method that receive a context and search on it
         if(current_context().inherited && stack.size() > 1) {
@@ -885,7 +724,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             auto it = parent_context.variables.find(node.token().content());
 
             if(it != parent_context.variables.end()) {
-                return return_value(it->second);
+                return it->second;
             }
         }
         auto it = current_context().functions.find(node.token().content());

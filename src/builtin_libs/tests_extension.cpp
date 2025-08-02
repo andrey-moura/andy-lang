@@ -64,27 +64,21 @@ public:
                     auto actual_object = object->as<std::shared_ptr<andy::lang::object>>();
                     auto matcher_params_object = matcher_params->as<std::vector<std::shared_ptr<andy::lang::object>>>();
                     auto expected_object = matcher_params_object[0];
-                    auto eq_method = actual_object->cls->instance_methods.find("==");
-
-                    if(eq_method == actual_object->cls->instance_methods.end()) {
-                        throw std::runtime_error("object of class " + actual_object->cls->name + " does not have a function called '=='");
-                    }
 
                     andy::lang::function_call eq_call = {
                         "==",
                         actual_object->cls,
                         actual_object,
-                        &eq_method->second,
+                        nullptr,
                         { expected_object },
-                        {},
-                        nullptr
+                        { },
                     };
 
-                    auto result = interpreter->call(eq_call);
+                    bool result = andy::lang::api::call<bool>(interpreter, eq_call);
 
-                    if(result->cls != interpreter->TrueClass) {
-                        std::string actual   = andy::lang::api::call<std::string>(interpreter, actual_object,"to_string");
-                        std::string expected = andy::lang::api::call<std::string>(interpreter, expected_object, "to_string");
+                    if(!result) {
+                        std::string actual   = andy::lang::api::call<std::string>(interpreter, andy::lang::function_call("to_string", actual_object));
+                        std::string expected = andy::lang::api::call<std::string>(interpreter, andy::lang::function_call("to_string", expected_object));
 
                         throw std::runtime_error("Expected " + expected + ", got " + actual);
                     }

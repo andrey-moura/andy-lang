@@ -49,6 +49,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/parser.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/function_call.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/andy_config_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
