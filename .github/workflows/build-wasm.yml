@@ -43,7 +43,7 @@ jobs:
     - name: Configure emcmake for andy-lang
       run: |
         source $GITHUB_WORKSPACE/emsdk/emsdk_env.sh
-        emcmake cmake -DCMAKE_BUILD_TYPE=Release ..
+        emcmake cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-s INVOKE_RUN=0" ..
       working-directory: andy-lang/build
       
     - name: Build project for andy-lang
