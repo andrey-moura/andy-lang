@@ -59,4 +59,27 @@ describe 'fn' do
             expect(f()).to eq(123)
         end
     end
+
+    describe 'with named parameters' do
+        context 'with default parameters' do
+            context 'when no parameters are provided' do
+                it 'uses default values for parameters' do
+                    fn greet(name: 'World')
+                        return 'Hello, ' + name + '!'
+                    end
+
+                    expect(greet).to eq('Hello, World!')
+                end
+            end
+            context 'when the parameter is provided' do
+                it 'uses the provided value instead of the default' do
+                    fn greet(name: 'World')
+                        return 'Hello, ' + name + '!'
+                    end
+
+                    expect(greet(name: 'Alice')).to eq('Hello, Alice!')
+                end
+            end
+        end
+    end
 end

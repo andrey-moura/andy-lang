@@ -21,7 +21,7 @@ public:
         auto run_it = app_instance->cls->instance_methods.find("init");
 
         if(run_it == app_instance->cls->instance_methods.end()) {
-            throw std::runtime_error("function 'init' is not defined in type " + app_instance->cls->name);
+            throw std::runtime_error("function 'init' is not defined in type " + std::string(app_instance->cls->name));
         }
 
         andy::lang::function_call run_it_call = {

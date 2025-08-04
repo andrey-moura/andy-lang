@@ -87,7 +87,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
             for(size_t i = 0; i < other_items.size(); ++i) {
                 auto it = items[i]->cls->instance_methods.find("==");
                 if(it == items[i]->cls->instance_methods.end()) {
-                    throw std::runtime_error("class " + items[i]->cls->name + " does not have a method '=='");
+                    throw std::runtime_error("class " + std::string(items[i]->cls->name) + " does not have a method '=='");
                 }
                 andy::lang::function_call call{
                     "==",
