@@ -4,6 +4,9 @@
 
 #include <uva/file.hpp>
 
+#include "andy/lang/interpreter.hpp"
+#include "andy/lang/extension.hpp"
+#include "andy/lang/lang.hpp"
 #include "andy/lang/api.hpp"
 
 andy::lang::method execute_method_definition(const andy::lang::parser::ast_node& class_child)
