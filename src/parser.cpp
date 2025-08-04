@@ -145,10 +145,7 @@ andy::lang::parser::ast_node andy::lang::parser::extract_fn_call_params(andy::la
 
         if(token.type() == lexer::token_type::token_delimiter)
         {
-            if(token.content() == ",") {
-                lexer.consume_token();
-                continue;
-            } else if(token.content() == ":") {
+            if(token.content() == ":") {
                 lexer.consume_token();
 
                 ast_node named_param(ast_node_type::ast_node_valuedecl);
@@ -162,12 +159,16 @@ andy::lang::parser::ast_node andy::lang::parser::extract_fn_call_params(andy::la
                 named_param.add_child(std::move(value_node));
 
                 params_node.add_child(std::move(named_param));
+            }
+
+            if(lexer.see_next().content() == ",") {
+                lexer.consume_token();
             } else {
                 break;
             }
-        }
-
+        } else {
         break;
+        }
     }
 
     return params_node;
@@ -509,11 +510,13 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
                 ast_node params_node = extract_fn_call_params(lexer);
                 fn_node.add_child(std::move(params_node));            
 
-                if(lexer.see_next().type() == andy::lang::lexer::token_type::token_delimiter && lexer.see_next().content() == ")") {
+                const auto& possible_closing = lexer.see_next();
+
+                if(possible_closing.type() == andy::lang::lexer::token_type::token_delimiter && possible_closing.content() == ")") {
                     // Consume the ')' token
                     lexer.consume_token();
                 } else {
-                    throw std::runtime_error(token.error_message_at_current_position("Expected ')'"));
+                    throw std::runtime_error(possible_closing.error_message_at_current_position("Expected ')'"));
                 }
             }
         } else {
@@ -698,7 +701,6 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_function(andy::la
                 auto next_token = lexer.see_next(1);
                 if (next_token.type() == lexer::token_type::token_delimiter && next_token.content() == ":") {
                     params_node.add_child(extract_pair(lexer));
-                    continue;
                 } else {
                     params_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_declname));
                 }
