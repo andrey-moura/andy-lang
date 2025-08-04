@@ -16,6 +16,30 @@ namespace andy
             /// @param path The path to the source code.
             /// @return Returns a shared pointer to the object.
             std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path);
+            /// @brief Convert or cast the object to a specific type.
+            /// @tparam T The type to convert to.
+            /// @param interpreter The interpreter.
+            /// @param object The object to convert.
+            /// @return Returns a shared pointer to the object.
+            template<typename T>
+            T cast_object_to(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>&& object)
+            {
+                if constexpr(std::is_same_v<T, std::string>) {
+                    if(object->cls == interpreter->StringClass) {
+                        return std::move(object->as<std::string>());
+                    }
+                    throw std::runtime_error("Cannot cast " + std::string(object->cls->name) + " to string");
+                } else if constexpr(std::is_same_v<T, bool>) {
+                    if(object->cls == interpreter->TrueClass) {
+                        return true;
+                    } else if(object->cls == interpreter->FalseClass) {
+                        return false;
+                    }
+                    throw std::runtime_error("Cannot cast " + std::string(object->cls->name) + " to bool");
+                } else {
+                    throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
+                }
+            }
             /// @brief Call a function.
             /// @param interpreter The interpreter.
             /// @param object The object.
@@ -66,30 +90,6 @@ namespace andy
                     return class_object;
                 }
                 else {
-                    throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
-                }
-            }
-            /// @brief Convert or cast the object to a specific type.
-            /// @tparam T The type to convert to.
-            /// @param interpreter The interpreter.
-            /// @param object The object to convert.
-            /// @return Returns a shared pointer to the object.
-            template<typename T>
-            T cast_object_to(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>&& object)
-            {
-                if constexpr(std::is_same_v<T, std::string>) {
-                    if(object->cls == interpreter->StringClass) {
-                        return std::move(object->as<std::string>());
-                    }
-                    throw std::runtime_error("Cannot cast " + std::string(object->cls->name) + " to string");
-                } else if constexpr(std::is_same_v<T, bool>) {
-                    if(object->cls == interpreter->TrueClass) {
-                        return true;
-                    } else if(object->cls == interpreter->FalseClass) {
-                        return false;
-                    }
-                    throw std::runtime_error("Cannot cast " + std::string(object->cls->name) + " to bool");
-                } else {
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
                 }
             }
