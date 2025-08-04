@@ -17,10 +17,10 @@ namespace andy {
         {
         public:
             //for user code, use create
-            structure(const std::string& __name, std::vector<andy::lang::method> __methods = {});
+            structure(std::string_view __name, std::vector<andy::lang::method> __methods = {});
             ~structure();
         public:
-            std::string name;
+            std::string_view name;
             std::shared_ptr<andy::lang::structure> base;
             std::vector<std::shared_ptr<andy::lang::structure>> deriveds;
 

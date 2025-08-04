@@ -44,8 +44,8 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
     interpreter->load(create_directory_class(interpreter));
 }
 
-andy::lang::structure::structure(const std::string& __name, std::vector<andy::lang::method> __methods)
-    : name(__name)
+andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang::method> __methods)
+    : name(std::move(__name))
 {
     for(auto& method : __methods) {
         if(method.storage_type == method_storage_type::class_method) {
