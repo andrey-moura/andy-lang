@@ -13,12 +13,25 @@ andy::lang::method execute_method_definition(const andy::lang::parser::ast_node&
 
     auto* params_node = class_child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
 
-    std::vector<std::string> params;
+    std::vector<andy::lang::fn_parameter> positional_params;
+    std::vector<andy::lang::fn_parameter> named_params;
+
     if(params_node) {
-        params.reserve(class_child.childrens().size());
+        positional_params.reserve(class_child.childrens().size());
+        named_params.reserve(class_child.childrens().size());
 
         for(auto& param : params_node->childrens()) {
-            params.push_back(std::string(param.token().content()));
+            andy::lang::fn_parameter fn_param;
+            if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
+                fn_param.name = param.child_content_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                fn_param.default_value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+                fn_param.named = true;
+                fn_param.has_default_value = fn_param.default_value_node != nullptr;
+                named_params.push_back(std::move(fn_param));
+            } else {
+                fn_param.name = std::string(param.token().content());
+                positional_params.push_back(std::move(fn_param));
+            }
         }
     }
 
@@ -26,7 +39,13 @@ andy::lang::method execute_method_definition(const andy::lang::parser::ast_node&
 
     auto method_type = static_node ? andy::lang::method_storage_type::class_method : andy::lang::method_storage_type::instance_method;
 
-    return andy::lang::method(method_name, method_type, params, class_child);
+    andy::lang::method method;
+    method.name = method_name;
+    method.storage_type = method_type;
+    method.positional_params = std::move(positional_params);
+    method.named_params = std::move(named_params);
+    method.block_ast = class_child;
+    return method;
 }
 
 andy::lang::interpreter::interpreter()
