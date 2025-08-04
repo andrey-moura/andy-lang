@@ -16,12 +16,12 @@
     [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) { \
         const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params); \
         if (!params_node || params_node->childrens().size() != 1) { \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires exactly one parameter"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires exactly one parameter"); \
         } \
         const auto& param = params_node->childrens()[0]; \
         T& value = object->as<T>(); \
         if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type() != andy::lang::lexer::token_type::token_literal) { \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires a numeric literal"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
         switch(param.token().kind()) { \
         case andy::lang::lexer::token_kind::token_integer: \
@@ -34,7 +34,7 @@
             value op param.token().double_literal; \
             break; \
         default: \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires a numeric literal"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
         return object; \
     }
@@ -42,13 +42,13 @@
     [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) { \
         const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params); \
         if (!params_node || params_node->childrens().size() != 1) { \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires exactly one parameter"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires exactly one parameter"); \
         } \
         const auto& param = params_node->childrens()[0]; \
         T& value = object->as<T>(); \
         bool comparison_result = false; \
         if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type() != andy::lang::lexer::token_type::token_literal) { \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires a numeric literal"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
         switch(param.token().kind()) { \
         case andy::lang::lexer::token_kind::token_integer: \
@@ -61,7 +61,7 @@
             comparison_result = value op param.token().double_literal; \
             break; \
         default: \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires a numeric literal"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
         return comparison_result ? std::make_shared<andy::lang::object>(interpreter->TrueClass) : std::make_shared<andy::lang::object>(interpreter->FalseClass); \
     }
@@ -69,12 +69,12 @@
     [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) { \
         const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params); \
         if (!params_node || params_node->childrens().size() != 1) { \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires exactly one parameter"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires exactly one parameter"); \
         } \
         const auto& param = params_node->childrens()[0]; \
         T value = object->as<T>(); \
         if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type() != andy::lang::lexer::token_type::token_literal) { \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires a numeric literal"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
         switch(param.token().kind()) { \
         case andy::lang::lexer::token_kind::token_integer: \
@@ -87,7 +87,7 @@
             value = value op param.token().double_literal; \
             break; \
         default: \
-            throw std::runtime_error(object->cls->name + "::operator " #op " requires a numeric literal"); \
+            throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
         return andy::lang::object::create(interpreter, object->cls, value); \
     }
@@ -111,7 +111,7 @@
         } else if (params[0]->cls == interpreter->DoubleClass) { \
             value op params[0]->as<double>(); \
         } else { \
-            throw std::runtime_error("undefined operator " #op " (" + call.object->cls->name + ", " + params[0]->cls->name + ")"); \
+            throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
         return call.object; \
     })
@@ -129,7 +129,7 @@
         } else if (params[0]->cls == interpreter->DoubleClass) { \
             comparison_result = value op params[0]->as<double>(); \
         } else { \
-            throw std::runtime_error("undefined operator " #op " (" + call.object->cls->name + ", " + params[0]->cls->name + ")"); \
+            throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
         return comparison_result ? std::make_shared<andy::lang::object>(interpreter->TrueClass) : std::make_shared<andy::lang::object>(interpreter->FalseClass); \
     })
@@ -147,7 +147,7 @@
         } else if (other->cls == interpreter->DoubleClass) { \
             value = value op other->as<double>(); \
         } else { \
-            throw std::runtime_error("undefined operator " #op " (" + call.object->cls->name + ", " + params[0]->cls->name + ")"); \
+            throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
         return andy::lang::object::create(interpreter, object->cls, value); \
     })
@@ -200,7 +200,7 @@ namespace andy
                     auto object = call.object;
                     auto other = call.positional_params[0];
                     if(other->cls != interpreter->IntegerClass) {
-                        throw std::runtime_error("undefined operator % (" + object->cls->name + ", " + other->cls->name + ")");
+                        throw std::runtime_error("undefined operator % (" + std::string(object->cls->name) + ", " + std::string(other->cls->name) + ")");
                     }
                     int value = object->as<int>();
                     value %= other->as<int>();
@@ -209,13 +209,13 @@ namespace andy
                 cls->inline_functions["%"] = [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) {
                     const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
                     if (!params_node || params_node->childrens().size() != 1) {
-                        throw std::runtime_error(object->cls->name + "::operator % requires exactly one parameter");
+                        throw std::runtime_error(std::string(object->cls->name) + "::operator % requires exactly one parameter");
                     }
                     const auto& other = params_node->childrens()[0];
                     if(other.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl ||
                        other.token().type() != andy::lang::lexer::token_type::token_literal ||
                        other.token().kind() != andy::lang::lexer::token_kind::token_integer) {
-                        throw std::runtime_error(object->cls->name + "::operator % requires an integer literal");
+                        throw std::runtime_error(std::string(object->cls->name) + "::operator % requires an integer literal");
                     }
                     int value = object->as<int>();
                     value %= other.token().integer_literal;
