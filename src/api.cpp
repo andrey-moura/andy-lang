@@ -33,8 +33,6 @@ namespace andy
                 interpreter.input_file_path = path;
                 std::shared_ptr<andy::lang::object> ret = interpreter.execute_all(root_node);
         
-                interpreter.start_extensions();
-        
                 return ret;
             }
 

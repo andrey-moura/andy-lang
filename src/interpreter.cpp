@@ -962,10 +962,3 @@ void andy::lang::interpreter::load_extension(andy::lang::extension* extension)
     extension->load(this);
     extensions.push_back(extension);
 }
-
-void andy::lang::interpreter::start_extensions()
-{
-    for(auto& extension : extensions) {
-        extension->start(this);
-    }
-}

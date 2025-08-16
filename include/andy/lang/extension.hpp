@@ -37,7 +37,6 @@ namespace andy {
         public:
             /// @brief Load the extension in the interpreter. Good for loading your custom classes. Called BEFORE the source code is executed.
             virtual void load(andy::lang::interpreter* interpreter) { }
-            virtual void start(andy::lang::interpreter* interpreter) { }
         private:
             std::string m_name;
         };
