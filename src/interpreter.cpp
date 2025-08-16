@@ -206,8 +206,14 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 } else {
                     object_to_call = object;
                 }
+
                 if(object_to_call) {
-                    class_to_call = object_to_call->cls;
+                    if(object_to_call->cls == ClassClass) {
+                        class_to_call = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
+                        object_to_call = nullptr;
+                    } else {
+                        class_to_call = object_to_call->cls;
+                    }
 
                     bool are_all_parameters_literals = true;
                     if(params_node) {
@@ -233,12 +239,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 }
 
                 if(is_new && object_to_call) {
-                    if(object_to_call->cls == ClassClass) {
-                        class_to_call = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
-                        object_to_call = nullptr;
-                    } else {
-                        throw std::runtime_error("new can only be called on a class");
-                    }
+                    throw std::runtime_error("new can only be called on a class");
                 } else if(is_assignment) {
                     if(!object_to_call) {
                         throw std::runtime_error("assignment operator '=' can only be used with a variable");
