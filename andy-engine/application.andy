@@ -1,12 +1,10 @@
 import :ui
 
-out 'Teste'
-
 namespace AndyEngine
     type Application extends UI.Application
         var main_window = null
         fn init
-            out 'Iniciado'
+            out 'Init'
            // main_window = UI.Window.new('Andy Engine')
          //   main_window.show
         end
@@ -14,5 +12,3 @@ namespace AndyEngine
 end
 
 UI.main(AndyEngine.Application)
-
-out 'Testando'

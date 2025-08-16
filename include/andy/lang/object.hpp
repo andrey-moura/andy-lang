@@ -192,6 +192,9 @@ namespace andy
 
             template<typename T>
             const T& as() const {
+                if(base_instance) {
+                    return base_instance->as<T>();
+                }
                 if(native_ptr) {
                     return *static_cast<T*>(native_ptr);
                 }
@@ -200,6 +203,9 @@ namespace andy
             }
             template<typename T>
             T& as() {
+                if(base_instance) {
+                    return base_instance->as<T>();
+                }
                 if(native_ptr) {
                     return *static_cast<T*>(native_ptr);
                 }

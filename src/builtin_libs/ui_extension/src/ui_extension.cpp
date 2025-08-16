@@ -8,6 +8,8 @@
 #include "andy/file.hpp"
 #include "andy/xml.hpp"
 
+#include "app_class.hpp"
+
 extern std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter* interpreter);
 
 class ui_extension : public andy::lang::extension
@@ -23,9 +25,16 @@ public:
     virtual void load(andy::lang::interpreter* interpreter) override
     {
         auto UIClass = std::make_shared<andy::lang::structure>("UI");
-        UIClass = {
-            { "main", andy::lang::method("main", andy::lang::method_storage_type::class_method, { "app_class" }, [interpreter](andy::lang::function_call& call) {
-                std::cout << "UI.main called with app_class: " << std::endl;
+        UIClass->class_methods = {
+            { "main", andy::lang::method("main", andy::lang::method_storage_type::class_method, { "app_class" }, [this, interpreter](andy::lang::function_call& call) {
+                auto app_class_class = call.positional_params[0];
+                if (!app_class_class || app_class_class->cls != interpreter->ClassClass) {
+                    throw std::runtime_error("UI.main expects an class, got " + (app_class_class ? std::string(app_class_class->cls->name) : "null"));
+                }
+                auto app_class = app_class_class->as<std::shared_ptr<andy::lang::structure>>();
+                application_instance = andy::lang::object::instantiate(interpreter, app_class, nullptr, {});
+                auto app_native = application_instance->as<std::shared_ptr<andylang_ui_app>>();
+                app_native->run();
                 return nullptr;
             })}
         };
