@@ -23,6 +23,12 @@ public:
     virtual void load(andy::lang::interpreter* interpreter) override
     {
         auto UIClass = std::make_shared<andy::lang::structure>("UI");
+        UIClass = {
+            { "main", andy::lang::method("main", andy::lang::method_storage_type::class_method, { "app_class" }, [interpreter](andy::lang::function_call& call) {
+                std::cout << "UI.main called with app_class: " << std::endl;
+                return nullptr;
+            })}
+        };
 
         auto classes = {
             create_app_class(interpreter),

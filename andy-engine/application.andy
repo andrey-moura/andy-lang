@@ -13,4 +13,6 @@ namespace AndyEngine
     end
 end
 
+UI.main(AndyEngine.Application)
+
 out 'Testando'
