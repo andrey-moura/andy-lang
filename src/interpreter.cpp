@@ -302,22 +302,22 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     for(int i = stack.size() - 1; i >= 0; --i) {
                         auto& context = stack[i];
 
-                        auto it = context.functions.find(function_name);
+                            auto it = context.functions.find(function_name);
 
-                        if(it != context.functions.end()) {
-                            method_to_call = it->second.get();
-                            break;
-                        }
+                            if(it != context.functions.end()) {
+                                method_to_call = it->second.get();
+                                break;
+                            }
 
-                        // If the current context is not inherited, we can stop searching
-                        if(!context.inherited && i == stack.size() - 1) {
-                            break;
+                            // If the current context is not inherited, we can stop searching
+                            if(!context.inherited && i == stack.size() - 1) {
+                                break;
+                            }
                         }
                     }
-                }
 
-                if(!method_to_call) {
-                    auto it = StdClass->class_methods.find(function_name);
+                    if(!method_to_call) {
+                        auto it = StdClass->class_methods.find(function_name);
 
                     if(it == StdClass->class_methods.end()) {
                         throw std::runtime_error("function '" + std::string(function_name) + "' not found");
@@ -335,22 +335,16 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
             if(params_node) {
                 for(auto& param : params_node->childrens()) {
                     const andy::lang::parser::ast_node* value_node = &param;
-                    if(is_named_param(param)) {
-                        // Named parameter
-                        if(auto __value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl)) {
-                            value_node = __value_node;
-                        }
-                    }
-                    std::shared_ptr<andy::lang::object> value = nullptr;
-                    
-                    value = node_to_object(*value_node, object ? object->cls : nullptr, object);
-
                     const andy::lang::parser::ast_node* name = nullptr;
-                    
-                    if(param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
+                    if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
+                        value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
                         name = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
                     }
 
+                    std::shared_ptr<andy::lang::object> value = nullptr;
+                    
+                    value = node_to_object(*value_node, object ? object->cls : nullptr, object);
+                    
                     if(name) {
                         std::string content = std::string(name->token().content());
                         named_params[content] = value;
@@ -698,7 +692,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         fn_object_decname = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
         
         if(fn_object_decname) {    
-            object = try_object_from_declname(*fn_object_decname);
+            object = try_object_from_declname(*fn_object_decname, cls, object);
         } else if(auto fn_value = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl)) {
             object = node_to_object(*fn_value, cls, object);
         }

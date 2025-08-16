@@ -78,30 +78,4 @@ After building, run as sudo on Linux or with an Administrator Command Prompt on 
 ```
 
 ### Building with UI enabled
-
-
-### Install SDL
-
-#### Install Dependencies needed on Linux (use the package manager of your distribution)
-
-```sh
-    sudo apt install libx11-dev libxext-dev libwayland-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev libxfixes-dev
-```
-
-#### Building SDL
-
-```sh
-    git clone https://github.com/libsdl-org/SDL.git
-    cd SDL/
-    git checkout release-3.2.x
-    cmake -DSDL_STATIC=ON -DSDL_SHARED=OFF -DCMAKE_BUILD_TYPE=Release -DSDL_AUDIO=OFF -DSDL_VIDEO=ON -DSDL_GPU=ON -DSDL_RENDER=ON -DSDL_CAMERA=OFF -DSDL_JOYSTICK=OFF -DSDL_HAPTIC=OFF -DSDL_HIDAPI=ON -DSDL_POWER=OFF -DSDL_SENSOR=OFF -DSDL_SENSOR=OFF -DSDL_DIALOG=OFF -B build .
-    cmake --build build --config Release --parallel
-```
-
-After building, run as sudo on Linux or with an Administrator Command Prompt on Windows
-
-```sh
-    cmake --install build
-```
-
-Now follow the instructions in the [Building](#Building) section to build andy-lang. The Andy will automatically detect the SDL library and enable the UI.
+The UI is enabled by default.
