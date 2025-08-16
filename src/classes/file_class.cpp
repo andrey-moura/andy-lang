@@ -46,7 +46,7 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
                 throw std::runtime_error("file '" + path.string() + "' does not exist");
             }
 
-            std::vector<std::string> file = uva::file::read_all_lines<char>(path);
+            std::vector<std::string> file = andy::file::read_all_lines<char>(path);
 
             std::vector<std::shared_ptr<andy::lang::object>> lines;
 

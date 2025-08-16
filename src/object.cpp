@@ -4,13 +4,13 @@
 #include <andy/lang/method.hpp>
 #include <andy/lang/interpreter.hpp>
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 andy::lang::object::object(std::shared_ptr<andy::lang::structure> c)
     : cls(c)
 {
     if(cls) {
-        uva::console::log_debug("{}#{} created", cls->name, (void*)this);
+        andy::console::log_debug("{}#{} created", cls->name, (void*)this);
     }
 }
 
@@ -21,7 +21,7 @@ andy::lang::object::~object()
             native_destructor(this);
         }
 
-        uva::console::log_debug("{}#{} destroyed", cls->name, (void*)this);
+        andy::console::log_debug("{}#{} destroyed", cls->name, (void*)this);
     }
 }
 
@@ -72,7 +72,7 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::
 
 void andy::lang::object::log_native_destructor()
 {
-    uva::console::log_debug("{}#{} native destructor", cls->name, (void*)this);
+    andy::console::log_debug("{}#{} native destructor", cls->name, (void*)this);
 }
 
 bool andy::lang::object::is_present() const
