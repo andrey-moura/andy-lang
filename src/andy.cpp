@@ -3,7 +3,7 @@
 
 #include <andy/lang/api.hpp>
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 #ifdef __UVA_DEBUG__
     #define try if(true)
@@ -27,9 +27,9 @@ int main(int argc, char** argv) {
                     std::cout << "Usage: " << argv[0] << " [file]" << std::endl;
                     std::cout << std::endl;
                     std::cout << "Options: " << std::endl;
-                    uva::console::print_warning("  --help");
+                    andy::console::print_warning("  --help");
                     std::cout << "     Display this information" << std::endl;
-                    uva::console::print_warning("  --version");
+                    andy::console::print_warning("  --version");
                     std::cout << "  Display the version of the andy language" << std::endl;
                     return 0;
                 } else if(arg == "--version") {
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
         }
         
     } catch (const std::exception& e) {
-        uva::console::log_error(e.what());
+        andy::console::log_error(e.what());
         return 1;
     }
 

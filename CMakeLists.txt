@@ -74,10 +74,10 @@ add_library(andy-lang
 
     ${ANDY_UI_EXTENSION_SOURCES}
 
-    $<TARGET_OBJECTS:uva-file>
-    $<TARGET_OBJECTS:uva-core>
-    $<TARGET_OBJECTS:uva-console>
-    $<TARGET_OBJECTS:uva-binary>
+    $<TARGET_OBJECTS:andy-file>
+    $<TARGET_OBJECTS:andy-core>
+    $<TARGET_OBJECTS:andy-console>
+    $<TARGET_OBJECTS:andy-binary>
 )
 
 target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${SDL3_LIBRARIES})

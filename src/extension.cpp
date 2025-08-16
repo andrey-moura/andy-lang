@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include <uva.hpp>
+#include <andy.hpp>
 
 #include <andy/lang/interpreter.hpp>
 
@@ -13,7 +13,7 @@
 #   include <Windows.h>
 #endif
 
-#include <uva/file.hpp>
+#include <andy/file.hpp>
 
 std::map<std::string_view, std::shared_ptr<andy::lang::extension>> andy::lang::extension::builtins;
 
@@ -43,7 +43,7 @@ std::filesystem::path find_module_path(
     std::filesystem::path& current_path
 )
 {
-    std::filesystem::path executable_path = uva::file::executable_path();
+    std::filesystem::path executable_path = andy::file::executable_path();
     std::filesystem::path module_path = executable_path;
 
     std::string library_name = std::string(module);

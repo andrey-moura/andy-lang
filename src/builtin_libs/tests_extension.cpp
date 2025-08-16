@@ -57,7 +57,7 @@ public:
                 // TODO refactor
                 auto matcher = params[0];
                 if(matcher->cls->name != "Matcher") {
-                    throw std::runtime_error("Argument to 'to' must be a Matcher, got " + matcher->cls->name);
+                    throw std::runtime_error("Argument to 'to' must be a Matcher, got " + std::string(matcher->cls->name));
                 }
                 auto matcher_params = matcher->instance_variables["params"];
                 if(matcher->instance_variables["name"]->as<std::string>() == "eq") {

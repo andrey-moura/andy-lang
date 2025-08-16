@@ -5,7 +5,7 @@
 #include <functional>
 #include <string>
 
-#include <uva/core.hpp>
+#include <andy/core.hpp>
 
 #include <andy/lang/lexer.hpp>
 

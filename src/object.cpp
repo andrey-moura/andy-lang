@@ -4,13 +4,13 @@
 #include <andy/lang/method.hpp>
 #include <andy/lang/interpreter.hpp>
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 andy::lang::object::object(std::shared_ptr<andy::lang::structure> c)
     : cls(c)
 {
     if(cls) {
-        uva::console::log_debug("{}#{} created", cls->name, (void*)this);
+        andy::console::log_debug("{}#{} created", cls->name, (void*)this);
     }
 }
 
@@ -21,7 +21,7 @@ andy::lang::object::~object()
             native_destructor(this);
         }
 
-        uva::console::log_debug("{}#{} destroyed", cls->name, (void*)this);
+        andy::console::log_debug("{}#{} destroyed", cls->name, (void*)this);
     }
 }
 
@@ -30,7 +30,8 @@ void andy::lang::object::initialize(andy::lang::interpreter* interpreter)
     auto self = shared_from_this();
     for(auto& instance_variable : cls->instance_variables) {
         if(instance_variable.second) {
-            instance_variables[instance_variable.first] = interpreter->execute(*instance_variable.second, self);
+            instance_variables[instance_variable.first] = std::make_shared<andy::lang::object>(interpreter->NullClass);
+            interpreter->execute(*instance_variable.second, self);
         }
     }
 }
@@ -44,7 +45,7 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::
     if(new_it == cls->instance_methods.end()) {
         // default constructor
         if(new_call.positional_params.size() || new_call.named_params.size()) {
-            throw std::runtime_error("Default constructor does not accept parameters in class " + cls->name);
+            throw std::runtime_error("Default constructor does not accept parameters in class " + std::string(cls->name));
         }
         if(cls->base) {
             // call the base class constructor
@@ -71,7 +72,7 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::
 
 void andy::lang::object::log_native_destructor()
 {
-    uva::console::log_debug("{}#{} native destructor", cls->name, (void*)this);
+    andy::console::log_debug("{}#{} native destructor", cls->name, (void*)this);
 }
 
 bool andy::lang::object::is_present() const
@@ -83,7 +84,7 @@ bool andy::lang::object::is_present() const
     auto it = cls->instance_methods.find("present?");
 
     if(it == cls->instance_methods.end()) {
-        throw std::runtime_error("present? is not defined in class " + cls->name);
+        throw std::runtime_error("present? is not defined in class " + std::string(cls->name));
     } else {
         auto this_without_const = const_cast<object*>(this);
 

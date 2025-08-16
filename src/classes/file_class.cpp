@@ -1,6 +1,6 @@
 #include <filesystem>
 
-#include <uva/file.hpp>
+#include <andy/file.hpp>
 
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
@@ -36,7 +36,7 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
             } else {
                 throw std::runtime_error("invalid path");
             }
-            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(uva::file::read_all_text<char>(path)));
+            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(andy::file::read_all_text<char>(path)));
         })},
         { "read_all_lines", andy::lang::method("read_all_lines",andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& input_path = params[0]->as<std::string>();
@@ -46,7 +46,7 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
                 throw std::runtime_error("file '" + path.string() + "' does not exist");
             }
 
-            std::vector<std::string> file = uva::file::read_all_lines<char>(path);
+            std::vector<std::string> file = andy::file::read_all_lines<char>(path);
 
             std::vector<std::shared_ptr<andy::lang::object>> lines;
 

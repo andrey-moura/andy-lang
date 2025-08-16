@@ -1,7 +1,7 @@
 #include "andy/lang/lang.hpp"
 #include "andy/lang/interpreter.hpp"
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 extern std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_andy_config_class(andy::lang::interpreter*);
@@ -44,8 +44,8 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
     interpreter->load(create_directory_class(interpreter));
 }
 
-andy::lang::structure::structure(const std::string& __name, std::vector<andy::lang::method> __methods)
-    : name(__name)
+andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang::method> __methods)
+    : name(std::move(__name))
 {
     for(auto& method : __methods) {
         if(method.storage_type == method_storage_type::class_method) {
@@ -55,10 +55,10 @@ andy::lang::structure::structure(const std::string& __name, std::vector<andy::la
         }
     }
 
-    uva::console::log_debug("{}#Class created", name);
+    andy::console::log_debug("{}#Class created", name);
 }
 
 andy::lang::structure::~structure()
 {
-    uva::console::log_debug("{}#Class destroyed", name);
+    andy::console::log_debug("{}#Class destroyed", name);
 }

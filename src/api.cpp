@@ -3,7 +3,7 @@
 #include <andy/lang/lexer.hpp>
 #include <andy/lang/parser.hpp>
 
-#include <uva/file.hpp>
+#include <andy/file.hpp>
 
 extern void create_builtin_libs();
 
@@ -15,7 +15,7 @@ namespace andy
         {
             std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path)
             {
-                std::string source = uva::file::read_all_text<char>(path);
+                std::string source = andy::file::read_all_text<char>(path);
 
                 std::string path_str = path.string();
 
@@ -39,8 +39,7 @@ namespace andy
             }
 
             void contained_class(andy::lang::interpreter *interpreter, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::structure> contained) {
-                auto cls_obj = andy::lang::object::create(interpreter, interpreter->ClassClass, nullptr);
-                call(interpreter, andy::lang::function_call("new", cls_obj, { to_object(interpreter, cls->name) }));
+                auto cls_obj = to_object(interpreter, contained);
                 cls->class_variables[contained->name] = cls_obj;
             }
 
@@ -48,7 +47,7 @@ namespace andy
                 auto method = __call.object->cls->instance_methods.find(__call.name);
 
                 if(method == __call.object->cls->instance_methods.end()) {
-                    throw std::runtime_error("Class " + __call.object->cls->name + " does not have an instance function called '" + std::string(__call.name) + "'");
+                    throw std::runtime_error("Class " + std::string(__call.object->cls->name) + " does not have an instance function called '" + std::string(__call.name) + "'");
                 }
 
                 __call.method = &method->second;

@@ -2,11 +2,11 @@
 
 #include <andy/lang/preprocessor.hpp>
 
-#include <uva.hpp>
+#include <andy.hpp>
 
-#include <uva/file.hpp>
+#include <andy/file.hpp>
 
-// TODO: move to uva::file
+// TODO: move to andy::file
 std::vector<std::string> list_files_with_wildcard(const std::filesystem::path& base_path, std::string_view pattern) {
     std::vector<std::string> files;
     std::filesystem::path path = base_path;
@@ -123,7 +123,7 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     // After this the iterator is at the position of the next token
     
     for(std::string& file : files) {
-        std::string file_content = uva::file::read_all_text<char>(file);
+        std::string file_content = andy::file::read_all_text<char>(file);
         andy::lang::lexer l(file, file_content);
 
         process(file, l);
