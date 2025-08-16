@@ -1,8 +1,8 @@
 #include <filesystem>
 #include <chrono>
 
-#include "uva/console.hpp"
-#include "uva/file.hpp"
+#include "andy/console.hpp"
+#include "andy/file.hpp"
 #include "andy/binary.hpp"
 
 #include "andy/lang/parser.hpp"
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
             std::getline(std::cin, temp);
             file_path = std::filesystem::absolute(temp);
             std::getline(std::cin, temp);
-            source = uva::file::read_all_text<char>(temp);
+            source = andy::file::read_all_text<char>(temp);
         } else {
             run = false;
             file_path = std::filesystem::absolute(argv[1]);
@@ -184,9 +184,9 @@ int main(int argc, char** argv) {
                 }
             } else if(read_from_temp) {
                 std::filesystem::path temp_file_path = std::filesystem::absolute(read_from_temp.argument);
-                source = uva::file::read_all_text<char>(temp_file_path);
+                source = andy::file::read_all_text<char>(temp_file_path);
             } else {
-                source = uva::file::read_all_text<char>(file_path);
+                source = andy::file::read_all_text<char>(file_path);
             }
         }
 

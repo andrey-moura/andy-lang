@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <fstream>
 
-#include <uva/console.hpp>
-#include <uva/file.hpp>
+#include <andy/console.hpp>
+#include <andy/file.hpp>
 
 #include <andy/lang/interpreter.hpp>
 #include <andy/lang/lexer.hpp>
@@ -41,13 +41,13 @@ void display_usage(std::string_view argv0)
     std::cout << std::endl;
     std::cout << "Options:" << std::endl;
     std::cout << std::endl;
-    uva::console::print_warning("--debug, -d");
+    andy::console::print_warning("--debug, -d");
     std::cout << "         Enable debug mode" << std::endl;
-    uva::console::print_warning("--incremental, -i");
+    andy::console::print_warning("--incremental, -i");
     std::cout << "   Only generate code if the original file changed" << std::endl;
-    uva::console::print_warning("--file, -f <folder>");
+    andy::console::print_warning("--file, -f <folder>");
     std::cout << " Output the generated code to a file in folder" << std::endl;
-    uva::console::print_warning("--help");
+    andy::console::print_warning("--help");
     std::cout << "              Display this information" << std::endl;
 }
 
@@ -128,14 +128,14 @@ int main(int argc, char* argv[]) {
                 folder_arg = argv[i + 1];
                 ++i;
             } else {
-                uva::console::log_error("Expected argument after --file flag");
+                andy::console::log_error("Expected argument after --file flag");
                 return 1;
             }
         } else if(arg == "--help") {
             display_usage(argv[0]);
             return 0;
         } else if(i > 1) {
-            uva::console::log_error("Unknown argument: " + std::string(arg));
+            andy::console::log_error("Unknown argument: " + std::string(arg));
             return 1;
         }
     }
@@ -173,12 +173,12 @@ int main(int argc, char* argv[]) {
         std::filesystem::path input_file_path = input_file_path_str;
 
         if(!std::filesystem::exists(input_file_path)) {
-            uva::console::log_error("Input file does not exist");
+            andy::console::log_error("Input file does not exist");
             return 1;
         }
 
         if(!std::filesystem::is_regular_file(input_file_path)) {
-            uva::console::log_error("Input file is not a regular file");
+            andy::console::log_error("Input file is not a regular file");
             return 1;
         }
 
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
 
         if (unit == nullptr)
         {
-            uva::console::log_error("Unable to parse translation unit. Quitting.");
+            andy::console::log_error("Unable to parse translation unit. Quitting.");
             return 1;
         }
 

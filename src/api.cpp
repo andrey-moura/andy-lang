@@ -3,7 +3,7 @@
 #include <andy/lang/lexer.hpp>
 #include <andy/lang/parser.hpp>
 
-#include <uva/file.hpp>
+#include <andy/file.hpp>
 
 extern void create_builtin_libs();
 
@@ -15,7 +15,7 @@ namespace andy
         {
             std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path)
             {
-                std::string source = uva::file::read_all_text<char>(path);
+                std::string source = andy::file::read_all_text<char>(path);
 
                 std::string path_str = path.string();
 

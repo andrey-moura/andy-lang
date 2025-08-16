@@ -1,7 +1,7 @@
 #include "andy/lang/lang.hpp"
 #include "andy/lang/interpreter.hpp"
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 extern std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_andy_config_class(andy::lang::interpreter*);
@@ -55,10 +55,10 @@ andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang
         }
     }
 
-    uva::console::log_debug("{}#Class created", name);
+    andy::console::log_debug("{}#Class created", name);
 }
 
 andy::lang::structure::~structure()
 {
-    uva::console::log_debug("{}#Class destroyed", name);
+    andy::console::log_debug("{}#Class destroyed", name);
 }

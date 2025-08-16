@@ -6,9 +6,8 @@
 #include "andy/lang/api.hpp"
 #include "andy/lang/extension.hpp"
 #include "andy/ui/app.hpp"
-// It is actually andy/
-#include "uva/file.hpp"
-#include "uva/xml.hpp"
+#include "andy/file.hpp"
+#include "andy/xml.hpp"
 
 extern std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter* interpreter);
 extern std::shared_ptr<andy::lang::structure> create_frame_class(andy::lang::interpreter* interpreter);
