@@ -2,14 +2,13 @@
 
 #include "andy/lang/api.hpp"
 
-#include "andy/ui/window.hpp"
-#include "andy/widgets.hpp"
+#include "andy/drawing/window.hpp"
 
-class andylang_ui_window : public andy::ui::window
+class andylang_drawing_window : public andy::drawing::window
 {
 public:
-    andylang_ui_window(std::string_view title, andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __window_instance)
-        : andy::ui::window(title), interpreter(__interpreter)
+    andylang_drawing_window(std::string_view title, andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __window_instance)
+        : andy::drawing::window(title), interpreter(__interpreter)
     {
         interpreter = __interpreter;
         window_instance = __window_instance.get();
@@ -26,25 +25,18 @@ std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpret
     window_class->instance_methods = {
         {"new", andy::lang::method("new", andy::lang::method_storage_type::instance_method, {"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string_view title = params[0]->as<std::string>();
-            auto window = std::make_shared<andylang_ui_window>(title, interpreter, object->derived_instance);
+            auto window = std::make_shared<andylang_drawing_window>(title, interpreter, object->derived_instance);
             object->set_native(std::move(window));
 
             return nullptr;
         })},
         { "show", andy::lang::method("show", andy::lang::method_storage_type::instance_method, { "maximized: false" }, [](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
-            auto window = call.object->as<std::shared_ptr<andylang_ui_window>>();
+            auto window = call.object->as<std::shared_ptr<andylang_drawing_window>>();
             window->show(maximized->is_present());
 
             return nullptr;
         })},
-        // { "set_page", andy::lang::method("set_page", andy::lang::method_storage_type::instance_method, {"page"}, [](andy::lang::function_call& call) {
-        //     auto page = call.positional_params[0];
-        //     auto window = call.object->as<std::shared_ptr<andylang_ui_window>>();
-        //     window->set_page(page->as<std::shared_ptr<andy::ui::page>>());
-
-        //     return nullptr;
-        // })},
     };
     return window_class;
 }

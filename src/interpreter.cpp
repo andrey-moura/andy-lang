@@ -364,9 +364,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 other->native_copy_to(object_to_call.get());
                 object_to_call->instance_variables = other->instance_variables;
                 return object_to_call;
-            }  else if(is_new) {
-                object_to_call = andy::lang::object::instantiate(this, class_to_call);
-                return object_to_call;
             }
 
             andy::lang::function_call __call = {
@@ -378,6 +375,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 std::move(named_params),
                 source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
             };
+
+            if(is_new) {
+                object_to_call = andy::lang::object::instantiate(this, class_to_call, __call);
+                return object_to_call;
+            }
 
             std::shared_ptr<andy::lang::object> ret = call(__call);
             return ret;
