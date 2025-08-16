@@ -36,7 +36,7 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
             } else {
                 throw std::runtime_error("invalid path");
             }
-            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(uva::file::read_all_text<char>(path)));
+            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(andy::file::read_all_text<char>(path)));
         })},
         { "read_all_lines", andy::lang::method("read_all_lines",andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& input_path = params[0]->as<std::string>();
