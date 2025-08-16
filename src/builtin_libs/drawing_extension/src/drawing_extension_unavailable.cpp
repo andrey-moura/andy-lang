@@ -6,11 +6,11 @@
 #include "andy/lang/api.hpp"
 #include "andy/lang/extension.hpp"
 
-class ui_extension : public andy::lang::extension
+class drawing_extension : public andy::lang::extension
 {
 public:
-    ui_extension()
-        : andy::lang::extension("ui")
+    drawing_extension()
+        : andy::lang::extension("drawing")
     {
     }
 protected:
@@ -22,7 +22,7 @@ public:
     }
 };
 
-std::shared_ptr<andy::lang::extension> create_ui_extension()
+std::shared_ptr<andy::lang::extension> create_drawing_extension()
 {
-    return std::make_shared<ui_extension>();
+    return std::make_shared<drawing_extension>();
 }
