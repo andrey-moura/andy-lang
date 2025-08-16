@@ -20,11 +20,6 @@ public:
     {
         throw std::runtime_error("This distribution of Andy was built without UI support. Please, recompile it with the UI support or download the official release.");
     }
-
-    virtual void start(andy::lang::interpreter* interpreter) override
-    {
-    
-    }
 };
 
 std::shared_ptr<andy::lang::extension> create_ui_extension()
