@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>...</title>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script>
+            var Module = {
+                print: function(text) {
+                    console.log(text);
+                },
+                onRuntimeInitialized: function() {
+                    $.ajax({
+                        url: "application.andy",
+                        dataType: "text",
+                        success: function(code) {
+                            FS.writeFile("/application.andy", code);
+                            try {
+                                callMain(["/application.andy"]);
+                            } catch (e) {
+                                console.error("Error executing code:", e);
+                            }
+                        },
+                        error: function() {
+                            console.error("Failed to load code");
+                        }
+                    });
+                }
+            };
+        </script>
+        <script src="embuild/andy.js"></script>
+    </head>
+</html>

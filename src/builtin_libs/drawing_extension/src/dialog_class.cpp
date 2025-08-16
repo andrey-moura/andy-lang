@@ -1,8 +1,8 @@
-// #include <uva/file.hpp>
+// #include <andy/file.hpp>
 // #include <andy/ui/dialog.hpp>
 
-// #include <uva/widgets.hpp>
-// #include <uva/xml.hpp>
+// #include <andy/widgets.hpp>
+// #include <andy/xml.hpp>
 
 // #include "toplevel_class.hpp"
 

@@ -118,8 +118,8 @@ andy::lang::parser::ast_node andy::lang::parser::extract_pair(andy::lang::lexer 
 
     // Parse the key
     ast_node pair_node(ast_node_type::ast_node_pair);
-    ast_node key_node = parse_identifier_or_literal(lexer);
-    key_node.set_type(ast_node_type::ast_node_declname);
+
+    ast_node key_node = ast_node(lexer.next_token(), ast_node_type::ast_node_declname);
     pair_node.add_child(std::move(key_node));
     
     // Consume the ':' token
@@ -358,7 +358,14 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
     andy::lang::lexer::token identifier_or_literal;
 
     switch(token.type()) {
-        case andy::lang::lexer::token_type::token_identifier:
+        case andy::lang::lexer::token_type::token_identifier: {
+            auto possible_colon = lexer.see_next(1);
+            if(possible_colon.type() == andy::lang::lexer::token_type::token_delimiter && possible_colon.content() == ":") {
+                return extract_pair(lexer);
+            }
+            identifier_or_literal = std::move(lexer.next_token());
+            break;
+        }
         case andy::lang::lexer::token_type::token_literal:
             identifier_or_literal = std::move(lexer.next_token());
             break;
@@ -495,7 +502,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
     ast_node identifier_or_literal_node;
     const auto& next_token = lexer.see_next();
 
-    if(is_any_function_call(identifier_or_literal, lexer)){
+    if(is_any_function_call(identifier_or_literal, lexer)) {
         ast_node fn_node(ast_node_type::ast_node_fn_call);
         fn_node.add_child(std::move(ast_node(std::move(identifier_or_literal), ast_node_type::ast_node_declname)));
 

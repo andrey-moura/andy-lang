@@ -19,11 +19,7 @@ namespace andy {
         struct fn_parameter
         {
             fn_parameter() = default;
-            fn_parameter(std::string_view __name)
-                : name(std::string(__name))
-            {
-
-            }
+            fn_parameter(std::string_view __name);
             fn_parameter(std::string __name, bool __named, const andy::lang::parser::ast_node* __default_value_node)
                 : name(std::move(__name)), named(__named), default_value_node(__default_value_node), has_default_value(true) {
             }

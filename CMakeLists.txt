@@ -34,7 +34,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
 
+include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/drawing_extension/CMakeLists.txt")
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
 
 add_library(andy-lang
@@ -73,6 +75,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/tests_extension.cpp
 
     ${ANDY_UI_EXTENSION_SOURCES}
+    ${ANDY_DRAWING_EXTENSION_SOURCES}
 
     $<TARGET_OBJECTS:andy-file>
     $<TARGET_OBJECTS:andy-core>
@@ -80,7 +83,7 @@ add_library(andy-lang
     $<TARGET_OBJECTS:andy-binary>
 )
 
-target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${SDL3_LIBRARIES})
+target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp

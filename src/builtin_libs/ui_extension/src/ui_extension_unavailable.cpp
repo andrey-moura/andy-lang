@@ -18,12 +18,7 @@ protected:
 public:
     virtual void load(andy::lang::interpreter* interpreter) override
     {
-        throw std::runtime_error("This compilation of Andy was built without UI support. Please, recompile it with the UI support or download the official release.");
-    }
-
-    virtual void start(andy::lang::interpreter* interpreter) override
-    {
-    
+        throw std::runtime_error("This distribution of Andy was built without UI support. Please, recompile it with the UI support or download the official release.");
     }
 };
 

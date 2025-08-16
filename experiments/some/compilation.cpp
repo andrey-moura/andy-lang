@@ -3,7 +3,7 @@
 #include <fstream>
 #include <cstdint>
 
-#include <uva/console.hpp>
+#include <andy/console.hpp>
 
 #ifdef __UVA_DEBUG__
     #define try if(true)
@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
             }
         }
     } catch (const std::exception& e) {
-        uva::console::log_error(e.what());
+        andy::console::log_error(e.what());
         return 1;
     }
 

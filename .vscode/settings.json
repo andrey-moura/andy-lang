@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.S": "arm",
         "*.uva": "uva",
         "*.andy": "andy",
         "any": "cpp",
@@ -71,18 +72,36 @@
         "thread": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "charconv": "cpp",
+        "filesystem": "cpp",
+        "format": "cpp",
+        "locale": "cpp",
+        "queue": "cpp",
+        "ranges": "cpp",
+        "span": "cpp",
+        "stack": "cpp",
+        "xhash": "cpp",
+        "xlocale": "cpp",
+        "xlocbuf": "cpp",
+        "xlocinfo": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp",
+        "xmemory": "cpp",
+        "xstring": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp"
     },
     "cmake.configureArgs": [
 
     ],
     "cmake.debugConfig": {
         "args": [
-            "/home/andrey/Moonslate/andy-lang/tests/high-level/if_spec.andy",
+            "${workspaceFolder}/andy-engine/application.andy"
         ],
-        "cwd": "/home/andrey/Moonslate/HM-Studio",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
-        "type": "lldb"
-    }
+        "request": "launch"
+    },
 }
