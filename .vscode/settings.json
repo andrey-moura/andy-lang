@@ -78,7 +78,7 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "/home/andrey/Moonslate/andy-lang/application.andy"
+            "${workspaceFolder}/application.andy"
         ],
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
