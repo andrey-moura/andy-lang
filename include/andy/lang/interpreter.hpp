@@ -125,8 +125,6 @@ namespace andy
             const std::shared_ptr<andy::lang::object> node_to_object(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls = nullptr, std::shared_ptr<andy::lang::object> object = nullptr);
 
             void load_extension(andy::lang::extension* extension);
-
-            void start_extensions();
         protected:
             /// @brief The call stack.
             std::vector<interpreter_context> stack;

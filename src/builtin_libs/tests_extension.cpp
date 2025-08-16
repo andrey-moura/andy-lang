@@ -110,11 +110,6 @@ public:
             return matcher;
         });
     }
-
-    void start(andy::lang::interpreter* interpreter) override
-    {
-        andy::tests::run();
-    }
 };
 
 std::shared_ptr<andy::lang::extension> create_tests_extension()
