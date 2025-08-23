@@ -98,7 +98,7 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "${workspaceFolder}/andy-engine/application.andy"
+            "${workspaceFolder}/tests/high-level/net_spec.andy"
         ],
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,

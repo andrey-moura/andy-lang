@@ -38,6 +38,7 @@ include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/drawing_extension/CMakeLists.txt")
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/net_extension/CMakeLists.txt")
 
 add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
@@ -76,6 +77,7 @@ add_library(andy-lang
 
     ${ANDY_UI_EXTENSION_SOURCES}
     ${ANDY_DRAWING_EXTENSION_SOURCES}
+    ${ANDY_NET_EXTENSION_SOURCES}
 
     $<TARGET_OBJECTS:andy-file>
     $<TARGET_OBJECTS:andy-core>

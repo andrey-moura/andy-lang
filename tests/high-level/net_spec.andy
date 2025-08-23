@@ -1,0 +1,28 @@
+import :net
+import :tests
+
+fn status_tester(status_code)
+    var url = "http://httpbin.org/status/${status_code}"
+    describe "${url}" do
+        it "should return status code ${status_code}" do
+            var res = Net::HTTP.get(url);
+            expect(res.status_code).to eq(status_code);
+        end
+    end
+end
+
+describe 'Net' do
+    describe 'HTTP' do
+        describe 'get' do
+            status_tester(200);
+            status_tester(400);
+            status_tester(404);
+            status_tester(500);
+            describe 'with JSON response body' do
+                it 'should have json attributes' do
+                    
+                end
+            end
+        end
+    end
+end
