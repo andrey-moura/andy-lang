@@ -27,4 +27,4 @@
 	url = https://github.com/andrey-moura/binary.git
 [submodule "modules/andy-net"]
 	path = modules/andy-net
-	url = git@github.com:andrey-moura/andy-net.git
+	url = https://github.com/andrey-moura/andy-net.git
