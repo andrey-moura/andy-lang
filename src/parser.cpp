@@ -243,10 +243,12 @@ static bool is_any_function_call(const andy::lang::lexer::token& token, const an
 
 static void extract_fn_yield_block_if_exists(andy::lang::parser::ast_node& node, andy::lang::parser& parser, const andy::lang::lexer::token& token, andy::lang::lexer& lexer)
 {
-    if(node.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
+    if(node.type() != andy::lang::parser::ast_node_type::ast_node_fn_call &&
+        node.type() != andy::lang::parser::ast_node_type::ast_node_declname) {
         // Cant extract yield block from this node
         return;
     }
+
     auto& next_token = lexer.see_next();
 
     if(next_token.type() == andy::lang::lexer::token_type::token_identifier && next_token.content() == "do") {
