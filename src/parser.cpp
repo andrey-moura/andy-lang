@@ -270,7 +270,7 @@ static andy::lang::parser::ast_node chain_if_exists(andy::lang::parser::ast_node
                 // Already handled in the array declaration
                 break;
             }
-            if(next_token.content() == ".") {
+            if(next_token.content() == "." || next_token.content() == "::") {
                 lexer.consume_token(); // Consume the '.' token
 
                 andy::lang::parser::ast_node next_node = parser.parse_identifier_or_literal(lexer, false);

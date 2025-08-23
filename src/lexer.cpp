@@ -299,6 +299,12 @@ void andy::lang::lexer::read_next_token()
     size_t delimiter_size = is_delimiter(m_current);
     if(delimiter_size) {
         if(c == ':' && m_current.size() > 1) {
+            if(m_current[1] == ':') {
+                // It is a scope resolution operator
+                read(2);
+                push_token(token_type::token_operator);
+                return;
+            } else
             if(is_alpha(m_current[1])) {
                 discard();
                 while(m_current.size() && (is_alphanum(m_current.front()) || m_current.front() == '_')) { 
