@@ -659,11 +659,10 @@ void andy::lang::lexer::extract_and_push_string()
                     // Check if the string is finished
                     if(m_current.size() && m_current.front() == '\"') {
                         discard(); // Remove the closing quote
-                        return;
+                    } else {
+                        // Read the continuation of the string after the variable or expression
+                        extract_and_push_string();
                     }
-
-                    // Read the continuation of the string after the variable or expression
-                    extract_and_push_string();
 
                     // So the parser knows where the string ends
                     push_token(token_type::token_delimiter);
