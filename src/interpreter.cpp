@@ -298,21 +298,37 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 }
 
                 if(function_name != "new") {
-                if(!method_to_call) {
-                // Yet not found, so we search in the current context.
-                    for(int i = stack.size() - 1; i >= 0; --i) {
-                        auto& context = stack[i];
+                    if(!method_to_call) {
+                        // Yet not found, so we search in the current context.
+                        // If the current context is the global, we skip the
+                        // check as it will be made after.
+                        bool checked_global = false;
+                        if(!is_global_context()) {
+                            for(int i = stack.size() - 1; i >= 0; --i) {
+                                checked_global = i == 0;
+
+                                auto& context = stack[i];
+
+                                auto it = context.functions.find(function_name);
+
+                                if(it != context.functions.end()) {
+                                    method_to_call = it->second.get();
+                                    break;
+                                }
+
+                                // If the current context is not inherited, we can stop searching
+                                if(!context.inherited && i == stack.size() - 1) {
+                                    break;
+                                }
+                            }
+                        }
+                        if(!method_to_call && !checked_global) {
+                            auto& context = stack.front();
 
                             auto it = context.functions.find(function_name);
 
                             if(it != context.functions.end()) {
                                 method_to_call = it->second.get();
-                                break;
-                            }
-
-                            // If the current context is not inherited, we can stop searching
-                            if(!context.inherited && i == stack.size() - 1) {
-                                break;
                             }
                         }
                     }
@@ -320,11 +336,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     if(!method_to_call) {
                         auto it = StdClass->class_methods.find(function_name);
 
-                    if(it == StdClass->class_methods.end()) {
-                        throw std::runtime_error("function '" + std::string(function_name) + "' not found");
-                    } else {
-                        method_to_call = &it->second;
-                        class_to_call = StdClass;
+                        if(it == StdClass->class_methods.end()) {
+                            throw std::runtime_error("function '" + std::string(function_name) + "' not found");
+                        } else {
+                            method_to_call = &it->second;
+                            class_to_call = StdClass;
                         }
                     }
                 }
@@ -796,24 +812,19 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 
     auto it = current_context().variables.find(node.token().content());
 
-    if(it != current_context().variables.end()) {
-        return it->second;
-    } else {
-        // Todo make a method that receive a context and search on it
-        if(current_context().inherited && stack.size() > 1) {
-            // Search in the parent context
-            auto& parent_context = stack[stack.size() - 2];
-            auto it = parent_context.variables.find(node.token().content());
+    for(int i = stack.size() - 1; i >= 0; --i) {
+        auto& context = stack[i];
 
-            if(it != parent_context.variables.end()) {
-                return it->second;
-            }
+        auto it = context.variables.find(node.token().content());
+
+        if(it != context.variables.end()) {
+            return it->second;
         }
 
-        auto it = current_context().functions.find(node.token().content());
+        auto fn_it = current_context().functions.find(node.token().content());
 
-        if(it != current_context().functions.end()) {
-            auto method = it->second;
+        if(fn_it != current_context().functions.end()) {
+            auto method = fn_it->second;
             andy::lang::function_call __call = {
                 method->name,
                 nullptr,
@@ -824,6 +835,11 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 node.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
             };
             return call(__call);
+        }
+
+        // If the current context is not inherited, we can stop searching
+        if(!context.inherited && i == stack.size() - 1) {
+            break;
         }
     }
 
