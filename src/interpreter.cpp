@@ -377,9 +377,16 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 }
 
                 auto other = positional_params.front();
+                // One for positional_params + one for other (variabled declared above)
+                if(other.use_count() > 2) {
+                    other->native_copy_to(object_to_call.get());
+                } else {
+                    other->native_move_to<void>(object_to_call.get());
+                }
+                
                 object_to_call->cls = other->cls;
-                other->native_copy_to(object_to_call.get());
                 object_to_call->instance_variables = other->instance_variables;
+
                 return object_to_call;
             }
 

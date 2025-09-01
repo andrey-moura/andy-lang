@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#   include <Windows.h>
+#endif
+
 #include <iostream>
 #include <random>
 
@@ -36,6 +40,13 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
 
         { "out", andy::lang::method("out",andy::lang::method_storage_type::class_method, {"message"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> obj = params[0];
+#ifdef _WIN32
+            static bool have_console_have_been_set = false;
+            if (!have_console_have_been_set) {
+                SetConsoleOutputCP(CP_UTF8);
+                have_console_have_been_set = true;
+            }
+#endif
             if(obj->cls == interpreter->StringClass) {
                 std::cout << obj->as<std::string>() << std::endl;
             } else {

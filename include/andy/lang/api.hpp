@@ -26,7 +26,7 @@ namespace andy
             {
                 if constexpr(std::is_same_v<T, std::string>) {
                     if(object->cls == interpreter->StringClass) {
-                        return std::move(object->as<std::string>());
+                        return object->as<std::string>();
                     }
                     throw std::runtime_error("Cannot cast " + std::string(object->cls->name) + " to string");
                 } else if constexpr(std::is_same_v<T, bool>) {

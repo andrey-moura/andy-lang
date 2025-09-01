@@ -170,6 +170,17 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
 
+        {"include?", andy::lang::method("include?", andy::lang::method_storage_type::instance_method, { "other" }, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            const std::string& value = object->as<std::string>();
+            const std::string& other = params[0]->as<std::string>();
+
+            if(value.find(other) != std::string::npos) {
+                return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+            }
+
+            return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+        })},
+
         {"capitalize!", andy::lang::method("capitalize!", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string& value = object->as<std::string>();
 

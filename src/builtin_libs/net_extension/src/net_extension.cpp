@@ -6,8 +6,8 @@
 #include <andy/lang/api.hpp>
 #include <andy/lang/extension.hpp>
 
-#include "net_class.cpp"
-#include "http_class.cpp"
+extern std::shared_ptr<andy::lang::structure> create_net_class(andy::lang::interpreter* interpreter);
+extern std::shared_ptr<andy::lang::structure> create_http_class(andy::lang::interpreter* interpreter);
 
 class net_extension : public andy::lang::extension
 {

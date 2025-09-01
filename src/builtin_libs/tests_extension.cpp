@@ -60,9 +60,9 @@ public:
                     throw std::runtime_error("Argument to 'to' must be a Matcher, got " + std::string(matcher->cls->name));
                 }
                 auto matcher_params = matcher->instance_variables["params"];
+                auto actual_object = object->as<std::shared_ptr<andy::lang::object>>();
+                auto matcher_params_object = matcher_params->as<std::vector<std::shared_ptr<andy::lang::object>>>();
                 if(matcher->instance_variables["name"]->as<std::string>() == "eq") {
-                    auto actual_object = object->as<std::shared_ptr<andy::lang::object>>();
-                    auto matcher_params_object = matcher_params->as<std::vector<std::shared_ptr<andy::lang::object>>>();
                     auto expected_object = matcher_params_object[0];
 
                     andy::lang::function_call eq_call = {
@@ -82,6 +82,27 @@ public:
 
                         throw std::runtime_error("Expected " + expected + ", got " + actual);
                     }
+                } else if(matcher->instance_variables["name"]->as<std::string>() == "include") {
+                    // Handle include matcher
+                    auto expected_object = matcher_params_object[0];
+
+                    andy::lang::function_call include_call = {
+                        "include?",
+                        actual_object->cls,
+                        actual_object,
+                        nullptr,
+                        { expected_object },
+                        {},
+                    };
+
+                    bool result = andy::lang::api::call<bool>(interpreter, include_call);
+
+                    if(!result) {
+                        std::string actual   = andy::lang::api::call<std::string>(interpreter, andy::lang::function_call("to_string", actual_object));
+                        std::string expected = andy::lang::api::call<std::string>(interpreter, andy::lang::function_call("to_string", expected_object));
+
+                        throw std::runtime_error("Expected \"" + actual + "\" to include \"" + expected + "\"");
+                    }
                 }
 
                 return nullptr;
@@ -96,6 +117,7 @@ public:
         add_describe_like<andy::tests::pending>(interpreter, "pending");
 
         auto matcher_result_class = std::make_shared<andy::lang::structure>("Matcher");
+
         interpreter->load(matcher_result_class);
         interpreter->StdClass->class_methods["expect"] = andy::lang::method("expect", andy::lang::method_storage_type::class_method, { "object" }, [=](andy::lang::function_call& call) {
             return andy::lang::object::create(interpreter, expect_class, call.positional_params[0]);
@@ -106,6 +128,15 @@ public:
             matcher_params.push_back(call.positional_params[0]);
             auto matcher_params_object = andy::lang::object::create(interpreter, interpreter->ArrayClass, std::move(matcher_params));
             matcher->instance_variables["name"] = andy::lang::api::to_object(interpreter, "eq");
+            matcher->instance_variables["params"] = matcher_params_object;
+            return matcher;
+        });
+        interpreter->StdClass->class_methods["include"] = andy::lang::method("include", andy::lang::method_storage_type::class_method, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+            auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
+            std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
+            matcher_params.push_back(call.positional_params[0]);
+            auto matcher_params_object = andy::lang::object::create(interpreter, interpreter->ArrayClass, std::move(matcher_params));
+            matcher->instance_variables["name"] = andy::lang::api::to_object(interpreter, "include");
             matcher->instance_variables["params"] = matcher_params_object;
             return matcher;
         });
