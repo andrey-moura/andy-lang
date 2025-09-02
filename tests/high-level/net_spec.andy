@@ -32,21 +32,21 @@ describe 'Net' do
                 it 'should have text? as true' do
                     var res = Net::HTTP.get('http://httpbin.org/encoding/utf8')
                     expect(res.status_code).to eq(200)
-                    expect(res.text?).to be(true)
+                    expect(res.text?).to eq(true)
                 end
             end
-            // describe 'http://httpbin.org/json' do
-            //     it 'should have correct body size' do
-            //         var res = Net::HTTP.get('http://httpbin.org/json')
-            //         expect(res.status_code).to eq(200)
-            //         expect(res.text.size).to eq(14239)
-            //     end
-            //     it 'should have correct body' do
-            //         var res = Net::HTTP.get('http://httpbin.org/json')
-            //         expect(res.status_code).to eq(200)
-            //         expect(res.text).to include('Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν')
-            //     end
-            // end
+            describe 'http://httpbin.org/json' do
+                it 'should have correct values' do
+                    var res = Net::HTTP.get('http://httpbin.org/json')
+                    expect(res.status_code).to eq(200)
+                    out res.json['slideshow']['author']
+                end
+                // it 'should have correct body' do
+                //     var res = Net::HTTP.get('http://httpbin.org/json')
+                //     expect(res.status_code).to eq(200)
+                //     expect(res.text).to include('Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν')
+                // end
+            end
         end
     end
 end

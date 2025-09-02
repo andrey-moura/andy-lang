@@ -85,13 +85,11 @@ add_library(andy-lang
     $<TARGET_OBJECTS:andy-binary>
 )
 
-target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES})
+target_link_libraries(andy-lang PRIVATE ${ANDY_NET_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES} ${ANDY_NET_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
-
-target_link_libraries(andy PRIVATE andy-lang ${wxWidgets_LIBRARIES})
 
 if(FALSE)
     find_package(Clang REQUIRED)

@@ -1,4 +1,5 @@
 #include <andy/lang/lang.hpp>
+#include <andy/lang/api.hpp>
 #include <andy/lang/interpreter.hpp>
 
 std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter* interpreter)
@@ -37,6 +38,34 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             }
 
             return std::make_shared<andy::lang::object>(interpreter->NullClass);
+        })},
+        {"to_string", andy::lang::method("to_string",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+            std::string result = "{";
+            auto& dictionary = object->as<andy::lang::dictionary>();
+            for(auto& pair : dictionary) {
+                result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
+                    "to_string",
+                    pair.first->cls,
+                    pair.first,
+                    &pair.first->cls->instance_methods["to_string"],
+                    {},
+                    {},
+                    nullptr
+                });
+                result += ": ";
+                result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
+                    "to_string",
+                    pair.second->cls,
+                    pair.second,
+                    &pair.second->cls->instance_methods["to_string"],
+                    {},
+                    {},
+                    nullptr
+                });
+                result += ", ";
+            }
+            result += "}";
+            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(result));
         })},
     };
     

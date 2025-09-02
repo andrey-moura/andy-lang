@@ -88,6 +88,12 @@ namespace andy
                     auto class_object = andy::lang::object::create(interpreter, interpreter->ClassClass, std::move(value));
                     class_object->cls->instance_methods["new"].call(class_object);
                     return class_object;
+                } else if constexpr(std::is_same_v<T, bool>) {
+                    if(value) {
+                        return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+                    } else {
+                        return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+                    }
                 }
                 else {
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));

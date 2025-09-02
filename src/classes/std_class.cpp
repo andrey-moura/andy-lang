@@ -6,6 +6,7 @@
 #include <random>
 
 #include <andy/lang/lang.hpp>
+#include <andy/lang/api.hpp>
 #include <andy/lang/interpreter.hpp>
 #include <andy/lang/extension.hpp>
 
@@ -50,7 +51,11 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
             if(obj->cls == interpreter->StringClass) {
                 std::cout << obj->as<std::string>() << std::endl;
             } else {
-                std::string s = obj->cls->instance_methods["to_string"].call(obj)->as<std::string>();
+                std::string s = andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
+                    "to_string",
+                    obj->cls,
+                    obj,
+                });
                 std::cout << s << std::endl;
             }
 
