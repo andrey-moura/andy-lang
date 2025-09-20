@@ -12,7 +12,7 @@
                 },
                 onRuntimeInitialized: function() {
                     $.ajax({
-                        url: "application.andy",
+                        url: "andy-engine/application.andy",
                         dataType: "text",
                         success: function(code) {
                             FS.writeFile("/application.andy", code);

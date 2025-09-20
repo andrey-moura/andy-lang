@@ -194,6 +194,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 object_to_call = std::make_shared<andy::lang::object>(object->cls->base);
                 object_to_call->derived_instance = object;
                 object->base_instance = object_to_call;
+                object_to_call->derived_instance = object;
                 class_to_call = object->cls->base;
             } else {
                 if(object_node) {
@@ -377,11 +378,21 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 }
 
                 auto other = positional_params.front();
+                auto use_count = other.use_count();
+                if(other->base_instance) {
+                    use_count--;
+                }
                 // One for positional_params + one for other (variabled declared above)
-                if(other.use_count() > 2) {
+                if(use_count > 2) {
                     other->native_copy_to(object_to_call.get());
+                    if(other->base_instance) {
+                        object_to_call->base_instance = std::make_shared<andy::lang::object>(NullClass);
+                        other->base_instance->native_copy_to(object_to_call->base_instance.get());
+                    }
                 } else {
                     other->native_move_to<void>(object_to_call.get());
+                    object_to_call->base_instance = other->base_instance;
+                    other->base_instance = nullptr;
                 }
                 
                 object_to_call->cls = other->cls;
@@ -765,7 +776,8 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             method_it = object->cls->base->instance_methods.find(var_name);
             if(method_it != object->cls->base->instance_methods.end()) {
                 method = &method_it->second;
-        }
+                object = object->base_instance;
+            }
         }
 
         if(method) {

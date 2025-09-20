@@ -28,11 +28,12 @@ option(BUILD_ANDY_ANALYZER "Build andy-analyzer" ON)
 get_filename_component(ANDYLANG_PARENT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-string/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
 
@@ -83,9 +84,10 @@ add_library(andy-lang
     $<TARGET_OBJECTS:andy-core>
     $<TARGET_OBJECTS:andy-console>
     $<TARGET_OBJECTS:andy-binary>
+    $<TARGET_OBJECTS:andy-string>
 )
 
-target_link_libraries(andy-lang PRIVATE ${ANDY_NET_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES} ${ANDY_NET_LIBRARIES})
+target_link_libraries(andy-lang PRIVATE ${ANDY_NET_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp

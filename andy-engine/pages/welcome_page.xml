@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="schema.xsd"
+    type="application/xml"
+    schematypens="http://www.w3.org/2001/XMLSchema"?>
+<layout
+    type="flexible"
+    direction="horizontal"
+    justify="center">
+    <text
+        font-size="32px">
+        Welcome to Andy Engine!
+    </text>
+</layout>

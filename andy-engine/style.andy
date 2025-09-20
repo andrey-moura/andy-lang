@@ -1,0 +1,9 @@
+namespace AndyEngine
+    type Style // extends UI::Style
+        fn apply
+            all.set(
+                background_color: Drawing::Color.new(30, 30, 30)
+            )
+        end
+    end
+end

@@ -33,7 +33,7 @@ namespace andy {
             function_call() = default;
             function_call(
                 std::string_view __name,
-                std::shared_ptr<andy::lang::object> __object,
+                std::shared_ptr<andy::lang::object> __object = nullptr,
                 std::vector<std::shared_ptr<andy::lang::object>> __positional_params = {},
                 std::map<std::string, std::shared_ptr<andy::lang::object>> __named_params = {}
             );

@@ -28,3 +28,6 @@
 [submodule "modules/andy-net"]
 	path = modules/andy-net
 	url = https://github.com/andrey-moura/andy-net.git
+[submodule "modules/andy-string"]
+	path = modules/andy-string
+	url = https://github.com/andrey-moura/string.git
