@@ -378,8 +378,29 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                 }
 
                 auto other = positional_params.front();
-                current_context().variables[function_name] = other;
-                return other;
+
+                auto use_count = other.use_count();
+
+                if(other->base_instance) {
+                    use_count--;
+                }
+                // One for positional_params + one for other (variabled declared above)
+                if(use_count > 2) {
+                    other->native_copy_to(object_to_call.get());
+                    if(other->base_instance) {
+                        object_to_call->base_instance = std::make_shared<andy::lang::object>(NullClass);
+                        other->base_instance->native_copy_to(object_to_call->base_instance.get());
+                    }
+                } else {
+                    other->native_move_to<void>(object_to_call.get());
+                    object_to_call->base_instance = other->base_instance;
+                    other->base_instance = nullptr;
+                }
+                
+                object_to_call->cls = other->cls;
+                object_to_call->instance_variables = other->instance_variables;
+
+                return object_to_call;
             }
 
             andy::lang::function_call __call = {
