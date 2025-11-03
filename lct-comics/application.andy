@@ -1,0 +1,19 @@
+import :ui
+import :drawing
+
+namespace LCTComics
+    type Application extends UI.Application
+        var main_window = null
+        fn init
+            main_window = Drawing.Window.new('LCT Comics')
+            // bind(:closed, on: :main_window, to: :main_window_closed)
+            main_window.show(maximized: true)
+        end
+
+        fn main_window_closed
+            out 'Main window closed'
+        end
+    end
+end
+
+UI.main(LCTComics::Application)

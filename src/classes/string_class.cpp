@@ -5,8 +5,8 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
 {
     auto StringClass = std::make_shared<andy::lang::structure>("String");
 
-    StringClass->instance_methods = {
-        {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    StringClass->instance_functions = {
+        {"present?", andy::lang::function("present?", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 
             if(value.empty()) {
@@ -16,18 +16,18 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
         })},
 
-        {"to_string", andy::lang::method("to_string", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"to_string", andy::lang::function("to_string", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             return andy::lang::object::instantiate(interpreter, StringClass, value);
         })},
 
-        {"find", andy::lang::method("find", andy::lang::method_storage_type::instance_method, {"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"find", andy::lang::function("find", andy::lang::function_storage_type::instance_function, {"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             size_t pos = value.find(params[0]->as<std::string>());
             return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, (int32_t)pos);
         })},
 
-        {"substring", andy::lang::method("substring", andy::lang::method_storage_type::instance_method, {"start", "size"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"substring", andy::lang::function("substring", andy::lang::function_storage_type::instance_function, {"start", "size"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             size_t start = params[0]->as<int32_t>();
             size_t size = params[1]->as<int32_t>();
@@ -35,7 +35,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return andy::lang::object::instantiate(interpreter, StringClass, value.substr(start, size));
         })},
 
-        {"to_lower_case!", andy::lang::method("to_lower_case!", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"to_lower_case!", andy::lang::function("to_lower_case!", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string& value = object->as<std::string>();
 
             for(char & c : value) {
@@ -45,7 +45,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return nullptr;
         })},
 
-        {"to_lower_case", andy::lang::method("to_lower_case!", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"to_lower_case", andy::lang::function("to_lower_case!", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string value = object->as<std::string>();
 
             for(char & c : value) {
@@ -55,7 +55,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return andy::lang::object::instantiate(interpreter, StringClass, value);
         })},
 
-        {"to_integer!", andy::lang::method("to_integer!", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"to_integer!", andy::lang::function("to_integer!", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string& value = object->as<std::string>();
 
             if(value.empty()) {
@@ -88,7 +88,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return object;
         })},
 
-        {"to_integer", andy::lang::method("to_integer", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"to_integer", andy::lang::function("to_integer", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string value = object->as<std::string>();
 
             if(value.empty()) return std::make_shared<andy::lang::object>(interpreter->NullClass);
@@ -103,7 +103,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, result);
         })},
 
-        {"erase!", andy::lang::method("erase!", andy::lang::method_storage_type::instance_method, {"start", "size"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"erase!", andy::lang::function("erase!", andy::lang::function_storage_type::instance_function, {"start", "size"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string& value = object->as<std::string>();
             size_t start = params[0]->as<int32_t>();
             size_t size = params[1]->as<int32_t>();
@@ -113,7 +113,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return nullptr;
         })},
 
-        {"starts_with?", andy::lang::method("starts_with?", andy::lang::method_storage_type::instance_method, {"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"starts_with?", andy::lang::function("starts_with?", andy::lang::function_storage_type::instance_function, {"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string& value = object->as<std::string>();
             const std::string& what = params[0]->as<std::string>();
 
@@ -126,7 +126,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
 
-        {"==", andy::lang::method("==", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"==", andy::lang::function("==", andy::lang::function_storage_type::instance_function, {"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             const std::string& other = params[0]->as<std::string>();
 
@@ -137,7 +137,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
 
-        {"!=", andy::lang::method("!=", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"!=", andy::lang::function("!=", andy::lang::function_storage_type::instance_function, {"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             const std::string& other = params[0]->as<std::string>();
 
@@ -148,19 +148,19 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
         
-        {"+", andy::lang::method("+", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"+", andy::lang::function("+", andy::lang::function_storage_type::instance_function, {"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             const std::string& other = params[0]->as<std::string>();
 
             return andy::lang::object::instantiate(interpreter, StringClass, value + other);
         })},
 
-        {"size", andy::lang::method("size", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"size", andy::lang::function("size", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, (int32_t)value.size());
         })},
 
-        {"empty?", andy::lang::method("empty?", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"empty?", andy::lang::function("empty?", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 
             if(value.empty()) {
@@ -170,7 +170,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
 
-        {"include?", andy::lang::method("include?", andy::lang::method_storage_type::instance_method, { "other" }, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"include?", andy::lang::function("include?", andy::lang::function_storage_type::instance_function, { "other" }, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
             const std::string& other = params[0]->as<std::string>();
 
@@ -181,7 +181,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return std::make_shared<andy::lang::object>(interpreter->FalseClass);
         })},
 
-        {"capitalize!", andy::lang::method("capitalize!", andy::lang::method_storage_type::instance_method, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"capitalize!", andy::lang::function("capitalize!", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string& value = object->as<std::string>();
 
             if(!value.empty()) {

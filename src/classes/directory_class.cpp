@@ -9,8 +9,8 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
 {
     auto DirectoryClass = std::make_shared<andy::lang::structure>("Directory");
 
-    DirectoryClass->class_methods = {
-        { "exists?", andy::lang::method("exists?", andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    DirectoryClass->class_functions = {
+        { "exists?", andy::lang::function("exists?", andy::lang::function_storage_type::class_function, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::filesystem::path path;
             std::shared_ptr<andy::lang::object> path_object = params[0];
             if(path_object->cls == interpreter->StringClass) {
@@ -26,7 +26,7 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
                 return std::make_shared<andy::lang::object>(interpreter->FalseClass);
             }
         })},
-        { "create", andy::lang::method("create",andy::lang::method_storage_type::class_method, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        { "create", andy::lang::function("create",andy::lang::function_storage_type::class_function, {"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::filesystem::path path;
             std::shared_ptr<andy::lang::object> path_object = params[0];
             if(path_object->cls == interpreter->StringClass) {
@@ -39,7 +39,7 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
             std::filesystem::create_directory(path);
             return nullptr;
         })},
-        { "home", andy::lang::method("home",andy::lang::method_storage_type::class_method, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        { "home", andy::lang::function("home",andy::lang::function_storage_type::class_function, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::filesystem::path path = std::filesystem::path(std::getenv("HOME"));
             if(path.empty()) {
                 throw std::runtime_error("Unable to retrieve home directory");

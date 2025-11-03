@@ -11,10 +11,10 @@ static bool first = true;
 
 template<typename T>
 inline static void add_describe_like(andy::lang::interpreter* interpreter, std::string_view name) {
-    interpreter->StdClass->class_methods[name] = andy::lang::method(name, andy::lang::method_storage_type::class_method, { "what" }, [interpreter](andy::lang::function_call& call) {
+    interpreter->StdClass->class_functions[name] = andy::lang::function(name, andy::lang::function_storage_type::class_function, { "what" }, [interpreter](andy::lang::function_call& call) {
         std::string& what = call.positional_params[0]->as<std::string>();
         T d = T(what, [interpreter,call]() {
-            andy::lang::method yield_method;
+            andy::lang::function yield_method;
             yield_method.name = "yield";
             if(call.given_block == nullptr) {
                 throw std::runtime_error("yield called without a block");
@@ -52,8 +52,8 @@ public:
     void load(andy::lang::interpreter* interpreter) override
     {
         auto expect_class = std::make_shared<andy::lang::structure>("Expect");
-        expect_class->instance_methods = {
-            { "to", andy::lang::method("to", andy::lang::method_storage_type::instance_method, { "matcher_result" }, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        expect_class->instance_functions = {
+            { "to", andy::lang::function("to", andy::lang::function_storage_type::instance_function, { "matcher_result" }, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
                 // TODO refactor
                 auto matcher = params[0];
                 if(matcher->cls->name != "Matcher") {
@@ -119,10 +119,10 @@ public:
         auto matcher_result_class = std::make_shared<andy::lang::structure>("Matcher");
 
         interpreter->load(matcher_result_class);
-        interpreter->StdClass->class_methods["expect"] = andy::lang::method("expect", andy::lang::method_storage_type::class_method, { "object" }, [=](andy::lang::function_call& call) {
+        interpreter->StdClass->class_functions["expect"] = andy::lang::function("expect", andy::lang::function_storage_type::class_function, { "object" }, [=](andy::lang::function_call& call) {
             return andy::lang::object::create(interpreter, expect_class, call.positional_params[0]);
         });
-        interpreter->StdClass->class_methods["eq"] = andy::lang::method("eq", andy::lang::method_storage_type::class_method, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+        interpreter->StdClass->class_functions["eq"] = andy::lang::function("eq", andy::lang::function_storage_type::class_function, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
             matcher_params.push_back(call.positional_params[0]);
@@ -131,7 +131,7 @@ public:
             matcher->instance_variables["params"] = matcher_params_object;
             return matcher;
         });
-        interpreter->StdClass->class_methods["include"] = andy::lang::method("include", andy::lang::method_storage_type::class_method, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+        interpreter->StdClass->class_functions["include"] = andy::lang::function("include", andy::lang::function_storage_type::class_function, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
             matcher_params.push_back(call.positional_params[0]);

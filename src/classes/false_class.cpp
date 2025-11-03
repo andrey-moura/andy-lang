@@ -5,24 +5,24 @@ std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interprete
 {
     auto FalseClass = std::make_shared<andy::lang::structure>("False");
 
-    FalseClass->instance_methods = {
-        {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    FalseClass->instance_functions = {
+        {"present?", andy::lang::function("present?", andy::lang::function_storage_type::instance_function, [FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>(FalseClass);
         })},
-        {"||", andy::lang::method("||" ,andy::lang::method_storage_type::instance_method, {"other"}, [FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"||", andy::lang::function("||" ,andy::lang::function_storage_type::instance_function, {"other"}, [FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             andy::lang::function_call call = {
                 "present?",
                 FalseClass,
                 object,
-                &object->cls->instance_methods["present?"],
+                &object->cls->instance_functions["present?"],
                 {}
             };
-            return params[0]->cls->instance_methods["present?"].function(call);
+            return params[0]->cls->instance_functions["present?"].native_function(call);
         })},
-        {"!", andy::lang::method("!", andy::lang::method_storage_type::instance_method, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"!", andy::lang::function("!", andy::lang::function_storage_type::instance_function, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
         })},
-        {"==", andy::lang::method("==", andy::lang::method_storage_type::instance_method, {"other"}, [interpreter, FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"==", andy::lang::function("==", andy::lang::function_storage_type::instance_function, {"other"}, [interpreter, FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             auto other = params[0];
             return std::make_shared<andy::lang::object>(other->cls == FalseClass ? interpreter->TrueClass : interpreter->FalseClass);
         })},

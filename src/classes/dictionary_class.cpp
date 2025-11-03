@@ -6,8 +6,8 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 {
     auto DictionaryClass = std::make_shared<andy::lang::structure>("Dictionary");
 
-    DictionaryClass->instance_methods = {
-        {"present?", andy::lang::method("present?",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    DictionaryClass->instance_functions = {
+        {"present?", andy::lang::function("present?",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 
             if(value.empty()) {
@@ -16,12 +16,12 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
         })},
-        {"[]", andy::lang::method("[]",andy::lang::method_storage_type::instance_method, {"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"[]", andy::lang::function("[]",andy::lang::function_storage_type::instance_function, {"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> key = params[0];
 
             auto& dictionary = object->as<andy::lang::dictionary>();
 
-            auto operator_it = key->cls->instance_methods.find("==");
+            auto operator_it = key->cls->instance_functions.find("==");
 
             for(auto& pair : dictionary) {
                 andy::lang::function_call __call = {
@@ -39,7 +39,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 
             return std::make_shared<andy::lang::object>(interpreter->NullClass);
         })},
-        {"to_string", andy::lang::method("to_string",andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        {"to_string", andy::lang::function("to_string",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string result = "{";
             auto& dictionary = object->as<andy::lang::dictionary>();
             for(auto& pair : dictionary) {
@@ -47,7 +47,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "to_string",
                     pair.first->cls,
                     pair.first,
-                    &pair.first->cls->instance_methods["to_string"],
+                    &pair.first->cls->instance_functions["to_string"],
                     {},
                     {},
                     nullptr
@@ -57,7 +57,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "to_string",
                     pair.second->cls,
                     pair.second,
-                    &pair.second->cls->instance_methods["to_string"],
+                    &pair.second->cls->instance_functions["to_string"],
                     {},
                     {},
                     nullptr

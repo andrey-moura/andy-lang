@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) {
                                 return_type = std::move(everything_on_left);
                             }
 
-                            andy::lang::method m;
+                            andy::lang::function m;
                             m.name = std::move(name);
 
                             if(return_type.size()) {
@@ -326,10 +326,10 @@ int main(int argc, char* argv[]) {
                                 return CXChildVisit_Continue;
                             }, nullptr);
 
-                            if(m.storage_type == andy::lang::method_storage_type::instance_method) {
-                                cls->instance_methods[m.name] = std::move(m);
+                            if(m.storage_type == andy::lang::function_storage_type::instance_function) {
+                                cls->instance_functions[m.name] = std::move(m);
                             } else {
-                                cls->class_methods[m.name] = std::move(m);
+                                cls->class_functions[m.name] = std::move(m);
                             }
                         }
 
@@ -378,18 +378,18 @@ int main(int argc, char* argv[]) {
             output_file << "{" << std::endl;
             output_file << "\tauto " << snake_case_name << "_class = std::make_shared<andy::lang::structure>(" << "\"" << cls.name << "\"" << "); " << std::endl;
 
-            if(cls.instance_methods.size() > 0) {
+            if(cls.instance_functions.size() > 0) {
                 output_file  << std::endl;
 
                 output_file  << "\t" << snake_case_name << "_class->methods = {" << std::endl;
 
                 size_t method_iterator = 0;
 
-                for(auto& [name, method] : cls.instance_methods) {
+                for(auto& [name, method] : cls.instance_functions) {
                     if(method_iterator) {
                         output_file << "," << std::endl;
                     }
-                    output_file << "\t\t{\"" << name << "\", andy::lang::method(\"" << name << "\", andy::lang::method_storage_type::instance_method, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {" << std::endl;
+                    output_file << "\t\t{\"" << name << "\", andy::lang::function(\"" << name << "\", andy::lang::function_storage_type::instance_function, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {" << std::endl;
 
                     if(method.name == "new") {
                         output_file << "\t\t\tif constexpr(sizeof(" << snake_case_name << ") < andy::lang::max_native_size) {" << std::endl;

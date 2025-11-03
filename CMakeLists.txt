@@ -43,7 +43,7 @@ include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/net_extension/CMakeLists.txt
 
 add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/method.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/function.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/preprocessor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/extension.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/class.cpp
@@ -64,6 +64,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/function_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp

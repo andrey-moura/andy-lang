@@ -28,27 +28,56 @@ public:
             current_page->draw(renderer);
         }
     }
+    virtual void closed() override
+    {
+        auto bindings_it = window_instance->derived_instance->instance_variables.find("bindings");
+        if(bindings_it == window_instance->derived_instance->instance_variables.end()) {
+            return;
+        }
+        auto& bindings = bindings_it->second->as<andy::lang::dictionary>();
+        for (auto& [key_obj, value_obj] : bindings) {
+            if(key_obj->cls != interpreter->StringClass) {
+                continue;
+            }
+            if(key_obj->as<std::string>() != "closed") {
+                continue;
+            }
+            if(value_obj->cls != interpreter->FunctionClass) {
+                throw std::runtime_error("binding for 'closed' event is not a function, got '" + std::string(value_obj->cls->name) + "'");
+            }
+            andy::lang::function_call call = {
+                "closed",
+                window_instance->derived_instance->cls,
+                window_instance->derived_instance->shared_from_this(),
+                value_obj->as<andy::lang::function*>(),
+                {},
+                {},
+                nullptr
+            };
+        }
+    }
 };
 
 std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpreter* interpreter)
 {
     auto window_class = std::make_shared<andy::lang::structure>("Window");
-    window_class->instance_methods = {
-        {"new", andy::lang::method("new", andy::lang::method_storage_type::instance_method, {"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    window_class->instance_functions = {
+        {"new", andy::lang::function("new", andy::lang::function_storage_type::instance_function, {"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string_view title = params[0]->as<std::string>();
             auto window = std::make_shared<andylang_drawing_window>(title, interpreter, object);
             object->set_native(std::move(window));
+            object->instance_variables["bindings"] = andy::lang::api::to_object(interpreter, andy::lang::dictionary{});
 
             return nullptr;
         })},
-        { "show", andy::lang::method("show", andy::lang::method_storage_type::instance_method, { "maximized: false" }, [](andy::lang::function_call& call) {
+        { "show", andy::lang::function("show", andy::lang::function_storage_type::instance_function, { "maximized: false" }, [](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
             auto window = call.object->as<std::shared_ptr<andylang_drawing_window>>();
             window->show(maximized->is_present());
 
             return nullptr;
         })},
-        { "set_page", andy::lang::method("set_page", andy::lang::method_storage_type::instance_method, { "page" }, [interpreter](andy::lang::function_call& call) {
+        { "set_page", andy::lang::function("set_page", andy::lang::function_storage_type::instance_function, { "page" }, [interpreter](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> page_name = call.positional_params[0];
             if(page_name->cls != interpreter->StringClass) {
                 throw std::runtime_error("function 'set_page' expects a string as parameter, got '" + std::string(page_name->cls->name) + "'");

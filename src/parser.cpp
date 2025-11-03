@@ -9,7 +9,7 @@
 
 #include <andy/lang/object.hpp>
 #include <andy/lang/class.hpp>
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 
 using namespace andy;
 using namespace lang;

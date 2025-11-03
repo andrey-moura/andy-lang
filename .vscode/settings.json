@@ -113,7 +113,7 @@
         "args": [
             "application.andy",
         ],
-        "cwd": "${workspaceFolder}/andy-engine",
+        "cwd": "${workspaceFolder}/lct-comics",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
         "request": "launch"

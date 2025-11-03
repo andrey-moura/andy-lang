@@ -5,7 +5,7 @@
 #include <map>
 #include <memory>
 
-#include "andy/lang/method.hpp"
+#include "andy/lang/function.hpp"
 #include "andy/lang/class.hpp"
 
 namespace andy
@@ -110,6 +110,17 @@ namespace andy
                 auto obj = std::make_shared<andy::lang::object>(cls);
                 obj->set_native<T>(std::move(value));
 
+                return obj;
+            }
+            /// @brief Creates the object with a pointer to a value.
+            /// @tparam T The type of the value.
+            /// @param value The pointer to the value.
+            /// @return Returns a shared pointer to the object.
+            template<typename T>
+            static std::shared_ptr<andy::lang::object> create(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, T* value)
+            {
+                auto obj = std::make_shared<andy::lang::object>(cls);
+                obj->set_native_ptr(value);
                 return obj;
             }
             template<typename T>

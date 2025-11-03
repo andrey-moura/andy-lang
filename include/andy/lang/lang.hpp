@@ -1,7 +1,7 @@
 #pragma once
 
 #include <andy/lang/class.hpp>
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
 
 namespace andy {

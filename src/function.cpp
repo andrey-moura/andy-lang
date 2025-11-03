@@ -1,4 +1,4 @@
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
 #include <andy/lang/class.hpp>
 
@@ -30,7 +30,7 @@ andy::lang::fn_parameter::fn_parameter(std::string_view __name)
     }
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::method::call(std::shared_ptr<andy::lang::object> o)
+std::shared_ptr<andy::lang::object> andy::lang::function::call(std::shared_ptr<andy::lang::object> o)
 {
     andy::lang::function_call call = {
         name,
@@ -41,10 +41,10 @@ std::shared_ptr<andy::lang::object> andy::lang::method::call(std::shared_ptr<and
         {},
         nullptr
     };
-    return function(call);
+    return native_function(call);
 }
 
-void andy::lang::method::init_params(std::vector<std::string> __params)
+void andy::lang::function::init_params(std::vector<std::string> __params)
 {
     for(auto& param : __params) {
         fn_parameter fn_param(std::move(param));
