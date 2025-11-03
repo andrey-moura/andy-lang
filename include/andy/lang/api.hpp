@@ -81,6 +81,10 @@ namespace andy
                     auto obj = std::make_shared<andy::lang::object>(interpreter->ArrayClass);
                     obj->set_native<std::vector<std::shared_ptr<andy::lang::object>>>(std::move(value));
                     return obj;
+} else if constexpr(std::is_same_v<T, andy::lang::dictionary>) {
+                    auto obj = std::make_shared<andy::lang::object>(interpreter->DictionaryClass);
+                    obj->set_native<andy::lang::dictionary>(std::move(value));
+                    return obj;
                 } else if constexpr(std::is_same_v<T, const char*> || std::is_same_v<T, char*> || std::is_same_v<T, std::string_view>) {
                     return to_object(interpreter, std::string(value));
                 }
