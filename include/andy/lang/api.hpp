@@ -91,7 +91,10 @@ namespace andy
                 }
                 else if constexpr(std::is_same_v<T, std::shared_ptr<andy::lang::structure>>) {
                     auto class_object = andy::lang::object::create(interpreter, interpreter->ClassClass, std::move(value));
-                    class_object->cls->instance_functions["new"]->call(class_object);
+                    auto new_func = class_object->cls->functions.find("new");
+                    if(new_func != class_object->cls->functions.end() && new_func->second->storage_type == andy::lang::function_storage_type::instance_function) {
+                        new_func->second->call(class_object);
+                    }
                     return class_object;
                 } else if constexpr(std::is_same_v<T, bool>) {
                     if(value) {
