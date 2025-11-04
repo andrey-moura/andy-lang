@@ -67,9 +67,8 @@ Tests are written in C++ (using a custom testing framework) and in Andy language
 - **Standard**: C++20
 - **Style**: 
   - Use 4 spaces for indentation (no tabs)
-  - Opening braces on the same line for functions and classes
-  - Use `snake_case` for variables and functions
-  - Use `PascalCase` for class names
+  - Opening braces on the following line for functions and classes
+  - Use `snake_case` for variables, functions and class names
   - Use namespace `andy::lang` for language components
   - Prefer `std::shared_ptr` for object management
   
