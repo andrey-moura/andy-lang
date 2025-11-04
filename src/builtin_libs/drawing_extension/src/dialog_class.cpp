@@ -25,8 +25,7 @@ private:
 std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpreter* interpreter)
 {
     auto dialog_class = std::make_shared<andy::lang::structure>("Dialog");
-    dialog_class->instance_functions = {
-        {"new", andy::lang::function("new", andy::lang::function_storage_type::instance_function, {"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        dialog_class->instance_functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string_view title = params[0]->as<std::string>();
             auto dialog = std::make_shared<andylang_drawing_dialog>(title, interpreter, object->derived_instance);
             object->set_native(std::move(dialog));
@@ -45,14 +44,15 @@ std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpret
                 auto page_instance = andy::lang::object::create(interpreter, page_class_object->as<std::shared_ptr<andy::lang::structure>>(), std::move(page));
             }
             return nullptr;
-        })},
-        { "show", andy::lang::function("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
+        });
+
+    dialog_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
             auto dialog = call.object->as<std::shared_ptr<andylang_drawing_dialog>>();
             dialog->show(maximized->is_present());
 
             return nullptr;
-        })},
-    };
+        });
+
     return dialog_class;
 }
