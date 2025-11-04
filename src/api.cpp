@@ -49,7 +49,7 @@ namespace andy
                         throw std::runtime_error("Class " + std::string(__call.object->cls->name) + " does not have an instance function called '" + std::string(__call.name) + "'");
                     }
 
-                    __call.method = &method->second;
+                    __call.method = method->second.get();
                 } else {
                     auto method = interpreter->StdClass->class_functions.find(__call.name);
 
@@ -60,7 +60,7 @@ namespace andy
                         ast = ast.childrens().front();
                         return interpreter->execute(ast, __call.object);
                     } else {
-                        __call.method = &method->second;
+                        __call.method = method->second.get();
                     }
 
                 }

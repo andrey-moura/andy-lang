@@ -91,7 +91,7 @@ namespace andy
                 }
                 else if constexpr(std::is_same_v<T, std::shared_ptr<andy::lang::structure>>) {
                     auto class_object = andy::lang::object::create(interpreter, interpreter->ClassClass, std::move(value));
-                    class_object->cls->instance_functions["new"].call(class_object);
+                    class_object->cls->instance_functions["new"]->call(class_object);
                     return class_object;
                 } else if constexpr(std::is_same_v<T, bool>) {
                     if(value) {

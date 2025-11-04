@@ -6,8 +6,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 {
     auto DictionaryClass = std::make_shared<andy::lang::structure>("Dictionary");
 
-    DictionaryClass->instance_functions = {
-        {"present?", andy::lang::function("present?",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        DictionaryClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 
             if(value.empty()) {
@@ -15,8 +14,9 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             }
 
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
-        })},
-        {"[]", andy::lang::function("[]",andy::lang::function_storage_type::instance_function, {"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        });
+
+    DictionaryClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::shared_ptr<andy::lang::object> key = params[0];
 
             auto& dictionary = object->as<andy::lang::dictionary>();
@@ -28,7 +28,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "==",
                     key->cls,
                     key,
-                    &operator_it->second,
+                    operator_it->second.get(),
                     { pair.first }
                 };
                 auto result = interpreter->call(__call);
@@ -38,8 +38,9 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             }
 
             return std::make_shared<andy::lang::object>(interpreter->NullClass);
-        })},
-        {"to_string", andy::lang::function("to_string",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        });
+
+    DictionaryClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string result = "{";
             auto& dictionary = object->as<andy::lang::dictionary>();
             for(auto& pair : dictionary) {
@@ -47,7 +48,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "to_string",
                     pair.first->cls,
                     pair.first,
-                    &pair.first->cls->instance_functions["to_string"],
+                    pair.first->cls->instance_functions["to_string"].get(),
                     {},
                     {},
                     nullptr
@@ -57,7 +58,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "to_string",
                     pair.second->cls,
                     pair.second,
-                    &pair.second->cls->instance_functions["to_string"],
+                    pair.second->cls->instance_functions["to_string"].get(),
                     {},
                     {},
                     nullptr
@@ -66,8 +67,8 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             }
             result += "}";
             return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(result));
-        })},
-    };
+        });
+
     
     return DictionaryClass;
 }
