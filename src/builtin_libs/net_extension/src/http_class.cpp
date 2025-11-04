@@ -6,16 +6,16 @@
 std::shared_ptr<andy::lang::structure> create_http_class(andy::lang::interpreter* interpreter)
 {
     auto response_class = std::make_shared<andy::lang::structure>("Response");
-    response_class->instance_functions["text"] = andy::lang::function("text", andy::lang::function_storage_type::instance_function, {  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    response_class->instance_functions["text"] = std::make_shared<andy::lang::function>("text", andy::lang::function_storage_type::instance_function, std::vector<std::string>{  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         auto& response = object->as<andy::net::http::response>();
         std::string_view text = response.text();
         return andy::lang::api::to_object(interpreter, text);
     });
-    response_class->instance_functions["text?"] = andy::lang::function("text?", andy::lang::function_storage_type::instance_function, {  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    response_class->instance_functions["text?"] = std::make_shared<andy::lang::function>("text?", andy::lang::function_storage_type::instance_function, std::vector<std::string>{  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         auto& response = object->as<andy::net::http::response>();
         return andy::lang::api::to_object(interpreter, response.is_text());
     });
-    response_class->instance_functions["json"] = andy::lang::function("json", andy::lang::function_storage_type::instance_function, {  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    response_class->instance_functions["json"] = std::make_shared<andy::lang::function>("json", andy::lang::function_storage_type::instance_function, std::vector<std::string>{  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         auto& response = object->as<andy::net::http::response>();
         andy::lang::dictionary json;
         std::string_view content_type = response.headers["Content-Type"];
@@ -32,12 +32,12 @@ std::shared_ptr<andy::lang::structure> create_http_class(andy::lang::interpreter
 
         return interpreter->node_to_object(node);
     });
-    response_class->instance_functions["json?"] = andy::lang::function("json?", andy::lang::function_storage_type::instance_function, {  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    response_class->instance_functions["json?"] = std::make_shared<andy::lang::function>("json?", andy::lang::function_storage_type::instance_function, std::vector<std::string>{  }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         auto& response = object->as<andy::net::http::response>();
         return andy::lang::api::to_object(interpreter, response.headers["Content-Type"].starts_with("application/json"));
     });
     auto http_class = std::make_shared<andy::lang::structure>("HTTP");
-    http_class->class_functions["get"] = andy::lang::function("get", andy::lang::function_storage_type::class_function, { "url" }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    http_class->class_functions["get"] = std::make_shared<andy::lang::function>("get", andy::lang::function_storage_type::class_function, std::vector<std::string>{ "url" }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         const auto& url = params[0]->as<std::string>();
 
         auto response = andy::net::http::get(url);

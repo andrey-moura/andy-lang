@@ -196,7 +196,7 @@ namespace andy
                 { "/",  BINARY_ARITHMETIC_OPERATOR(/, T)  },
             };
             if constexpr (std::is_same_v<T, int>) {
-                cls->instance_functions["%"] = andy::lang::function("%", andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) {
+                cls->instance_functions["%"] = std::make_shared<andy::lang::function>("%", andy::lang::function_storage_type::instance_function, std::vector<std::string>{ "other" }, [interpreter](andy::lang::function_call& call) {
                     auto object = call.object;
                     auto other = call.positional_params[0];
                     if(other->cls != interpreter->IntegerClass) {
@@ -206,7 +206,7 @@ namespace andy
                     value %= other->as<int>();
                     return andy::lang::object::create(interpreter, object->cls, value);
                 });
-                cls->inline_functions["%"] = [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) {
+                cls->inline_functions["%"] = std::make_shared<andy::lang::inline_function>([](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) {
                     const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
                     if (!params_node || params_node->childrens().size() != 1) {
                         throw std::runtime_error(std::string(object->cls->name) + "::operator % requires exactly one parameter");
@@ -220,10 +220,14 @@ namespace andy
                     int value = object->as<int>();
                     value %= other.token().integer_literal;
                     return andy::lang::object::create(interpreter, object->cls, value);
-                };
+                });
             }
-            cls->inline_functions.insert(inline_functions.begin(), inline_functions.end());
-            cls->instance_functions.insert(instance_functions.begin(), instance_functions.end());
+            for(auto& [name, func_ptr] : inline_functions) {
+                cls->inline_functions[name] = std::make_shared<andy::lang::inline_function>(func_ptr);
+            }
+            for(auto& [name, func] : instance_functions) {
+                cls->instance_functions[name] = std::make_shared<andy::lang::function>(std::move(func));
+            }
         }
     };
 };

@@ -24,9 +24,9 @@ namespace andy {
             std::shared_ptr<andy::lang::structure> base;
             std::vector<std::shared_ptr<andy::lang::structure>> deriveds;
 
-            std::map<std::string_view, andy::lang::function> instance_functions;
-            std::map<std::string_view, andy::lang::function> class_functions;
-            std::map<std::string_view, inline_function> inline_functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::function>> instance_functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::function>> class_functions;
+            std::map<std::string_view, std::shared_ptr<inline_function>> inline_functions;
 
             std::map<std::string_view, const andy::lang::parser::ast_node*> instance_variables;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> class_variables;

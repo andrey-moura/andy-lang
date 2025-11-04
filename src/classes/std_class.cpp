@@ -32,7 +32,7 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
             if(obj->cls == interpreter->StringClass) {
                 std::cout << obj->as<std::string>();
             } else {
-                std::string s = obj->cls->instance_functions["to_string"].call(obj)->as<std::string>();
+                std::string s = obj->cls->instance_functions["to_string"]->call(obj)->as<std::string>();
                 std::cout << s;
             }
 
@@ -70,7 +70,7 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
         })},
 
         { "system", andy::lang::function("system",andy::lang::function_storage_type::class_function, {"command"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::shared_ptr<andy::lang::object> command = params[0]->cls->instance_functions["to_string"].call(params[0]);
+            std::shared_ptr<andy::lang::object> command = params[0]->cls->instance_functions["to_string"]->call(params[0]);
             int code = std::system(command->as<std::string>().c_str());
 #ifdef __linux__
             code = WEXITSTATUS(code);

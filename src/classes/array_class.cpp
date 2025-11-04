@@ -17,7 +17,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
                     result += ", ";
                 }
 
-                result += item->cls->instance_functions["to_string"].call(item)->as<std::string>();
+                result += item->cls->instance_functions["to_string"]->call(item)->as<std::string>();
             }
 
             result += "]";
@@ -36,7 +36,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
                     result += separator;
                 }
 
-                result += item->cls->instance_functions["to_string"].call(item)->as<std::string>();
+                result += item->cls->instance_functions["to_string"]->call(item)->as<std::string>();
             }
 
             return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(result));
@@ -93,7 +93,7 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
                     "==",
                     items[i]->cls,
                     items[i],
-                    &it->second,
+                    it->second.get(),
                     { other_items[i] }
                 };
                 auto result = interpreter->call(call);

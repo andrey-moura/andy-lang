@@ -11,7 +11,7 @@ static bool first = true;
 
 template<typename T>
 inline static void add_describe_like(andy::lang::interpreter* interpreter, std::string_view name) {
-    interpreter->StdClass->class_functions[name] = andy::lang::function(name, andy::lang::function_storage_type::class_function, { "what" }, [interpreter](andy::lang::function_call& call) {
+    interpreter->StdClass->class_functions[name] = std::make_shared<andy::lang::function>(name, andy::lang::function_storage_type::class_function, std::vector<std::string>{ "what" }, [interpreter](andy::lang::function_call& call) {
         std::string& what = call.positional_params[0]->as<std::string>();
         T d = T(what, [interpreter,call]() {
             andy::lang::function yield_method;
@@ -119,10 +119,10 @@ public:
         auto matcher_result_class = std::make_shared<andy::lang::structure>("Matcher");
 
         interpreter->load(matcher_result_class);
-        interpreter->StdClass->class_functions["expect"] = andy::lang::function("expect", andy::lang::function_storage_type::class_function, { "object" }, [=](andy::lang::function_call& call) {
+        interpreter->StdClass->class_functions["expect"] = std::make_shared<andy::lang::function>("expect", andy::lang::function_storage_type::class_function, std::vector<std::string>{ "object" }, [=](andy::lang::function_call& call) {
             return andy::lang::object::create(interpreter, expect_class, call.positional_params[0]);
         });
-        interpreter->StdClass->class_functions["eq"] = andy::lang::function("eq", andy::lang::function_storage_type::class_function, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+        interpreter->StdClass->class_functions["eq"] = std::make_shared<andy::lang::function>("eq", andy::lang::function_storage_type::class_function, std::vector<std::string>{ "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
             matcher_params.push_back(call.positional_params[0]);
@@ -131,7 +131,7 @@ public:
             matcher->instance_variables["params"] = matcher_params_object;
             return matcher;
         });
-        interpreter->StdClass->class_functions["include"] = andy::lang::function("include", andy::lang::function_storage_type::class_function, { "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+        interpreter->StdClass->class_functions["include"] = std::make_shared<andy::lang::function>("include", andy::lang::function_storage_type::class_function, std::vector<std::string>{ "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
             matcher_params.push_back(call.positional_params[0]);

@@ -28,7 +28,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "==",
                     key->cls,
                     key,
-                    &operator_it->second,
+                    operator_it->second.get(),
                     { pair.first }
                 };
                 auto result = interpreter->call(__call);
@@ -47,7 +47,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "to_string",
                     pair.first->cls,
                     pair.first,
-                    &pair.first->cls->instance_functions["to_string"],
+                    pair.first->cls->instance_functions["to_string"].get(),
                     {},
                     {},
                     nullptr
@@ -57,7 +57,7 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     "to_string",
                     pair.second->cls,
                     pair.second,
-                    &pair.second->cls->instance_functions["to_string"],
+                    pair.second->cls->instance_functions["to_string"].get(),
                     {},
                     {},
                     nullptr
