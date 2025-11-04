@@ -63,7 +63,7 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::
             new_call.name = "new";
             new_call.cls = cls;
             new_call.object = shared_from_this();
-            new_call.method = &new_it->second;
+            new_call.method = new_it->second.get();
 
             interpreter->call(new_call);
         }
@@ -88,7 +88,7 @@ bool andy::lang::object::is_present() const
     } else {
         auto this_without_const = const_cast<object*>(this);
 
-        auto obj = it->second.call( this_without_const->shared_from_this() );
+        auto obj = it->second->call( this_without_const->shared_from_this() );
 
         if(obj->cls->name == "True") {
             return true;

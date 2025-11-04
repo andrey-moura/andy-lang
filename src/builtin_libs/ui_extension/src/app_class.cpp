@@ -20,7 +20,7 @@ void andylang_ui_app::on_init()
         "init",
         app_instance->cls,
         app_instance->shared_from_this(),
-        &run_it->second,
+        run_it->second.get(),
         {},
         {},
         nullptr
@@ -33,13 +33,13 @@ std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter*
 {
     auto AppClass = std::make_shared<andy::lang::structure>("Application");
 
-    AppClass->instance_functions = {
-        { "new", andy::lang::function("new", andy::lang::function_storage_type::instance_function, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params){
+        AppClass->instance_functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::instance_function,std::initializer_list<std::string>{}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params){
             std::shared_ptr<andylang_ui_app> app = std::make_shared<andylang_ui_app>(interpreter, object->derived_instance);
             object->set_native(app);
             return nullptr;
-        })},
-        { "bind", andy::lang::function("bind", andy::lang::function_storage_type::instance_function, { "event", "on: null", "to: null" }, [interpreter](andy::lang::function_call& call) {
+        });
+
+    AppClass->instance_functions["bind"] = std::make_shared<andy::lang::function>("bind", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"event", "on: null", "to: null"}, [interpreter](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> event_name = call.positional_params[0];
             std::shared_ptr<andy::lang::object> handler_name = call.named_params["to"];
             std::shared_ptr<andy::lang::object> on_param = call.named_params["on"];
@@ -87,8 +87,8 @@ std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter*
             bindings_map.push_back({event_name, handler_function_object});
 
             return nullptr;
-        })},
-    };
+        });
+
 
     return AppClass;
 }

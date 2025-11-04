@@ -51,9 +51,9 @@ andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang
 {
     for(auto& method : __methods) {
         if(method.storage_type == function_storage_type::class_function) {
-            class_functions[method.name] = std::move(method);
+            class_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
         } else {
-            instance_functions[method.name] = std::move(method);
+            instance_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
         }
     }
 

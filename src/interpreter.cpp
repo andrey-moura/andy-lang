@@ -55,7 +55,7 @@ andy::lang::interpreter::interpreter()
 
 void andy::lang::interpreter::load(std::shared_ptr<andy::lang::structure> cls)
 {
-    cls->class_functions["subclasses"] = andy::lang::function("subclasses", function_storage_type::instance_function, [cls,this](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    cls->class_functions["subclasses"] = std::make_shared<andy::lang::function>("subclasses", function_storage_type::instance_function, [cls,this](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         std::vector<std::shared_ptr<andy::lang::object>> subclasses;
         subclasses.reserve(cls->deriveds.size());
 
@@ -113,9 +113,9 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
         case andy::lang::parser::ast_node_type::ast_node_fn_decl: {
             auto method = execute_method_definition(class_child);
             if(method.storage_type == andy::lang::function_storage_type::class_function || source_code.decl_type() == "namespace") {
-                cls->class_functions[method.name] = std::move(method);
+                cls->class_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
             } else {
-                cls->instance_functions[method.name] = std::move(method);
+                cls->instance_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
             }
         }
         break;
@@ -127,7 +127,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
             auto child_cls = execute_classdecl(class_child);
             auto cls_object = andy::lang::object::create(this, ClassClass, child_cls);
-            cls_object->cls->instance_functions["new"].call(cls_object);
+            cls_object->cls->instance_functions["new"]->call(cls_object);
             cls->class_variables[child_cls->name] = cls_object;
         }
         default:
@@ -190,7 +190,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     throw std::runtime_error("base class " + std::string(object->cls->base->name) + " does not have a constructor");
                 }
 
-                method_to_call = &it->second;
+                method_to_call = it->second.get();
                 object_to_call = std::make_shared<andy::lang::object>(object->cls->base);
                 object_to_call->derived_instance = object;
                 object->base_instance = object_to_call;
@@ -233,7 +233,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                         // We can inline!
                         auto it = class_to_call->inline_functions.find(function_name);
                         if(it != class_to_call->inline_functions.end()) {
-                            auto& inline_fn = it->second;
+                            auto& inline_fn = *it->second;
                             return inline_fn(this, object_to_call, source_code);
                         }
                     }
@@ -260,13 +260,13 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                                     throw std::runtime_error("object has no base instance");
                                 }
 
-                                method_to_call = &it->second;
+                                method_to_call = it->second.get();
                                 class_to_call = object_to_call->cls->base;
                                 object_to_call = object_to_call->base_instance;
                             }
                         }
                     } else {
-                        method_to_call = &it->second;
+                        method_to_call = it->second.get();
                         object_to_call = object_to_call;
                         class_to_call = object_to_call->cls;
                     }
@@ -281,14 +281,14 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                     auto it = class_to_call->class_functions.find(function_name);
 
                     if(it != class_to_call->class_functions.end()) {
-                        method_to_call = &it->second;
+                        method_to_call = it->second.get();
                     } else {
                         // If the class does not have the method, we search in the base class.
                         if(class_to_call->base) {
                             it = class_to_call->base->class_functions.find(function_name);
 
                             if(it != class_to_call->base->class_functions.end()) {
-                                method_to_call = &it->second;
+                                method_to_call = it->second.get();
                                 class_to_call = class_to_call->base;
                             }
                         }
@@ -340,7 +340,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
                         if(it == StdClass->class_functions.end()) {
                             throw std::runtime_error("function '" + std::string(function_name) + "' not found");
                         } else {
-                            method_to_call = &it->second;
+                            method_to_call = it->second.get();
                             class_to_call = StdClass;
                         }
                     }
@@ -773,11 +773,11 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         andy::lang::function* method = nullptr;
         auto method_it = object->cls->instance_functions.find(var_name);
         if(method_it != object->cls->instance_functions.end()) {
-            method = &method_it->second;
+            method = method_it->second.get();
         } else if(object->cls->base) {
             method_it = object->cls->base->instance_functions.find(var_name);
             if(method_it != object->cls->base->instance_functions.end()) {
-                method = &method_it->second;
+                method = method_it->second.get();
                 object = object->base_instance;
             }
         }
@@ -787,7 +787,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 var_name,
                 object->cls,
                 object,
-                &method_it->second,
+                method_it->second.get(),
                 {},
                 {},
                 fn_object
@@ -814,7 +814,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                             var_name,
                             cls,
                             nullptr,
-                            &it->second,
+                            it->second.get(),
                             {},
                             {},
                             fn_object
@@ -979,7 +979,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
                         "to_string",
                         obj->cls,
                         obj,
-                        &method->second,
+                        method->second.get(),
                         {},
                         {},
                         nullptr
