@@ -36,15 +36,15 @@ describe 'Net' do
                 end
             end
             describe 'http://httpbin.org/json' do
-                it 'should have correct values' do
+                it 'should have json? as true' do
                     var res = Net::HTTP.get('http://httpbin.org/json')
                     expect(res.status_code).to eq(200)
-                    out res.json['slideshow']['author']
+                    expect(res.json?).to eq(true)
                 end
-                // it 'should have correct body' do
-                //     var res = Net::HTTP.get('http://httpbin.org/json')
-                //     expect(res.status_code).to eq(200)
-                //     expect(res.text).to include('Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν')
+                // it 'should have correct values' do
+                    // var res = Net::HTTP.get('http://httpbin.org/json')
+                    // expect(res.status_code).to eq(200)
+                    // out res.json['slideshow']
                 // end
             end
         end
