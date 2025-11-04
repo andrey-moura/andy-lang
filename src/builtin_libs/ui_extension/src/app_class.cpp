@@ -20,7 +20,7 @@ void andylang_ui_app::on_init()
         "init",
         app_instance->cls,
         app_instance->shared_from_this(),
-        &run_it->second,
+        run_it->second.get(),
         {},
         {},
         nullptr

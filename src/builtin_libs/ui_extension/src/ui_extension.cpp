@@ -31,7 +31,7 @@ public:
                     throw std::runtime_error("UI.main expects an class, got " + (app_class_class ? std::string(app_class_class->cls->name) : "null"));
                 }
                 auto app_class = app_class_class->as<std::shared_ptr<andy::lang::structure>>();
-                application_instance = andy::lang::object::instantiate(interpreter, app_class, nullptr,std::initializer_list<std::string>{});
+                application_instance = andy::lang::object::instantiate(interpreter, app_class, nullptr, {});
                 auto app_native = application_instance->as<std::shared_ptr<andylang_ui_app>>();
                 app_native->run();
                 return nullptr;
