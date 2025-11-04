@@ -26,7 +26,7 @@ public:
     {
         auto UIClass = std::make_shared<andy::lang::structure>("UI");
         UIClass->class_functions = {
-            { "main", andy::lang::function("main", andy::lang::function_storage_type::class_function, { "app_class" }, [this, interpreter](andy::lang::function_call& call) {
+            { "main", andy::lang::function("main", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"app_class"}, [this, interpreter](andy::lang::function_call& call) {
                 auto app_class_class = call.positional_params[0];
                 if (!app_class_class || app_class_class->cls != interpreter->ClassClass) {
                     throw std::runtime_error("UI.main expects an class, got " + (app_class_class ? std::string(app_class_class->cls->name) : "null"));

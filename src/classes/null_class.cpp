@@ -14,7 +14,7 @@ std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter
         return andy::lang::object::instantiate( interpreter, interpreter->StringClass, std::move(str) );
     });
     
-    NullClass->instance_functions["=="] = std::make_shared<andy::lang::function>("==", andy::lang::function_storage_type::instance_function, {"other"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    NullClass->instance_functions["=="] = std::make_shared<andy::lang::function>("==", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"other"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         if(params[0]->cls == interpreter->NullClass) {
             return std::make_shared<andy::lang::object>( interpreter->TrueClass );
         } else {

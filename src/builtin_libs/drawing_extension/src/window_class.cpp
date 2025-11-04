@@ -70,14 +70,14 @@ std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpret
 
             return nullptr;
         })},
-        { "show", andy::lang::function("show", andy::lang::function_storage_type::instance_function, { "maximized: false" }, [](andy::lang::function_call& call) {
+        { "show", andy::lang::function("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
             auto window = call.object->as<std::shared_ptr<andylang_drawing_window>>();
             window->show(maximized->is_present());
 
             return nullptr;
         })},
-        { "set_page", andy::lang::function("set_page", andy::lang::function_storage_type::instance_function, { "page" }, [interpreter](andy::lang::function_call& call) {
+        { "set_page", andy::lang::function("set_page", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"page"}, [interpreter](andy::lang::function_call& call) {
 //             std::shared_ptr<andy::lang::object> page_name = call.positional_params[0];
 //             if(page_name->cls != interpreter->StringClass) {
 //                 throw std::runtime_error("function 'set_page' expects a string as parameter, got '" + std::string(page_name->cls->name) + "'");

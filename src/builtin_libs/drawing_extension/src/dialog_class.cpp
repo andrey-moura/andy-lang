@@ -46,7 +46,7 @@ std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpret
             }
             return nullptr;
         })},
-        { "show", andy::lang::function("show", andy::lang::function_storage_type::instance_function, { "maximized: false" }, [](andy::lang::function_call& call) {
+        { "show", andy::lang::function("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
             std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
             auto dialog = call.object->as<std::shared_ptr<andylang_drawing_dialog>>();
             dialog->show(maximized->is_present());
