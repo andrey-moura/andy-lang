@@ -78,31 +78,31 @@ std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpret
             return nullptr;
         })},
         { "set_page", andy::lang::function("set_page", andy::lang::function_storage_type::instance_function, { "page" }, [interpreter](andy::lang::function_call& call) {
-            std::shared_ptr<andy::lang::object> page_name = call.positional_params[0];
-            if(page_name->cls != interpreter->StringClass) {
-                throw std::runtime_error("function 'set_page' expects a string as parameter, got '" + std::string(page_name->cls->name) + "'");
-            }
+//             std::shared_ptr<andy::lang::object> page_name = call.positional_params[0];
+//             if(page_name->cls != interpreter->StringClass) {
+//                 throw std::runtime_error("function 'set_page' expects a string as parameter, got '" + std::string(page_name->cls->name) + "'");
+//             }
 
-            std::string view_filename = page_name->as<std::string>();
-            view_filename += "_page.xml";
-#ifdef ANDY_DRAWING_EMSCRIPTEN
-            std::string xml_content = load_file_emscripten("pages/" + view_filename);
-            if(xml_content.empty()) {
-                throw std::runtime_error("file 'pages/" + view_filename + "' not found");
-            }
-            andy::xml xml = andy::xml::decode(xml_content);
-            andy::xml::schema schema = andy::xml::schema(andy::xml::decode("pages/schema.xsd"));
-#else
-            std::filesystem::path views_file = std::filesystem::absolute("pages");
-            views_file /= view_filename;
-            if(!std::filesystem::exists(views_file)) {
-                throw std::runtime_error("file '" + views_file.string() + "' not found");
-            }
-            andy::xml xml = andy::xml::decode(views_file);
-            std::filesystem::path schema_file_path = std::filesystem::absolute("pages/schema.xsd");
-            andy::xml::schema schema = andy::xml::schema(andy::xml::decode(schema_file_path));
-#endif
-            call.object->as<std::shared_ptr<andylang_drawing_window>>()->current_page = std::make_shared<andy::drawing::page>(std::move(schema), std::move(xml));
+//             std::string view_filename = page_name->as<std::string>();
+//             view_filename += "_page.xml";
+// #ifdef ANDY_DRAWING_EMSCRIPTEN
+//             std::string xml_content = load_file_emscripten("pages/" + view_filename);
+//             if(xml_content.empty()) {
+//                 throw std::runtime_error("file 'pages/" + view_filename + "' not found");
+//             }
+//             andy::xml xml = andy::xml::decode(xml_content);
+//             andy::xml::schema schema = andy::xml::schema(andy::xml::decode("pages/schema.xsd"));
+// #else
+//             std::filesystem::path views_file = std::filesystem::absolute("pages");
+//             views_file /= view_filename;
+//             if(!std::filesystem::exists(views_file)) {
+//                 throw std::runtime_error("file '" + views_file.string() + "' not found");
+//             }
+//             andy::xml xml = andy::xml::decode(views_file);
+//             std::filesystem::path schema_file_path = std::filesystem::absolute("pages/schema.xsd");
+//             andy::xml::schema schema = andy::xml::schema(andy::xml::decode(schema_file_path));
+// #endif
+//             call.object->as<std::shared_ptr<andylang_drawing_window>>()->current_page = std::make_shared<andy::drawing::page>(std::move(schema), std::move(xml));
 
             return nullptr;
         })},
