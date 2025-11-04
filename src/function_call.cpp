@@ -1,4 +1,4 @@
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
 
 namespace andy {
@@ -17,7 +17,7 @@ namespace andy {
             std::string_view __name,
             std::shared_ptr<andy::lang::structure> __cls,
             std::shared_ptr<andy::lang::object> __object,
-            const andy::lang::method* method,
+            const andy::lang::function* method,
             std::vector<std::shared_ptr<andy::lang::object>> __positional_params,
             std::map<std::string, std::shared_ptr<andy::lang::object>> __named_params,
             const andy::lang::parser::ast_node* __given_block

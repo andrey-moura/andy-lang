@@ -42,13 +42,28 @@ namespace andy
             }
 
             std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
-                auto method = __call.object->cls->instance_methods.find(__call.name);
+                if(__call.object) {
+                    auto method = __call.object->cls->instance_functions.find(__call.name);
 
-                if(method == __call.object->cls->instance_methods.end()) {
-                    throw std::runtime_error("Class " + std::string(__call.object->cls->name) + " does not have an instance function called '" + std::string(__call.name) + "'");
+                    if(method == __call.object->cls->instance_functions.end()) {
+                        throw std::runtime_error("Class " + std::string(__call.object->cls->name) + " does not have an instance function called '" + std::string(__call.name) + "'");
+                    }
+
+                    __call.method = method->second.get();
+                } else {
+                    auto method = interpreter->StdClass->class_functions.find(__call.name);
+
+                    if(method == interpreter->StdClass->class_functions.end()) {
+                        andy::lang::lexer lexer("", __call.name);
+                        andy::lang::parser parser;
+                        auto ast = parser.parse_all(lexer);
+                        ast = ast.childrens().front();
+                        return interpreter->execute(ast, __call.object);
+                    } else {
+                        __call.method = method->second.get();
+                    }
+
                 }
-
-                __call.method = &method->second;
 
                 return interpreter->call(__call);
             }

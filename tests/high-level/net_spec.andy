@@ -1,0 +1,52 @@
+import :net
+import :tests
+
+fn status_tester(status_code)
+    var url = "http://httpbin.org/status/${status_code}"
+    describe "${url}" do
+        it "should have status code ${status_code}" do
+            var res = Net::HTTP.get(url);
+            expect(res.status_code).to eq(status_code);
+        end
+    end
+end
+
+describe 'Net' do
+    describe 'HTTP' do
+        describe 'get' do
+            // status_tester(200);
+            // status_tester(400);
+            // status_tester(404);
+            // status_tester(500);
+            describe 'http://httpbin.org/encoding/utf8' do
+                it 'should have correct body size' do
+                    var res = Net::HTTP.get('http://httpbin.org/encoding/utf8')
+                    expect(res.status_code).to eq(200)
+                    expect(res.text.size).to eq(14239)
+                end
+                it 'should have correct body' do
+                    var res = Net::HTTP.get('http://httpbin.org/encoding/utf8')
+                    expect(res.status_code).to eq(200)
+                    expect(res.text).to include('Οὐχὶ ταὐτὰ παρίσταταί μοι γιγνώσκειν')
+                end
+                it 'should have text? as true' do
+                    var res = Net::HTTP.get('http://httpbin.org/encoding/utf8')
+                    expect(res.status_code).to eq(200)
+                    expect(res.text?).to eq(true)
+                end
+            end
+            describe 'http://httpbin.org/json' do
+                it 'should have json? as true' do
+                    var res = Net::HTTP.get('http://httpbin.org/json')
+                    expect(res.status_code).to eq(200)
+                    expect(res.json?).to eq(true)
+                end
+                // it 'should have correct values' do
+                    // var res = Net::HTTP.get('http://httpbin.org/json')
+                    // expect(res.status_code).to eq(200)
+                    // out res.json['slideshow']
+                // end
+            end
+        end
+    end
+end

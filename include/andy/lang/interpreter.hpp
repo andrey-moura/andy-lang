@@ -5,7 +5,7 @@
 
 #include <andy/lang/parser.hpp>
 #include <andy/lang/class.hpp>
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
 
 namespace andy
@@ -19,7 +19,7 @@ namespace andy
             std::shared_ptr<andy::lang::structure> cls;
             std::shared_ptr<andy::lang::object> self;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
-            std::map<std::string_view, std::shared_ptr<andy::lang::method>> functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::function>> functions;
             const andy::lang::parser::ast_node* given_block = nullptr;
 
             bool has_returned = false;
@@ -103,6 +103,9 @@ namespace andy
 
             /// @brief The global class class.
             std::shared_ptr<andy::lang::structure> ClassClass;
+
+            /// @brief The global function class.
+            std::shared_ptr<andy::lang::structure> FunctionClass;
 
             std::shared_ptr<andy::lang::object> call(function_call& call);
 

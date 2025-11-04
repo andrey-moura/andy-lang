@@ -148,7 +148,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     EndDialog(hDlg, 0);
 
-    int response = MessageBoxA(NULL, "Andy has been installed successfully? Would you like to restart your computer now?", "Success", MB_YESNO | MB_ICONQUESTION);
+    int response = MessageBoxA(NULL, "Andy has been installed successfully. Would you like to restart your computer now?", "Success", MB_YESNO | MB_ICONQUESTION);
     
     if (response == IDYES) {
         system("shutdown /r /t 0");

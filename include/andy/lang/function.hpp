@@ -11,10 +11,10 @@ namespace andy {
     namespace lang {
         class object;
         class structure;
-        class method;
-        enum class method_storage_type {
-            instance_method,
-            class_method,
+        class function;
+        enum class function_storage_type {
+            instance_function,
+            class_function,
         };
         struct fn_parameter
         {
@@ -33,7 +33,7 @@ namespace andy {
             function_call() = default;
             function_call(
                 std::string_view __name,
-                std::shared_ptr<andy::lang::object> __object,
+                std::shared_ptr<andy::lang::object> __object = nullptr,
                 std::vector<std::shared_ptr<andy::lang::object>> __positional_params = {},
                 std::map<std::string, std::shared_ptr<andy::lang::object>> __named_params = {}
             );
@@ -41,7 +41,7 @@ namespace andy {
                 std::string_view __name,
                 std::shared_ptr<andy::lang::structure> __cls,
                 std::shared_ptr<andy::lang::object> __object,
-                const andy::lang::method* method = nullptr,
+                const andy::lang::function* method = nullptr,
                 std::vector<std::shared_ptr<andy::lang::object>> __positional_params = {},
                 std::map<std::string, std::shared_ptr<andy::lang::object>> __named_params = {},
                 const andy::lang::parser::ast_node* __given_block = nullptr
@@ -49,29 +49,29 @@ namespace andy {
             std::string_view                                           name;
             std::shared_ptr<andy::lang::structure>                     cls;
             std::shared_ptr<andy::lang::object>                        object;
-            const andy::lang::method*                                  method = nullptr;
+            const andy::lang::function*                                  method = nullptr;
             std::vector<std::shared_ptr<andy::lang::object>>           positional_params;
             std::map<std::string, std::shared_ptr<andy::lang::object>> named_params = {};
             const andy::lang::parser::ast_node*                        given_block = nullptr;
         };
-        class method
+        class function
         {
         public:
             std::string_view name;
             andy::lang::parser::ast_node block_ast;
-            method_storage_type storage_type;
+            function_storage_type storage_type;
             std::vector<fn_parameter> positional_params;
             std::vector<fn_parameter> named_params;
-            std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call&)> function;
+            std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call&)> native_function;
 
-            method() = default;
+            function() = default;
 
-            method(std::string_view __name, method_storage_type __storage_type, std::vector<std::string> __params, andy::lang::parser::ast_node __block)
+            function(std::string_view __name, function_storage_type __storage_type, std::vector<std::string> __params, andy::lang::parser::ast_node __block)
                 : name(__name), block_ast(std::move(__block)), storage_type(__storage_type) {
                 init_params(__params);
             };
 
-            method(std::string_view __name, method_storage_type __storage_type, std::vector<fn_parameter> __params, andy::lang::parser::ast_node __block)
+            function(std::string_view __name, function_storage_type __storage_type, std::vector<fn_parameter> __params, andy::lang::parser::ast_node __block)
                 : name(__name), block_ast(std::move(__block)), storage_type(__storage_type) {
                 for(auto& param : __params) {
                     if(param.named) {
@@ -82,16 +82,16 @@ namespace andy {
                 }
             };
 
-            method(std::string_view name, method_storage_type __storage_type, std::initializer_list<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params)> fn)
+            function(std::string_view name, function_storage_type __storage_type, std::initializer_list<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params)> fn)
                 : name(name), storage_type(__storage_type) {
                 init_params(__params);
 
-                function = [fn](andy::lang::function_call& call) {
+                native_function = [fn](andy::lang::function_call& call) {
                     return fn(call.object, call.positional_params);
                 };
             }
 
-            method(std::string_view name, method_storage_type __storage_type, std::vector<fn_parameter> __params, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> positional_params, std::map<std::string, std::shared_ptr<andy::lang::object>> named_params)> fn)
+            function(std::string_view name, function_storage_type __storage_type, std::vector<fn_parameter> __params, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> positional_params, std::map<std::string, std::shared_ptr<andy::lang::object>> named_params)> fn)
                 : name(name), storage_type(__storage_type) {
                 positional_params.reserve(__params.size());
                 named_params.reserve(__params.size());
@@ -104,20 +104,20 @@ namespace andy {
                     }
                 }
 
-                function = [fn](andy::lang::function_call& call) {
+                native_function = [fn](andy::lang::function_call& call) {
                     return fn(call.object, call.positional_params, call.named_params);
                 };
             }
 
-            method(std::string_view name, method_storage_type __storage_type, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params)> fn)
+            function(std::string_view name, function_storage_type __storage_type, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params)> fn)
                 : name(name), storage_type(__storage_type) {
-                function = [fn](andy::lang::function_call& call) {
+                native_function = [fn](andy::lang::function_call& call) {
                     return fn(call.object, call.positional_params);
                 };
             }
 
-            method(std::string_view name, method_storage_type __storage_type, std::vector<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call& call)> fn)
-                : name(name), storage_type(__storage_type), function(fn) {
+            function(std::string_view name, function_storage_type __storage_type, std::vector<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call& call)> fn)
+                : name(name), storage_type(__storage_type), native_function(fn) {
                 init_params(__params);
             }
 

@@ -7,8 +7,7 @@ std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interprete
 {
     std::shared_ptr<andy::lang::structure> FloatClass = std::make_shared<andy::lang::structure>("Float");
 
-    FloatClass->instance_methods = {
-        {"present?", andy::lang::method("present?", andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        FloatClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             float i = object->as<float>();
             
             if(i == 0) {
@@ -16,13 +15,14 @@ std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::interprete
             }
 
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
-        })},
-        {"to_string", andy::lang::method("to_string", andy::lang::method_storage_type::instance_method, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        });
+
+    FloatClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             float value = object->as<float>();
 
             return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(std::to_string(value)));
-        })}
-    };
+        });
+
 
     andy::lang::add_operators<float>(FloatClass, interpreter);
 

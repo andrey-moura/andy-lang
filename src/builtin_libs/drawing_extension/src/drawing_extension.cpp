@@ -9,6 +9,9 @@
 #include "andy/xml.hpp"
 
 extern std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpreter* interpreter);
+extern std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpreter* interpreter);
+extern std::shared_ptr<andy::lang::structure> create_page_class(andy::lang::interpreter* interpreter);
+
 // extern std::shared_ptr<andy::lang::structure> create_xml_page_class(andy::lang::interpreter* interpreter);
 
 class drawing_extension : public andy::lang::extension
@@ -27,6 +30,8 @@ public:
 
         auto classes = {
             create_window_class(interpreter),
+            create_dialog_class(interpreter),
+            create_page_class(interpreter),
         };
     
         for (auto& cls : classes) {

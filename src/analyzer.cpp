@@ -354,6 +354,14 @@ int main(int argc, char** argv) {
                         auto* declname_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
                         auto* declname_token = &declname_node->token();
                         auto* params = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+                        if(params) {
+                            for(const auto& param : params->childrens())
+                            {
+                                if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
+                                    switch_type(param);
+                                }
+                            }
+                        }
                         tokens_to_write.push_back({ "function", declname_token });
                     }
                     break;
@@ -394,6 +402,14 @@ int main(int argc, char** argv) {
                         auto decltype_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_decltype);
                         if(decltype_node) {
                             tokens_to_write.push_back({ "keyword", &decltype_node->token() });
+                        }
+                    }
+                    break;
+                    case andy::lang::parser::ast_node_type::ast_node_pair: {
+                        auto* key_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                        if(key_node) {
+                            auto* key_token = &key_node->token();
+                            tokens_to_write.push_back({ "variable", key_token });
                         }
                     }
                     break;

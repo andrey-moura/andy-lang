@@ -2,14 +2,15 @@ import :ui
 import :drawing
 
 namespace AndyEngine
-    type Application extends UI.Application
-        var main_window = null
+    type Application extends UI::Application
+        var main_window = null;
         fn init
-            out 'Init'
-            main_window = Drawing.Window.new('Andy Engine')
+            main_window = Drawing::Window.new('Andy Engine')
+            main_window.set_page(:welcome)
+
             main_window.show(maximized: true)
         end
     end
 end
 
-UI.main(AndyEngine.Application)
+UI.main(AndyEngine::Application)

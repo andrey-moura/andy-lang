@@ -5,7 +5,8 @@
 #include <map>
 #include <memory>
 
-#include <andy/lang/method.hpp>
+#include "andy/lang/function.hpp"
+#include "andy/lang/class.hpp"
 
 namespace andy
 {
@@ -44,7 +45,7 @@ namespace andy
             // The native object copy function ptr.
             void (*native_copy_to_ptr)(object* obj, object* other) = nullptr;
             // The native object move function ptr.
-            void (*native_move)(object* obj, object&& other) = nullptr;
+            void (*native_move_to_ptr)(object* obj, object* other) = nullptr;
 #ifdef __UVA_DEBUG__
             int* native_int = (int*)native;
 #endif
@@ -111,6 +112,17 @@ namespace andy
 
                 return obj;
             }
+            /// @brief Creates the object with a pointer to a value.
+            /// @tparam T The type of the value.
+            /// @param value The pointer to the value.
+            /// @return Returns a shared pointer to the object.
+            template<typename T>
+            static std::shared_ptr<andy::lang::object> create(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls, T* value)
+            {
+                auto obj = std::make_shared<andy::lang::object>(cls);
+                obj->set_native_ptr(value);
+                return obj;
+            }
             template<typename T>
             void set_native(T value) {
                 if(native_destructor) {
@@ -143,11 +155,10 @@ namespace andy
             }
 
             template<typename T>
-            T* move_native_ptr() {
-                T* ptr = (T*)this->native_ptr;
-                this->native_ptr = nullptr;
-                this->native_destructor = nullptr;
-                return ptr;
+            void native_move_to(object* other) {
+                if(native_move_to_ptr) {
+                    native_move_to_ptr(this, other);
+                }
             }
 
             void native_copy_to(object* other) {
@@ -169,21 +180,32 @@ namespace andy
                         }
                     };
                 }
+
                 obj->native_copy_to_ptr = [](object* obj, object* other) {
                     if(other->native_destructor) {
                         other->native_destructor(other);
                     }
 
-                    other->set_native<T>(obj->as<T>());
+                    if constexpr(std::is_copy_constructible<T>::value)
+                    {
+                        other->set_native<T>(obj->as<T>());
+                    } else {
+                        throw std::runtime_error("Type " + std::string(obj->cls->name) + " does not support copy construction");
+                    }
                 };
-                if constexpr(!std::is_arithmetic<T>::value) {
-                    obj->native_move = [](object* obj, object&& other) {
-                        if(!obj->native_ptr) {
-                            new ((T*)(&obj->native)) T(std::move(*((T*)(&other.native))));
-                            // Let the destructor of the other object to be called
-                        }
-                    };
-                }
+
+                obj->native_move_to_ptr = [](object* obj, object* other) {
+                    if(other->native_destructor) {
+                        other->native_destructor(other);
+                    }
+
+                    if constexpr(std::is_move_constructible<T>::value)
+                    {
+                        other->set_native<T>(std::move(obj->as<T>()));
+                    } else {
+                        obj->native_copy_to(other);
+                    }
+                };
             }
 
             void log_native_destructor();

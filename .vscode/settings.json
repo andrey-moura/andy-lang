@@ -91,15 +91,29 @@
         "xmemory": "cpp",
         "xstring": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "coroutine": "cpp",
+        "expected": "cpp",
+        "resumable": "cpp",
+        "forward_list": "cpp",
+        "ios": "cpp",
+        "stop_token": "cpp",
+        "xfacet": "cpp",
+        "xiosbase": "cpp",
+        "xlocmes": "cpp",
+        "xstddef": "cpp",
+        "xtr1common": "cpp"
     },
     "cmake.configureArgs": [
 
     ],
     "cmake.debugConfig": {
         "args": [
-            "${workspaceFolder}/andy-engine/application.andy"
+            "application.andy",
         ],
+        "cwd": "${workspaceFolder}/lct-comics",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
         "request": "launch"

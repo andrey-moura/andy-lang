@@ -1,6 +1,6 @@
 #pragma once
 #include <andy/lang/class.hpp>
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
 
 
@@ -93,14 +93,14 @@
     }
 
 #define UNARY_OPERATOR(op, T) \
-    andy::lang::method(#op, andy::lang::method_storage_type::instance_method, {}, [interpreter](andy::lang::function_call& call) { \
+    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, {}, [interpreter](andy::lang::function_call& call) { \
         T& value = call.object->as<T>(); \
         value op; \
         return call.object; \
     })
 
 #define BINARY_ASSIGNMENT_OPERATOR(op, T) \
-    andy::lang::method(#op, andy::lang::method_storage_type::instance_method, { "other" }, [interpreter](andy::lang::function_call& call) { \
+    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) { \
         const auto& params = call.positional_params; \
         T& value = call.object->as<T>(); \
         auto& param = params[0]; \
@@ -117,7 +117,7 @@
     })
 
 #define BINARY_COMPARISON_OPERATOR(op, T) \
-    andy::lang::method(#op, andy::lang::method_storage_type::instance_method, { "other" }, [interpreter](andy::lang::function_call& call) { \
+    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) { \
         const auto& params = call.positional_params; \
         std::shared_ptr<andy::lang::object> other = params[0]; \
         T& value = call.object->as<T>(); \
@@ -135,7 +135,7 @@
     })
 
 #define BINARY_ARITHMETIC_OPERATOR(op, T) \
-    andy::lang::method(#op, andy::lang::method_storage_type::instance_method, { "other" }, [interpreter](andy::lang::function_call& call) { \
+    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) { \
         auto object = call.object; \
         auto other = call.positional_params[0]; \
         const auto& params = call.positional_params; \
@@ -177,7 +177,7 @@ namespace andy
                 { "*",  BINARY_ARITHMETIC_OPERATOR_INLINE(*, T)  },
                 { "/",  BINARY_ARITHMETIC_OPERATOR_INLINE(/, T)  }
             };
-            std::map<std::string_view, andy::lang::method> instance_methods = {
+            std::map<std::string_view, andy::lang::function> instance_functions = {
                 { "++", UNARY_OPERATOR(++, T) },
                 { "--", UNARY_OPERATOR(--, T) },
                 { "+=", BINARY_ASSIGNMENT_OPERATOR(+=, T) },
@@ -196,7 +196,7 @@ namespace andy
                 { "/",  BINARY_ARITHMETIC_OPERATOR(/, T)  },
             };
             if constexpr (std::is_same_v<T, int>) {
-                cls->instance_methods["%"] = andy::lang::method("%", andy::lang::method_storage_type::instance_method, { "other" }, [interpreter](andy::lang::function_call& call) {
+                cls->instance_functions["%"] = std::make_shared<andy::lang::function>("%", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{ "other" }, [interpreter](andy::lang::function_call& call) {
                     auto object = call.object;
                     auto other = call.positional_params[0];
                     if(other->cls != interpreter->IntegerClass) {
@@ -206,7 +206,7 @@ namespace andy
                     value %= other->as<int>();
                     return andy::lang::object::create(interpreter, object->cls, value);
                 });
-                cls->inline_functions["%"] = [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) {
+                cls->inline_functions["%"] = std::make_shared<andy::lang::inline_function>([](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) {
                     const auto* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
                     if (!params_node || params_node->childrens().size() != 1) {
                         throw std::runtime_error(std::string(object->cls->name) + "::operator % requires exactly one parameter");
@@ -220,10 +220,14 @@ namespace andy
                     int value = object->as<int>();
                     value %= other.token().integer_literal;
                     return andy::lang::object::create(interpreter, object->cls, value);
-                };
+                });
             }
-            cls->inline_functions.insert(inline_functions.begin(), inline_functions.end());
-            cls->instance_methods.insert(instance_methods.begin(), instance_methods.end());
+            for(auto& [name, func_ptr] : inline_functions) {
+                cls->inline_functions[name] = std::make_shared<andy::lang::inline_function>(func_ptr);
+            }
+            for(auto& [name, func] : instance_functions) {
+                cls->instance_functions[name] = std::make_shared<andy::lang::function>(std::move(func));
+            }
         }
     };
 };

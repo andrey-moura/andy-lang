@@ -299,6 +299,12 @@ void andy::lang::lexer::read_next_token()
     size_t delimiter_size = is_delimiter(m_current);
     if(delimiter_size) {
         if(c == ':' && m_current.size() > 1) {
+            if(m_current[1] == ':') {
+                // It is a scope resolution operator
+                read(2);
+                push_token(token_type::token_operator);
+                return;
+            } else
             if(is_alpha(m_current[1])) {
                 discard();
                 while(m_current.size() && (is_alphanum(m_current.front()) || m_current.front() == '_')) { 
@@ -653,11 +659,10 @@ void andy::lang::lexer::extract_and_push_string()
                     // Check if the string is finished
                     if(m_current.size() && m_current.front() == '\"') {
                         discard(); // Remove the closing quote
-                        return;
+                    } else {
+                        // Read the continuation of the string after the variable or expression
+                        extract_and_push_string();
                     }
-
-                    // Read the continuation of the string after the variable or expression
-                    extract_and_push_string();
 
                     // So the parser knows where the string ends
                     push_token(token_type::token_delimiter);

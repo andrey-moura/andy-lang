@@ -28,20 +28,22 @@ option(BUILD_ANDY_ANALYZER "Build andy-analyzer" ON)
 get_filename_component(ANDYLANG_PARENT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
 
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-console/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-file/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-core/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/CMakeLists.txt)
+include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-string/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/binary/CMakeLists.txt)
 include(${CMAKE_CURRENT_LIST_DIR}/modules/andy-widgets/CMakeLists.txt)
 
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/drawing_extension/CMakeLists.txt")
 include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/ui_extension/CMakeLists.txt")
+include("${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/net_extension/CMakeLists.txt")
 
 add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/api.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/method.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/function.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/preprocessor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/extension.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/class.cpp
@@ -62,6 +64,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/false_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/file_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/float_class.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/classes/function_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
@@ -76,20 +79,20 @@ add_library(andy-lang
 
     ${ANDY_UI_EXTENSION_SOURCES}
     ${ANDY_DRAWING_EXTENSION_SOURCES}
+    ${ANDY_NET_EXTENSION_SOURCES}
 
     $<TARGET_OBJECTS:andy-file>
     $<TARGET_OBJECTS:andy-core>
     $<TARGET_OBJECTS:andy-console>
     $<TARGET_OBJECTS:andy-binary>
+    $<TARGET_OBJECTS:andy-string>
 )
 
-target_link_libraries(andy-lang PRIVATE ${ANDY_BINARY_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES})
+target_link_libraries(andy-lang PRIVATE ${ANDY_NET_LIBRARIES} ${ANDY_DRAWING_BACKEND_LIBRARIES})
 
 add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
-
-target_link_libraries(andy PRIVATE andy-lang ${wxWidgets_LIBRARIES})
 
 if(FALSE)
     find_package(Clang REQUIRED)

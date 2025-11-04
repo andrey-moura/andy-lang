@@ -5,7 +5,7 @@
 #include <map>
 #include <memory>
 
-#include <andy/lang/method.hpp>
+#include <andy/lang/function.hpp>
 
 namespace andy {
     namespace lang {
@@ -17,16 +17,16 @@ namespace andy {
         {
         public:
             //for user code, use create
-            structure(std::string_view __name, std::vector<andy::lang::method> __methods = {});
+            structure(std::string_view __name, std::vector<andy::lang::function> __methods = {});
             ~structure();
         public:
             std::string_view name;
             std::shared_ptr<andy::lang::structure> base;
             std::vector<std::shared_ptr<andy::lang::structure>> deriveds;
 
-            std::map<std::string_view, andy::lang::method> instance_methods;
-            std::map<std::string_view, andy::lang::method> class_methods;
-            std::map<std::string_view, inline_function> inline_functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::function>> instance_functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::function>> class_functions;
+            std::map<std::string_view, std::shared_ptr<inline_function>> inline_functions;
 
             std::map<std::string_view, const andy::lang::parser::ast_node*> instance_variables;
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> class_variables;

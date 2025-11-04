@@ -5,6 +5,7 @@
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
 #include <andy/lang/config.hpp>
+#include <andy/lang/function.hpp>
 
 namespace andy
 {
@@ -26,7 +27,7 @@ namespace andy
             {
                 if constexpr(std::is_same_v<T, std::string>) {
                     if(object->cls == interpreter->StringClass) {
-                        return std::move(object->as<std::string>());
+                        return object->as<std::string>();
                     }
                     throw std::runtime_error("Cannot cast " + std::string(object->cls->name) + " to string");
                 } else if constexpr(std::is_same_v<T, bool>) {
@@ -81,13 +82,30 @@ namespace andy
                     auto obj = std::make_shared<andy::lang::object>(interpreter->ArrayClass);
                     obj->set_native<std::vector<std::shared_ptr<andy::lang::object>>>(std::move(value));
                     return obj;
+                } else if constexpr(std::is_same_v<T, andy::lang::dictionary>) {
+                    auto obj = std::make_shared<andy::lang::object>(interpreter->DictionaryClass);
+                    obj->set_native<andy::lang::dictionary>(std::move(value));
+                    return obj;
                 } else if constexpr(std::is_same_v<T, const char*> || std::is_same_v<T, char*> || std::is_same_v<T, std::string_view>) {
                     return to_object(interpreter, std::string(value));
                 }
                 else if constexpr(std::is_same_v<T, std::shared_ptr<andy::lang::structure>>) {
                     auto class_object = andy::lang::object::create(interpreter, interpreter->ClassClass, std::move(value));
-                    class_object->cls->instance_methods["new"].call(class_object);
+                    class_object->cls->instance_functions["new"]->call(class_object);
                     return class_object;
+                } else if constexpr(std::is_same_v<T, bool>) {
+                    if(value) {
+                        return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+                    } else {
+                        return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+                    }
+                } else if constexpr(std::is_same_v<T, andy::lang::function>) {
+                    auto function_object = andy::lang::object::create(
+                        interpreter,
+                        interpreter->FunctionClass,
+                        &value
+                    );
+                    return function_object;
                 }
                 else {
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
