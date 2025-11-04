@@ -40,26 +40,26 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::
 {
     initialize(interpreter);
 
-    auto new_it = cls->instance_functions.find("new");
+    auto new_it = cls->functions.find("new");
 
-    if(new_it == cls->instance_functions.end()) {
+    if(new_it == cls->functions.end() || new_it->second->storage_type != function_storage_type::instance_function) {
         // default constructor
         if(new_call.positional_params.size() || new_call.named_params.size()) {
             throw std::runtime_error("Default constructor does not accept parameters in class " + std::string(cls->name));
         }
         if(cls->base) {
             // call the base class constructor
-            auto base_new_it = cls->base->instance_functions.find("new");
-            if(base_new_it != cls->base->instance_functions.end()) {
+            auto base_new_it = cls->base->functions.find("new");
+            if(base_new_it != cls->base->functions.end() && base_new_it->second->storage_type == function_storage_type::instance_function) {
                 base_instance = std::make_shared<object>(cls->base);
                 base_instance->derived_instance = shared_from_this();
                 base_instance->initialize(interpreter, new_call);
             }
         }
     } else {
-        auto new_it = cls->instance_functions.find("new");
+        auto new_it = cls->functions.find("new");
 
-        if(new_it != cls->instance_functions.end()) {
+        if(new_it != cls->functions.end() && new_it->second->storage_type == function_storage_type::instance_function) {
             new_call.name = "new";
             new_call.cls = cls;
             new_call.object = shared_from_this();
@@ -81,9 +81,9 @@ bool andy::lang::object::is_present() const
         throw std::runtime_error("object has no class");
     }
     
-    auto it = cls->instance_functions.find("present?");
+    auto it = cls->functions.find("present?");
 
-    if(it == cls->instance_functions.end()) {
+    if(it == cls->functions.end() || it->second->storage_type != function_storage_type::instance_function) {
         throw std::runtime_error("present? is not defined in class " + std::string(cls->name));
     } else {
         auto this_without_const = const_cast<object*>(this);

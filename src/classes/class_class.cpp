@@ -6,7 +6,7 @@ std::shared_ptr<andy::lang::structure> create_class_class(andy::lang::interprete
 {
     auto cls = std::make_shared<andy::lang::structure>("Class");
 
-    cls->instance_functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "class_name" }, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    cls->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "class_name" }, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         if(params.size() == 1) {
             const std::string& class_name = params[0]->as<std::string>();
 

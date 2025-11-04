@@ -327,9 +327,9 @@ int main(int argc, char* argv[]) {
                             }, nullptr);
 
                             if(m.storage_type == andy::lang::function_storage_type::instance_function) {
-                                cls->instance_functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
+                                cls->functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
                             } else {
-                                cls->class_functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
+                                cls->functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
                             }
                         }
 
@@ -378,7 +378,7 @@ int main(int argc, char* argv[]) {
             output_file << "{" << std::endl;
             output_file << "\tauto " << snake_case_name << "_class = std::make_shared<andy::lang::structure>(" << "\"" << cls.name << "\"" << "); " << std::endl;
 
-            if(cls.instance_functions.size() > 0) {
+            if(cls.functions.size() > 0) {
                 output_file  << std::endl;
 
                 output_file  << "\t" << snake_case_name << "_class->methods = {" << std::endl;
