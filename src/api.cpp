@@ -43,17 +43,17 @@ namespace andy
 
             std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
                 if(__call.object) {
-                    auto method = __call.object->cls->instance_functions.find(__call.name);
+                    auto method = __call.object->cls->functions.find(__call.name);
 
-                    if(method == __call.object->cls->instance_functions.end()) {
+                    if(method == __call.object->cls->functions.end() || method->second->storage_type != andy::lang::function_storage_type::instance_function) {
                         throw std::runtime_error("Class " + std::string(__call.object->cls->name) + " does not have an instance function called '" + std::string(__call.name) + "'");
                     }
 
                     __call.method = method->second.get();
                 } else {
-                    auto method = interpreter->StdClass->class_functions.find(__call.name);
+                    auto method = interpreter->StdClass->functions.find(__call.name);
 
-                    if(method == interpreter->StdClass->class_functions.end()) {
+                    if(method == interpreter->StdClass->functions.end() || method->second->storage_type != andy::lang::function_storage_type::class_function) {
                         andy::lang::lexer lexer("", __call.name);
                         andy::lang::parser parser;
                         auto ast = parser.parse_all(lexer);

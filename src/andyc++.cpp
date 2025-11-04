@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
 
                 size_t method_iterator = 0;
 
-                for(auto& [name, method] : cls.instance_functions) {
+                for(auto& [name, method] : cls.functions) {
                     if(method_iterator) {
                         output_file << "," << std::endl;
                     }
