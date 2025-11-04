@@ -7,25 +7,13 @@
 #include <andy/lang/class.hpp>
 #include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
+#include <andy/lang/context.hpp>
 
 namespace andy
 {
     namespace lang
     {
         class extension;
-        // The context of the interpreter execution. It is relative to a block.
-        struct interpreter_context
-        {
-            std::shared_ptr<andy::lang::structure> cls;
-            std::shared_ptr<andy::lang::object> self;
-            std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
-            std::map<std::string_view, std::shared_ptr<andy::lang::function>> functions;
-            const andy::lang::parser::ast_node* given_block = nullptr;
-
-            bool has_returned = false;
-            std::shared_ptr<andy::lang::object> return_value;
-            bool inherited = false;
-        };
         // This class is responsible of storing all resources needed by an andylang program.
         // It will store all classes, objects, methods, variables, call stack, etc.
         class interpreter
@@ -130,7 +118,7 @@ namespace andy
             void load_extension(andy::lang::extension* extension);
         protected:
             /// @brief The call stack.
-            std::vector<interpreter_context> stack;
+            std::vector<context> stack;
 
             std::vector<andy::lang::extension*> extensions;
 
@@ -139,13 +127,13 @@ namespace andy
                 return stack.size() == 1;
             }
 
-            interpreter_context& current_context()
+            context& current_context()
             {
                 return stack.back();
             }
 
             void push_context(bool inherit = false) {
-                stack.push_back(interpreter_context());
+                stack.push_back(context());
                 if(inherit) {
                     stack.back().inherited = true;
                 }

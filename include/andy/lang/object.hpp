@@ -7,6 +7,7 @@
 
 #include "andy/lang/function.hpp"
 #include "andy/lang/class.hpp"
+#include "andy/lang/context.hpp"
 
 namespace andy
 {
@@ -15,13 +16,12 @@ namespace andy
         class structure;
         class interpreter;
         constexpr size_t max_native_size = 40;
-        class object : public std::enable_shared_from_this<object>
+        class object : public std::enable_shared_from_this<object>, public context
         {
         public:
             object(std::shared_ptr<andy::lang::structure> c);
             ~object();
         public:
-            std::shared_ptr<andy::lang::structure> cls;
             std::shared_ptr<object> base_instance = nullptr;
             std::shared_ptr<object> derived_instance = nullptr;
 

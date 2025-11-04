@@ -7,8 +7,8 @@
 #include <andy/console.hpp>
 
 andy::lang::object::object(std::shared_ptr<andy::lang::structure> c)
-    : cls(c)
 {
+    cls = c;
     if(cls) {
         andy::console::log_debug("{}#{} created", cls->name, (void*)this);
     }
