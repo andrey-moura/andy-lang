@@ -50,11 +50,7 @@ andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang
     : name(std::move(__name))
 {
     for(auto& method : __methods) {
-        if(method.storage_type == function_storage_type::class_function) {
-            class_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
-        } else {
-            instance_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
-        }
+        functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
     }
 
     andy::console::log_debug("{}#Class created", name);
