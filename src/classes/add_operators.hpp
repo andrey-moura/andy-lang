@@ -196,7 +196,7 @@ namespace andy
                 { "/",  BINARY_ARITHMETIC_OPERATOR(/, T)  },
             };
             if constexpr (std::is_same_v<T, int>) {
-                cls->instance_functions["%"] = std::make_shared<andy::lang::function>("%", andy::lang::function_storage_type::instance_function, std::vector<std::string>{ "other" }, [interpreter](andy::lang::function_call& call) {
+                cls->instance_functions["%"] = std::make_shared<andy::lang::function>("%", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{ "other" }, [interpreter](andy::lang::function_call& call) {
                     auto object = call.object;
                     auto other = call.positional_params[0];
                     if(other->cls != interpreter->IntegerClass) {
