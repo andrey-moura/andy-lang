@@ -7,6 +7,7 @@
 
 #include "andy/lang/function.hpp"
 #include "andy/lang/class.hpp"
+#include "andy/lang/interpreter_context.hpp"
 
 namespace andy
 {
@@ -15,17 +16,14 @@ namespace andy
         class structure;
         class interpreter;
         constexpr size_t max_native_size = 40;
-        class object : public std::enable_shared_from_this<object>
+        class object : public std::enable_shared_from_this<object>, public interpreter_context
         {
         public:
             object(std::shared_ptr<andy::lang::structure> c);
             ~object();
         public:
-            std::shared_ptr<andy::lang::structure> cls;
             std::shared_ptr<object> base_instance = nullptr;
             std::shared_ptr<object> derived_instance = nullptr;
-
-            std::map<std::string_view, std::shared_ptr<andy::lang::object>> instance_variables;
             // #ifdef __UVA_DEBUG__
             // andy::lang::object* debug_object = this;
 
@@ -42,10 +40,10 @@ namespace andy
         private:
             // The native object destructor function ptr.
             void (*native_destructor)(object* obj) = nullptr;
+            // The native move function ptr.
+            void (*native_move_ptr)(object* dest, object* src) = nullptr;
             // The native object copy function ptr.
-            void (*native_copy_to_ptr)(object* obj, object* other) = nullptr;
-            // The native object move function ptr.
-            void (*native_move_to_ptr)(object* obj, object* other) = nullptr;
+            std::shared_ptr<object> (*native_copy_ptr)(andy::lang::object* obj) = nullptr;
 #ifdef __UVA_DEBUG__
             int* native_int = (int*)native;
 #endif
@@ -99,6 +97,12 @@ namespace andy
 
                 return obj;
             }
+            static std::shared_ptr<andy::lang::object> create(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::structure> cls)
+            {
+                auto obj = std::make_shared<andy::lang::object>(cls);
+                obj->initialize(interpreter);
+                return obj;
+            }
             /// @brief Creates the object with a value.
             /// @tparam T The type of the value.
             /// @param cls The class of the object.
@@ -109,6 +113,7 @@ namespace andy
             {
                 auto obj = std::make_shared<andy::lang::object>(cls);
                 obj->set_native<T>(std::move(value));
+                obj->initialize(interpreter);
 
                 return obj;
             }
@@ -154,17 +159,12 @@ namespace andy
                 set_destructor<T>(this);
             }
 
-            template<typename T>
-            void native_move_to(object* other) {
-                if(native_move_to_ptr) {
-                    native_move_to_ptr(this, other);
+            std::shared_ptr<object> native_copy() {
+                if(native_copy_ptr) {
+                    return native_copy_ptr(this);
                 }
-            }
 
-            void native_copy_to(object* other) {
-                if(native_copy_to_ptr) {
-                    native_copy_to_ptr(this, other);
-                }
+                return nullptr;
             }
         private:
             template <typename T>
@@ -181,10 +181,9 @@ namespace andy
                     };
                 }
 
-                obj->native_copy_to_ptr = [](object* obj, object* other) {
-                    if(other->native_destructor) {
-                        other->native_destructor(other);
-                    }
+                obj->native_copy_ptr = [](andy::lang::object* obj) -> std::shared_ptr<andy::lang::object> {
+                    std::shared_ptr<andy::lang::object> other = std::make_shared<andy::lang::object>(obj->cls);
+                    other->self = other.get();
 
                     if constexpr(std::is_copy_constructible<T>::value)
                     {
@@ -192,19 +191,45 @@ namespace andy
                     } else {
                         throw std::runtime_error("Type " + std::string(obj->cls->name) + " does not support copy construction");
                     }
+
+                    for(const auto& [var_name, var_value] : obj->variables) {
+                        other->variables[var_name] = var_value->native_copy();
+                    }
+
+                    other->functions = obj->functions;
+                    other->inline_functions = obj->inline_functions;
+
+                    if(obj->base_instance) {
+                        other->base_instance = obj->base_instance->native_copy();
+                    }
+                    if(obj->derived_instance) {
+                        other->derived_instance = obj->derived_instance->native_copy();
+                    }
+
+                    return other;
                 };
 
-                obj->native_move_to_ptr = [](object* obj, object* other) {
-                    if(other->native_destructor) {
-                        other->native_destructor(other);
-                    }
+                obj->native_move_ptr = [](object* dest, object* src) {
+                    dest->self = dest;
+                    dest->cls = std::move(src->cls);
+                    dest->base_instance = std::move(src->base_instance);
+                    dest->derived_instance = std::move(src->derived_instance);
 
-                    if constexpr(std::is_move_constructible<T>::value)
-                    {
-                        other->set_native<T>(std::move(obj->as<T>()));
-                    } else {
-                        obj->native_copy_to(other);
-                    }
+                    dest->variables = std::move(src->variables);
+                    dest->functions = std::move(src->functions);
+                    dest->inline_functions = std::move(src->inline_functions);
+
+                    dest->native_destructor = src->native_destructor;
+                    dest->native_copy_ptr = src->native_copy_ptr;
+                    dest->native_ptr = src->native_ptr;
+
+                    T value = std::move(src->as<T>());
+                    dest->set_native<T>(std::move(value));
+
+                    src->native_destructor = nullptr;
+                    src->native_copy_ptr = nullptr;
+                    src->native_ptr = nullptr;
+                    std::memset(src->native, 0, max_native_size);
                 };
             }
 
@@ -234,6 +259,26 @@ namespace andy
 
                 return *static_cast<T*>((void*)native);
             }
+            public:
+                object& operator=(object&& other) noexcept
+                {
+                    if(other.native_move_ptr) {
+                        other.native_move_ptr(this, &other);
+                    } else {
+                        this->cls = std::move(other.cls);
+                        this->base_instance = std::move(other.base_instance);
+                        this->derived_instance = std::move(other.derived_instance);
+                        this->variables = std::move(other.variables);
+                        this->functions = std::move(other.functions);
+                        this->inline_functions = std::move(other.inline_functions);
+                        this->self = this;
+
+                        other.native_destructor = nullptr;
+                        other.native_copy_ptr = nullptr;
+                        other.native_ptr = nullptr;
+                    }
+                    return *this;
+                }
         };
     };
 };

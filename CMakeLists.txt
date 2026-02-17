@@ -46,6 +46,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/function.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/preprocessor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/extension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/interpreter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/object.cpp

@@ -11,7 +11,7 @@ static bool first = true;
 
 template<typename T>
 inline static void add_describe_like(andy::lang::interpreter* interpreter, std::string_view name) {
-    interpreter->StdClass->class_functions[name] = std::make_shared<andy::lang::function>(name, andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "what" }, [interpreter](andy::lang::function_call& call) {
+    interpreter->StdClass->functions[name] = std::make_shared<andy::lang::function>(name, andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "what" }, [interpreter](andy::lang::function_call& call) {
         std::string& what = call.positional_params[0]->as<std::string>();
         T d = T(what, [interpreter,call]() {
             andy::lang::function yield_method;
@@ -29,7 +29,7 @@ inline static void add_describe_like(andy::lang::interpreter* interpreter, std::
                 {},
                 nullptr
             };
-            interpreter->call(yield_call);
+            andy::lang::api::call(interpreter, yield_call);
         });
         if constexpr(!std::is_same_v<T, andy::tests::it> && !std::is_same_v<T, andy::tests::pending>) {
             if(first) {
@@ -59,10 +59,10 @@ public:
             if(matcher->cls->name != "Matcher") {
                 throw std::runtime_error("Argument to 'to' must be a Matcher, got " + std::string(matcher->cls->name));
             }
-            auto matcher_params = matcher->instance_variables["params"];
+            auto matcher_params = matcher->variables["params"];
             auto actual_object = object->as<std::shared_ptr<andy::lang::object>>();
             auto matcher_params_object = matcher_params->as<std::vector<std::shared_ptr<andy::lang::object>>>();
-            if(matcher->instance_variables["name"]->as<std::string>() == "eq") {
+            if(matcher->variables["name"]->as<std::string>() == "eq") {
                 auto expected_object = matcher_params_object[0];
 
                 andy::lang::function_call eq_call = {
@@ -82,7 +82,7 @@ public:
 
                     throw std::runtime_error("Expected " + expected + ", got " + actual);
                 }
-            } else if(matcher->instance_variables["name"]->as<std::string>() == "include") {
+            } else if(matcher->variables["name"]->as<std::string>() == "include") {
                 // Handle include matcher
                 auto expected_object = matcher_params_object[0];
 
@@ -118,25 +118,25 @@ public:
         auto matcher_result_class = std::make_shared<andy::lang::structure>("Matcher");
 
         interpreter->load(matcher_result_class);
-        interpreter->StdClass->class_functions["expect"] = std::make_shared<andy::lang::function>("expect", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "object" }, [=](andy::lang::function_call& call) {
-            return andy::lang::object::create(interpreter, expect_class, call.positional_params[0]);
+        interpreter->StdClass->functions["expect"] = std::make_shared<andy::lang::function>("expect", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "object" }, [=](andy::lang::function_call& call) {
+            return andy::lang::object::instantiate(interpreter, expect_class, call.positional_params[0]);
         });
-        interpreter->StdClass->class_functions["eq"] = std::make_shared<andy::lang::function>("eq", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+        interpreter->StdClass->functions["eq"] = std::make_shared<andy::lang::function>("eq", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
             matcher_params.push_back(call.positional_params[0]);
-            auto matcher_params_object = andy::lang::object::create(interpreter, interpreter->ArrayClass, std::move(matcher_params));
-            matcher->instance_variables["name"] = andy::lang::api::to_object(interpreter, "eq");
-            matcher->instance_variables["params"] = matcher_params_object;
+            auto matcher_params_object = andy::lang::object::instantiate(interpreter, interpreter->ArrayClass, std::move(matcher_params));
+            matcher->variables["name"] = andy::lang::api::to_object(interpreter, "eq");
+            matcher->variables["params"] = matcher_params_object;
             return matcher;
         });
-        interpreter->StdClass->class_functions["include"] = std::make_shared<andy::lang::function>("include", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
+        interpreter->StdClass->functions["include"] = std::make_shared<andy::lang::function>("include", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "what" }, [interpreter,matcher_result_class](andy::lang::function_call& call) {
             auto matcher = std::make_shared<andy::lang::object>(matcher_result_class);
             std::vector<std::shared_ptr<andy::lang::object>> matcher_params;
             matcher_params.push_back(call.positional_params[0]);
-            auto matcher_params_object = andy::lang::object::create(interpreter, interpreter->ArrayClass, std::move(matcher_params));
-            matcher->instance_variables["name"] = andy::lang::api::to_object(interpreter, "include");
-            matcher->instance_variables["params"] = matcher_params_object;
+            auto matcher_params_object = andy::lang::object::instantiate(interpreter, interpreter->ArrayClass, std::move(matcher_params));
+            matcher->variables["name"] = andy::lang::api::to_object(interpreter, "include");
+            matcher->variables["params"] = matcher_params_object;
             return matcher;
         });
     }

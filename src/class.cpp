@@ -47,11 +47,11 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
 }
 
 andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang::function> __methods)
-    : name(std::move(__name))
+    : name(std::move(__name)), interpreter_context()
 {
     for(auto& method : __methods) {
         if(method.storage_type == function_storage_type::class_function) {
-            class_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
+            functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
         } else {
             instance_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
         }

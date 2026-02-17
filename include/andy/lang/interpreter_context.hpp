@@ -1,0 +1,30 @@
+#pragma once
+
+#include "andy/lang/function.hpp"
+
+namespace andy
+{
+    namespace lang
+    {
+        class structure;
+        class object;
+        class parser;
+        // The context of the interpreter execution.
+        struct interpreter_context
+        {
+            // Do NOT use shared_ptr here to avoid circular references.
+            andy::lang::object* self;
+            std::shared_ptr<andy::lang::structure> cls;
+            std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
+            std::map<std::string_view, std::shared_ptr<andy::lang::function>> functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::inline_function>> inline_functions;
+            std::map<std::string_view, std::shared_ptr<andy::lang::structure>> classes;
+
+            const andy::lang::parser::ast_node* given_block = nullptr;
+
+            bool has_returned = false;
+            std::shared_ptr<andy::lang::object> return_value;
+            bool inherited = false;
+        };
+    }; // namespace lang
+}; // namespace andy

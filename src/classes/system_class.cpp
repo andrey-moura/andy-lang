@@ -17,13 +17,13 @@ std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpret
         throw std::runtime_error("unsupported OS");
     #endif
 
-    SystemClass->class_variables["OS"] = andy::lang::object::create(interpreter, interpreter->StringClass, std::string(current_os_name));
+    SystemClass->variables["OS"] = andy::lang::object::create(interpreter, interpreter->StringClass, std::string(current_os_name));
 
-    SystemClass->class_variables["Windows?"]     = std::make_shared<andy::lang::object>(interpreter->FalseClass);
-    SystemClass->class_variables["Linux?"]       = std::make_shared<andy::lang::object>(interpreter->FalseClass);
-    SystemClass->class_variables["WebAssembly?"] = std::make_shared<andy::lang::object>(interpreter->FalseClass);
+    SystemClass->variables["Windows?"]     = std::make_shared<andy::lang::object>(interpreter->FalseClass);
+    SystemClass->variables["Linux?"]       = std::make_shared<andy::lang::object>(interpreter->FalseClass);
+    SystemClass->variables["WebAssembly?"] = std::make_shared<andy::lang::object>(interpreter->FalseClass);
 
-    SystemClass->class_variables[std::string(current_os_name) + "?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    SystemClass->variables[std::string(current_os_name) + "?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
 
     return SystemClass;
 }

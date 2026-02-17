@@ -517,7 +517,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
                 lexer.consume_token();
             } else {
                 ast_node params_node = extract_fn_call_params(lexer);
-                fn_node.add_child(std::move(params_node));            
+                fn_node.add_child(std::move(params_node));
 
                 const auto& possible_closing = lexer.see_next();
 
@@ -528,7 +528,9 @@ andy::lang::parser::ast_node andy::lang::parser::parse_identifier_or_literal(and
                     throw std::runtime_error(possible_closing.error_message_at_current_position("Expected ')'"));
                 }
             }
-        } else {
+        } else if (auto& next_token = lexer.see_next();
+                  (next_token.type() == andy::lang::lexer::token_type::token_identifier && next_token.content() != "do") ||
+                  next_token.type() == andy::lang::lexer::token_type::token_literal) {
             // fn call with literal or identifier
             ast_node params_node = extract_fn_call_params(lexer);
             fn_node.add_child(std::move(params_node));

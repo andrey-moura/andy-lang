@@ -58,12 +58,12 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
         });
 
     ArrayClass->instance_functions["push"] = std::make_shared<andy::lang::function>("push",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"item"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+        std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
 
-            items.push_back(params[0]);
+        items.push_back(params[0]->native_copy());
 
-            return nullptr;
-        });
+        return nullptr;
+    });
 
     ArrayClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"index"} , [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();

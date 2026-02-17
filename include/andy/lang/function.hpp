@@ -12,6 +12,8 @@ namespace andy {
         class object;
         class structure;
         class function;
+        class interpreter;
+        using inline_function = std::shared_ptr<andy::lang::object>(*)(andy::lang::interpreter*, std::shared_ptr<andy::lang::object>&, const andy::lang::parser::ast_node&);
         enum class function_storage_type {
             instance_function,
             class_function,

@@ -25,34 +25,34 @@ private:
 std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpreter* interpreter)
 {
     auto dialog_class = std::make_shared<andy::lang::structure>("Dialog");
-        dialog_class->instance_functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::string_view title = params[0]->as<std::string>();
-            auto dialog = std::make_shared<andylang_drawing_dialog>(title, interpreter, object->derived_instance);
-            object->set_native(std::move(dialog));
+    dialog_class->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        std::string_view title = params[0]->as<std::string>();
+        auto dialog = std::make_shared<andylang_drawing_dialog>(title, interpreter, object->derived_instance);
+        object->set_native(std::move(dialog));
 
-            std::filesystem::path views_file = std::filesystem::absolute("views");
-            std::string snake_case_class_name = andy::string::to_snake_case(std::string(object->derived_instance->cls->name));
-            views_file /= snake_case_class_name;
-            views_file.replace_extension(".xml");
-            if(std::filesystem::exists(views_file)) {
-                andy::xml xml = andy::xml::decode(views_file);
-                std::filesystem::path schema_file_path = std::filesystem::absolute("views/schema.xsd");
-                andy::xml::schema schema = andy::xml::schema(andy::xml::decode(schema_file_path));
-                auto page = std::make_shared<andy::drawing::page>(std::move(schema), std::move(xml));
-                auto page_class_call = andy::lang::function_call("Drawing.Page", nullptr);
-                auto page_class_object = interpreter->call(page_class_call);
-                auto page_instance = andy::lang::object::create(interpreter, page_class_object->as<std::shared_ptr<andy::lang::structure>>(), std::move(page));
-            }
-            return nullptr;
-        });
+        std::filesystem::path views_file = std::filesystem::absolute("views");
+        std::string snake_case_class_name = andy::string::to_snake_case(std::string(object->derived_instance->cls->name));
+        views_file /= snake_case_class_name;
+        views_file.replace_extension(".xml");
+        if(std::filesystem::exists(views_file)) {
+            andy::xml xml = andy::xml::decode(views_file);
+            std::filesystem::path schema_file_path = std::filesystem::absolute("views/schema.xsd");
+            andy::xml::schema schema = andy::xml::schema(andy::xml::decode(schema_file_path));
+            auto page = std::make_shared<andy::drawing::page>(std::move(schema), std::move(xml));
+            auto page_class_call = andy::lang::function_call("Drawing.Page", nullptr);
+            auto page_class_object = interpreter->call(page_class_call);
+            auto page_instance = andy::lang::object::create(interpreter, page_class_object->as<std::shared_ptr<andy::lang::structure>>(), std::move(page));
+        }
+        return nullptr;
+    });
 
     dialog_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
-            std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
-            auto dialog = call.object->as<std::shared_ptr<andylang_drawing_dialog>>();
-            dialog->show(maximized->is_present());
+        std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
+        auto dialog = call.object->as<std::shared_ptr<andylang_drawing_dialog>>();
+        dialog->show(maximized->is_present());
 
-            return nullptr;
-        });
+        return nullptr;
+    });
 
     return dialog_class;
 }

@@ -37,13 +37,13 @@ std::shared_ptr<andy::lang::structure> create_http_class(andy::lang::interpreter
         return andy::lang::api::to_object(interpreter, response.headers["Content-Type"].starts_with("application/json"));
     });
     auto http_class = std::make_shared<andy::lang::structure>("HTTP");
-    http_class->class_functions["get"] = std::make_shared<andy::lang::function>("get", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "url" }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    http_class->functions["get"] = std::make_shared<andy::lang::function>("get", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{ "url" }, [=](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         const auto& url = params[0]->as<std::string>();
 
         auto response = andy::net::http::get(url);
 
         auto response_object = andy::lang::object::create(interpreter, response_class, std::move(response));
-        response_object->instance_variables["status_code"] = andy::lang::api::to_object(interpreter, response_object->as<andy::net::http::response>().status_code);
+        response_object->variables["status_code"] = andy::lang::api::to_object(interpreter, response_object->as<andy::net::http::response>().status_code);
         return response_object;
     });
     andy::lang::api::contained_class(interpreter, http_class, response_class);
