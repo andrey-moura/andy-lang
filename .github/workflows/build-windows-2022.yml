@@ -33,7 +33,7 @@ jobs:
           build-cache-${{ runner.os }}-
 
     - name: Configure CMake for andy-lang
-      run: cmake -DCMAKE_BUILD_TYPE=Release -G ninja -B build .
+      run: cmake -DCMAKE_BUILD_TYPE=Release -G Ninja -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
