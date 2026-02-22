@@ -135,7 +135,6 @@ elseif(WIN32)
 
     add_dependencies(andy-lang-installer andy)
     SET_TARGET_PROPERTIES(andy-lang-installer PROPERTIES LINK_FLAGS "/MANIFESTUAC:/level='requireAdministrator' /uiAccess='false'")
-    target_link_libraries(andy-lang PRIVATE ws2_32)
 endif()
 
 target_link_libraries(andy PRIVATE andy-lang)
