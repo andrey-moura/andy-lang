@@ -61,7 +61,7 @@ jobs:
           andy-lang/build/Release/andy-lang-installer.exe
 
     - name: Check if CMake can retrieve the build targets
-      run: cmake --build build --target help
+      run: cmake --build build -- /t:help
       working-directory: andy-lang
 
     - name: Run tests for andy-lang
