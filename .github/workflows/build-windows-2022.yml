@@ -33,7 +33,7 @@ jobs:
           build-cache-${{ runner.os }}-
 
     - name: Configure CMake for andy-lang
-      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
+      run: cmake -DCMAKE_BUILD_TYPE=Release -G ninja -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
@@ -61,7 +61,7 @@ jobs:
           andy-lang/build/Release/andy-lang-installer.exe
 
     - name: Check if CMake can retrieve the build targets
-      run: cmake --build build -- /t:help
+      run: cmake --build build --target help
       working-directory: andy-lang
 
     - name: Run tests for andy-lang
