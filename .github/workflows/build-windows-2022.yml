@@ -41,6 +41,7 @@ jobs:
 
     - name: Check if CMake can retrieve targets
       run: cmake --build build --target help
+      working-directory: andy-lang
 
     - name: Install andy-lang
       run: cmake --install build --config Release
