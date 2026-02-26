@@ -326,7 +326,7 @@ int main(int argc, char** argv) {
             switch_type = [&](const andy::lang::parser::ast_node& child) {
                 switch(child.type()) {
                     case andy::lang::parser::ast_node_type::ast_node_classdecl: {
-                        interpreter.load(interpreter.execute_classdecl(child));
+                        interpreter.execute_classdecl(child);
                         auto dectype_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_decltype);
                         auto* declname_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
                         auto* declname_token = &declname_node->token();

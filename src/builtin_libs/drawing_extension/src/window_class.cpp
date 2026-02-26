@@ -30,8 +30,8 @@ public:
     }
     virtual void closed() override
     {
-        auto bindings_it = window_instance->derived_instance->instance_variables.find("bindings");
-        if(bindings_it == window_instance->derived_instance->instance_variables.end()) {
+        auto bindings_it = window_instance->derived_instance->variables.find("bindings");
+        if(bindings_it == window_instance->derived_instance->variables.end()) {
             return;
         }
         auto& bindings = bindings_it->second->as<andy::lang::dictionary>();
@@ -61,11 +61,11 @@ public:
 std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpreter* interpreter)
 {
     auto window_class = std::make_shared<andy::lang::structure>("Window");
-        window_class->instance_functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        window_class->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::string_view title = params[0]->as<std::string>();
             auto window = std::make_shared<andylang_drawing_window>(title, interpreter, object);
             object->set_native(std::move(window));
-            object->instance_variables["bindings"] = andy::lang::api::to_object(interpreter, andy::lang::dictionary{});
+            object->variables["bindings"] = andy::lang::api::to_object(interpreter, andy::lang::dictionary{});
 
             return nullptr;
         });

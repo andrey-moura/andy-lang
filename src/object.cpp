@@ -7,8 +7,9 @@
 #include <andy/console.hpp>
 
 andy::lang::object::object(std::shared_ptr<andy::lang::structure> c)
-    : cls(c)
 {
+    cls = c;
+
     if(cls) {
         andy::console::log_debug("{}#{} created", cls->name, (void*)this);
     }
@@ -27,47 +28,45 @@ andy::lang::object::~object()
 
 void andy::lang::object::initialize(andy::lang::interpreter* interpreter)
 {
-    auto self = shared_from_this();
+    self = shared_from_this().get();
     for(auto& instance_variable : cls->instance_variables) {
         if(instance_variable.second) {
-            instance_variables[instance_variable.first] = std::make_shared<andy::lang::object>(interpreter->NullClass);
-            interpreter->execute(*instance_variable.second, self);
+            variables[instance_variable.first] = andy::lang::object::create(interpreter, interpreter->NullClass);
+            interpreter->execute(*instance_variable.second);
         }
     }
+    functions = cls->instance_functions;
+    inline_functions = cls->instance_inline_functions;
 }
 
 void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::lang::function_call new_call)
 {
+    interpreter->push_context_with_object(shared_from_this());
     initialize(interpreter);
 
-    auto new_it = cls->instance_functions.find("new");
+    auto new_it = functions.find("new");
 
-    if(new_it == cls->instance_functions.end()) {
+    if(new_it == functions.end()) {
         // default constructor
         if(new_call.positional_params.size() || new_call.named_params.size()) {
             throw std::runtime_error("Default constructor does not accept parameters in class " + std::string(cls->name));
         }
         if(cls->base) {
             // call the base class constructor
-            auto base_new_it = cls->base->instance_functions.find("new");
-            if(base_new_it != cls->base->instance_functions.end()) {
-                base_instance = std::make_shared<object>(cls->base);
-                base_instance->derived_instance = shared_from_this();
-                base_instance->initialize(interpreter, new_call);
-            }
+            base_instance = std::make_shared<object>(cls->base);
+            base_instance->derived_instance = shared_from_this();
+            base_instance->initialize(interpreter, new_call);
         }
     } else {
-        auto new_it = cls->instance_functions.find("new");
+        new_call.name = "new";
+        new_call.cls = cls;
+        new_call.object = shared_from_this();
+        new_call.method = new_it->second.get();
 
-        if(new_it != cls->instance_functions.end()) {
-            new_call.name = "new";
-            new_call.cls = cls;
-            new_call.object = shared_from_this();
-            new_call.method = new_it->second.get();
-
-            interpreter->call(new_call);
-        }
+        interpreter->call(new_call);
     }
+
+    interpreter->pop_context();
 }
 
 void andy::lang::object::log_native_destructor()

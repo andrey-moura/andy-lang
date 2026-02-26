@@ -38,11 +38,22 @@ namespace andy
 
             void contained_class(andy::lang::interpreter *interpreter, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::structure> contained) {
                 auto cls_obj = to_object(interpreter, contained);
-                cls->class_variables[contained->name] = cls_obj;
+                cls->variables[contained->name] = cls_obj;
             }
 
             std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
+                if(__call.name == "yield") {
+                    andy::lang::lexer lexer("", __call.name);
+                    andy::lang::parser parser;
+                    auto ast = parser.parse_all(lexer);
+                    ast = ast.childrens().front();
+                    auto ret = interpreter->execute(ast);
+                    return ret;
+                }
+
                 if(__call.object) {
+                    interpreter->push_context_with_object(__call.object);
+
                     auto method = __call.object->cls->instance_functions.find(__call.name);
 
                     if(method == __call.object->cls->instance_functions.end()) {
@@ -51,21 +62,29 @@ namespace andy
 
                     __call.method = method->second.get();
                 } else {
-                    auto method = interpreter->StdClass->class_functions.find(__call.name);
+                    interpreter->push_context();
 
-                    if(method == interpreter->StdClass->class_functions.end()) {
+                    auto method = interpreter->StdClass->functions.find(__call.name);
+
+                    if(method == interpreter->StdClass->functions.end()) {
                         andy::lang::lexer lexer("", __call.name);
                         andy::lang::parser parser;
                         auto ast = parser.parse_all(lexer);
                         ast = ast.childrens().front();
-                        return interpreter->execute(ast, __call.object);
+                        auto ret = interpreter->execute(ast);
+                        interpreter->pop_context();
+                        return ret;
                     } else {
                         __call.method = method->second.get();
                     }
 
                 }
 
-                return interpreter->call(__call);
+                std::shared_ptr<andy::lang::object> ret = interpreter->call(__call);
+
+                interpreter->pop_context();
+
+                return ret;
             }
         };
     }; // namespace lang

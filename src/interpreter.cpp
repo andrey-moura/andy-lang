@@ -1,7 +1,9 @@
 #include <iostream>
 
 #include "andy/file.hpp"
+#include "andy/console.hpp"
 
+#include "andy/lang/error.hpp"
 #include "andy/lang/interpreter.hpp"
 #include "andy/lang/extension.hpp"
 #include "andy/lang/lang.hpp"
@@ -55,7 +57,7 @@ andy::lang::interpreter::interpreter()
 
 void andy::lang::interpreter::load(std::shared_ptr<andy::lang::structure> cls)
 {
-    cls->class_functions["subclasses"] = std::make_shared<andy::lang::function>("subclasses", function_storage_type::instance_function, [cls,this](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    cls->functions["subclasses"] = std::make_shared<andy::lang::function>("subclasses", function_storage_type::instance_function, [cls,this](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         std::vector<std::shared_ptr<andy::lang::object>> subclasses;
         subclasses.reserve(cls->deriveds.size());
 
@@ -68,17 +70,85 @@ void andy::lang::interpreter::load(std::shared_ptr<andy::lang::structure> cls)
         return andy::lang::object::create(this, ArrayClass, std::move(subclasses));
     });
 
-    for(auto& previous_cls : classes) {
-        if(previous_cls->name == cls->name) {
-            previous_cls = cls;
-            return;
+    cls->cls = cls;
+
+    current_context->classes[cls->name] = cls;
+}
+
+std::shared_ptr<andy::lang::structure> andy::lang::interpreter::find_class(const std::string_view& name)
+{
+    if(current_context != global_context) {
+        auto it = current_context->classes.find(name);
+
+        if(it != current_context->classes.end()) {
+            return it->second;
         }
     }
 
-    classes.push_back(cls);
+    auto it = global_context->classes.find(name);
+
+    if(it != global_context->classes.end()) {
+        return it->second;
+    }
+
+    return nullptr;
 }
 
-std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdecl(const andy::lang::parser::ast_node& source_code)
+static bool is_named_param(const andy::lang::parser::ast_node& param)
+{
+    return param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl && param.childrens().size();
+}
+
+static void push_context_from_node_object_if_any(andy::lang::interpreter* interpreter, const andy::lang::parser::ast_node& node)
+{
+    const andy::lang::parser::ast_node* object_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+
+    if(object_node) {
+        object_node = object_node->childrens().data();
+        auto object = interpreter->execute(*object_node);
+        if(object) {
+            interpreter->push_context_with_object(object);
+        }
+    }
+}
+
+static void pop_context_from_node_object_if_any(andy::lang::interpreter* interpreter, const andy::lang::parser::ast_node& node)
+{
+    const andy::lang::parser::ast_node* object_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+
+    if(object_node) {
+        interpreter->pop_context();
+    }
+}
+
+static void push_context_from_node(andy::lang::interpreter* interpreter, const andy::lang::parser::ast_node& node)
+{
+    const andy::lang::parser::ast_node* object_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+
+    if(object_node) {
+        object_node = object_node->childrens().data();
+        auto object = interpreter->execute(*object_node);
+        if(object) {
+            interpreter->push_context_with_object(object);
+        }
+    } else {
+        interpreter->push_context();
+    }
+}
+
+static void pop_context_from_node(andy::lang::interpreter* interpreter, const andy::lang::parser::ast_node& node)
+{
+    interpreter->pop_context();
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_decl(const andy::lang::parser::ast_node& source_code)
+{
+    auto method = execute_method_definition(source_code);
+    current_context->functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
+    return nullptr;
+}
+
+static std::shared_ptr<andy::lang::structure> do_execute_classdecl(andy::lang::interpreter* interpreter, const andy::lang::parser::ast_node& source_code)
 {
     std::string_view class_name = source_code.decname();
 
@@ -88,10 +158,14 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
 
     if (baseclass_node)
     {
-        auto object = andy::lang::api::to_object(this, cls);
+        auto object = andy::lang::api::to_object(interpreter, cls);
+
+        interpreter->push_context_with_object(object);
 
         auto declname_node = baseclass_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-        auto base_class_object = execute(*declname_node, object);
+        auto base_class_object = interpreter->execute(*declname_node);
+
+        interpreter->pop_context();
         
         if(!base_class_object) {
             throw std::runtime_error("base class " + std::string(baseclass_node->decname()) + " not found");
@@ -113,7 +187,7 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
         case andy::lang::parser::ast_node_type::ast_node_fn_decl: {
             auto method = execute_method_definition(class_child);
             if(method.storage_type == andy::lang::function_storage_type::class_function || source_code.decl_type() == "namespace") {
-                cls->class_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
+                cls->functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
             } else {
                 cls->instance_functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
             }
@@ -125,482 +199,488 @@ std::shared_ptr<andy::lang::structure> andy::lang::interpreter::execute_classdec
         }
         break;
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
-            auto child_cls = execute_classdecl(class_child);
-            auto cls_object = andy::lang::object::create(this, ClassClass, child_cls);
-            cls_object->cls->instance_functions["new"]->call(cls_object);
-            cls->class_variables[child_cls->name] = cls_object;
+            auto child_cls = do_execute_classdecl(interpreter, class_child);
+            auto cls_object = andy::lang::object::create(interpreter, interpreter->ClassClass, child_cls);
+            cls_object->cls->functions["new"]->call(cls_object);
+            cls->variables[child_cls->name] = cls_object;
+            interpreter->load(child_cls);
         }
         default:
             class_child.token().error_message_at_current_position("unexpected token in class declaration");
             break;
         }
     }
-
     return cls;
 }
 
-static bool is_named_param(const andy::lang::parser::ast_node& param)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_classdecl(const andy::lang::parser::ast_node& source_code)
 {
-    return param.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl && param.childrens().size();
+    auto cls = do_execute_classdecl(this, source_code);
+    load(cls);
+    return nullptr;
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(const andy::lang::parser::ast_node& source_code)
 {
-    switch (source_code.type())
-    {
-        case andy::lang::parser::ast_node_type::ast_node_fn_decl: {
-            auto method = execute_method_definition(source_code);
-            current_context().functions[method.name] = std::make_shared<andy::lang::function>(std::move(method));
+    return node_to_object(source_code);
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(const andy::lang::parser::ast_node& source_code)
+{
+    std::string_view function_name = source_code.decname();
+
+    std::vector<std::shared_ptr<andy::lang::object>> positional_params;
+    std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
+
+    const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+
+    if(params_node) {
+        for(auto& param : params_node->childrens()) {
+            const andy::lang::parser::ast_node* value_node = &param;
+            const andy::lang::parser::ast_node* name = nullptr;
+            if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
+                value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+                name = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+            }
+
+            std::shared_ptr<andy::lang::object> value = nullptr;
+
+            value = execute(*value_node);
+
+            if(name) {
+                std::string content = std::string(name->token().content());
+                named_params[content] = value;
+            } else {
+                positional_params.push_back(value);
+            }
         }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_classdecl: {
-            auto cls = execute_classdecl(source_code);
-            load(cls);
+    }
+
+    // If the function call has an object (obj.fn()), we need to push the context to search for the
+    // function in the object and its class, and then pop it. If we don't have an object we need to
+    // search in the current context and then in the global context.
+    push_context_from_node_object_if_any(this, source_code);
+
+    std::string_view object_name = "";
+    bool is_super = function_name == "super";
+    bool is_assignment = function_name == "=";
+    bool is_new = function_name == "new";
+    andy::lang::function* method_to_call = nullptr;
+
+    if(is_assignment && !current_context->self) {
+        throw std::runtime_error("assignment operator '=' can only be used with a variable");
+    }
+
+    std::shared_ptr<andy::lang::object> ret = nullptr;
+
+    if(is_assignment) {
+        if(positional_params.size() != 1) {
+            throw std::runtime_error("assignment operator '=' requires exactly one parameter");
         }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_valuedecl: {
-            return node_to_object(source_code);
+        // If the parameter is only used once (on the right side of the assignment only),
+        // we can move it instead of copying it.
+        auto use_count = positional_params[0].use_count();
+        if(use_count == 1) {
+            *current_context->self = std::move(*positional_params[0].get());
+        } else {
+            auto copy = positional_params[0]->native_copy();
+            if(!copy) {
+                throw std::runtime_error("object of class " + std::string(positional_params[0]->cls->name) + " cannot be assigned because it does not support copying");
+            }
+            *current_context->self = std::move(*copy.get());
         }
-        break;
-        case andy::lang::parser::ast_node_fn_call: {
-            std::string_view function_name = source_code.decname();
-            bool is_super = function_name == "super";
-            bool is_assignment = function_name == "=";
-            bool is_new = function_name == "new";
-            andy::lang::function* method_to_call = nullptr;
-            std::shared_ptr<andy::lang::object> object_to_call = nullptr;
-            std::shared_ptr<andy::lang::structure> class_to_call = nullptr;
+    } else {
+        if(is_new) {
+            auto it = current_context->cls->instance_functions.find("new");
 
-            const andy::lang::parser::ast_node* object_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
-
-            const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
-
-            if(is_super) {
-                if(!object || object_node) {
-                    throw std::runtime_error("super can only be called from an instance object");
-                }
-
-                if(!object->cls->base) {
-                    throw std::runtime_error("class " + std::string(object->cls->name) + " does not have a base class");
-                }
-
-                auto it = object->cls->base->instance_functions.find("new");
-
-                if(it == object->cls->base->instance_functions.end()) {
-                    throw std::runtime_error("base class " + std::string(object->cls->base->name) + " does not have a constructor");
-                }
-
+            if(it != current_context->cls->instance_functions.end()) {
                 method_to_call = it->second.get();
-                object_to_call = std::make_shared<andy::lang::object>(object->cls->base);
-                object_to_call->derived_instance = object;
-                object->base_instance = object_to_call;
-                object_to_call->derived_instance = object;
-                class_to_call = object->cls->base;
-            } else {
-                if(object_node) {
-                    object_node = object_node->childrens().data();
-                    object_to_call = execute(*object_node, object);
-                    if(!object_to_call && object_node->type() == andy::lang::parser::ast_node_type::ast_node_declname) {
-                        // Possibly a class name, so we try to instantiate it.
-                       class_to_call = find_class(object_node->token().content());
-                    }
-                } else {
-                    object_to_call = object;
-                }
-
-                if(object_to_call) {
-                    if(object_to_call->cls == ClassClass) {
-                        class_to_call = object_to_call->as<std::shared_ptr<andy::lang::structure>>();
-                        object_to_call = nullptr;
-                    } else {
-                        class_to_call = object_to_call->cls;
-                    }
-
-                    bool are_all_parameters_literals = true;
-                    if(params_node) {
-                        for(auto& param : params_node->childrens()) {
-                            if(is_named_param(param)) {
-                                are_all_parameters_literals = false;
-                                break;
-                            }
-                            if(param.token().type() != andy::lang::lexer::token_type::token_literal) {
-                                are_all_parameters_literals = false;
-                                break;
-                            }
-                        }
-                    }
-                    if(are_all_parameters_literals) {
-                        // We can inline!
-                        auto it = class_to_call->inline_functions.find(function_name);
-                        if(it != class_to_call->inline_functions.end()) {
-                            auto& inline_fn = *it->second;
-                            return inline_fn(this, object_to_call, source_code);
-                        }
-                    }
-                }
-
-                if(is_new && object_to_call) {
-                    throw std::runtime_error("new can only be called on a class");
-                } else if(is_assignment) {
-                    if(!object_to_call) {
-                        throw std::runtime_error("assignment operator '=' can only be used with a variable");
-                    }
-                }
             }
-            if(!is_assignment) {
-                if(object_to_call) {
-                    auto it = object_to_call->cls->instance_functions.find(function_name);
+        } else {
+            auto it = current_context->functions.find(function_name);
 
-                    if(it == object_to_call->cls->instance_functions.end()) {
-                        if(object_to_call->cls->base) {
-                            it = object_to_call->cls->base->instance_functions.find(function_name);
+            if(it != current_context->functions.end()) {
+                method_to_call = it->second.get();
+            } else if(current_context->cls) {
+                auto it = current_context->cls->functions.find(function_name);
 
-                            if(it != object_to_call->cls->base->instance_functions.end()) {
-                                if(!object_to_call->base_instance) {
-                                    throw std::runtime_error("object has no base instance");
-                                }
-
-                                method_to_call = it->second.get();
-                                class_to_call = object_to_call->cls->base;
-                                object_to_call = object_to_call->base_instance;
-                            }
-                        }
-                    } else {
-                        method_to_call = it->second.get();
-                        object_to_call = object_to_call;
-                        class_to_call = object_to_call->cls;
-                    }
-
-                    if(!method_to_call) {
-                        // Calling directly on an object and the object does not have the method.
-                        if(object_node) {
-                            throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(object_to_call->cls->name));
-                        }
-                    }
-                } else if(class_to_call && function_name != "new") {
-                    auto it = class_to_call->class_functions.find(function_name);
-
-                    if(it != class_to_call->class_functions.end()) {
-                        method_to_call = it->second.get();
-                    } else {
-                        // If the class does not have the method, we search in the base class.
-                        if(class_to_call->base) {
-                            it = class_to_call->base->class_functions.find(function_name);
-
-                            if(it != class_to_call->base->class_functions.end()) {
-                                method_to_call = it->second.get();
-                                class_to_call = class_to_call->base;
-                            }
-                        }
-                    }
-                    if(!method_to_call) {
-                        throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(class_to_call->name));
-                    }
-                }
-
-                if(function_name != "new") {
-                    if(!method_to_call) {
-                        // Yet not found, so we search in the current context.
-                        // If the current context is the global, we skip the
-                        // check as it will be made after.
-                        bool checked_global = false;
-                        if(!is_global_context()) {
-                            for(int i = stack.size() - 1; i >= 0; --i) {
-                                checked_global = i == 0;
-
-                                auto& context = stack[i];
-
-                                auto it = context.functions.find(function_name);
-
-                                if(it != context.functions.end()) {
-                                    method_to_call = it->second.get();
-                                    break;
-                                }
-
-                                // If the current context is not inherited, we can stop searching
-                                if(!context.inherited && i == stack.size() - 1) {
-                                    break;
-                                }
-                            }
-                        }
-                        if(!method_to_call && !checked_global) {
-                            auto& context = stack.front();
-
-                            auto it = context.functions.find(function_name);
-
-                            if(it != context.functions.end()) {
-                                method_to_call = it->second.get();
-                            }
-                        }
-                    }
-
-                    if(!method_to_call) {
-                        auto it = StdClass->class_functions.find(function_name);
-
-                        if(it == StdClass->class_functions.end()) {
-                            throw std::runtime_error("function '" + std::string(function_name) + "' not found");
-                        } else {
-                            method_to_call = it->second.get();
-                            class_to_call = StdClass;
-                        }
-                    }
+                if(it != current_context->cls->functions.end()) {
+                    method_to_call = it->second.get();
                 }
             }
 
-            std::vector<std::shared_ptr<andy::lang::object>> positional_params;
-            std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
-
-            if(params_node) {
-                for(auto& param : params_node->childrens()) {
-                    const andy::lang::parser::ast_node* value_node = &param;
-                    const andy::lang::parser::ast_node* name = nullptr;
-                    if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
-                        value_node = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
-                        name = param.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                    }
-
-                    std::shared_ptr<andy::lang::object> value = nullptr;
-                    
-                    value = node_to_object(*value_node, object ? object->cls : nullptr, object);
-                    
-                    if(name) {
-                        std::string content = std::string(name->token().content());
-                        named_params[content] = value;
-                    } else {
-                        positional_params.push_back(value);
-                    }
+            if(!method_to_call) {
+                if(auto inline_it = current_context->inline_functions.find("new"); inline_it != current_context->inline_functions.end()) {
+                    auto self_ptr = current_context->self->shared_from_this();
+                    ret = (*inline_it->second)(this, self_ptr, source_code);
+                    goto pop_and_return;
                 }
-            }
-
-            if(is_assignment) {
-                if(positional_params.size() != 1) {
-                    throw std::runtime_error("assignment operator '=' requires exactly one parameter");
-                }
-
-                auto other = positional_params.front();
-
-                auto use_count = other.use_count();
-
-                if(other->base_instance) {
-                    use_count--;
-                }
-                // One for positional_params + one for other (variabled declared above)
-                if(use_count > 2) {
-                    other->native_copy_to(object_to_call.get());
-                    if(other->base_instance) {
-                        object_to_call->base_instance = std::make_shared<andy::lang::object>(NullClass);
-                        other->base_instance->native_copy_to(object_to_call->base_instance.get());
-                    }
-                } else {
-                    other->native_move_to<void>(object_to_call.get());
-                    object_to_call->base_instance = other->base_instance;
-                    other->base_instance = nullptr;
-                }
-                
-                object_to_call->cls = other->cls;
-                object_to_call->instance_variables = other->instance_variables;
-
-                return object_to_call;
-            }
-
-            andy::lang::function_call __call = {
-                function_name,
-                class_to_call,
-                object_to_call,
-                method_to_call,
-                std::move(positional_params),
-                std::move(named_params),
-                source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
-            };
-
-            if(is_new) {
-                object_to_call = andy::lang::object::instantiate(this, class_to_call, __call);
-                return object_to_call;
-            }
-
-            std::shared_ptr<andy::lang::object> ret = call(__call);
-            return ret;
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_vardecl: {
-            std::string_view var_name = source_code.decname();
-            std::shared_ptr<andy::lang::structure> cls = nullptr;
-            if(object) {
-                cls = object->cls;
-            }
-            std::shared_ptr<andy::lang::object> value = std::make_shared<andy::lang::object>(NullClass);
-            current_context().variables[var_name] = value;
-            if(auto fn_call = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call)) {
-                value = execute(*fn_call, object);
-            }
-            return value;
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_conditional: {
-            std::shared_ptr<andy::lang::object> ret = execute(*source_code.condition(), object);
-
-            if(ret && ret->is_present()) {
-                auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
-
-                ret = execute(*context, object);
-            } else {
-                auto e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_else);
-                if(!e) {
-                    e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_conditional);
-                }
-                if(e) {
-                    ret = execute(*e, object);
-                }
-            }
-
-            return ret;
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_while: {
-            std::shared_ptr<andy::lang::object> ret = nullptr;
-
-            bool match_condition = source_code.decl_type() == "until";
-
-            while(execute(*source_code.condition(), object)->is_present() != match_condition) {
-                push_context(true);
-                ret = execute(*source_code.context(), object);
-
-                if(current_context().has_returned) {
-                    return current_context().return_value;
-                }
-                pop_context();
-            }
-
-            return ret;
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_break: {
-            current_context().has_returned = true;
-            return nullptr;
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_context: {
-            if(source_code.childrens().size() == 0) {
-                return nullptr;
-            }
-
-            if(source_code.childrens().size() > 1) {
-                if(source_code.childrens().front().type() == andy::lang::parser::ast_node_type::ast_node_fn_object) {
-                    auto* fn_object = source_code.childrens().data();
-                    std::shared_ptr<andy::lang::object> context_object = node_to_object(fn_object->childrens().front(), object ? object->cls : nullptr, object);
-                    push_context(true);
-                    return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end(), context_object);
-                    pop_context();
-                }
-            }
-            return execute_all(source_code, object);
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_condition: {
-            return node_to_object(source_code.childrens().front());
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_fn_return: {
-            if(source_code.childrens().size()) {
-                return node_to_object(source_code.childrens().front(), object ? object->cls : nullptr, object);
-            } else {
-                return std::make_shared<andy::lang::object>(NullClass);
             }
         }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_foreach: {
-            auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
 
-            std::shared_ptr<andy::lang::object> array_or_dictionary = node_to_object(valuedecl->childrens().front());
-
-            auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
-
-            if(array_or_dictionary->cls == ArrayClass) {
-                std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
-                for(auto& value : array_values) {
-                    push_context(true);
-
-                    current_context().variables[vardecl->decname()] = value;
-                    execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context), object);
-
-                    pop_context();
+        if(!method_to_call) {
+            auto it = StdClass->functions.find(function_name);
+            if(it != StdClass->functions.end()) {
+                method_to_call = it->second.get();
+            }
+        }
+        if(!method_to_call) {
+            auto it = global_context->functions.find(function_name);
+            if(it != global_context->functions.end()) {
+                method_to_call = it->second.get();
+            }
+            if(!method_to_call) {
+                if(current_context->self && !is_new) {
+                    throw std::runtime_error("function '" + std::string(function_name) + "' not found in object of class " + std::string(current_context->cls->name));
                 }
-            } else if(array_or_dictionary->cls == DictionaryClass) {
-                andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
-                for(auto& [key, value] : dictionary_values) {
-                    push_context(true);
-
-                    std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
-                    std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
-
-                    current_context().variables[vardecl->decname()] = params_object;
-
-                    execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context), object);
-
-                    pop_context();
+                if(current_context->cls) {
+                    if(is_new) {
+                        // Simple default constructor call
+                        ret = andy::lang::object::instantiate(this, current_context->cls);
+                        goto pop_and_return;
+                    }
+                    throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(current_context->cls->name));
                 }
-            } else {
-                throw std::runtime_error("foreach should iterate over an array or a dictionary");
+                throw std::runtime_error("function '" + std::string(function_name) + "' not found in current context");
             }
         }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_for: {
-            auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
-            if(!valuedecl) {
-                valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-            }
 
-            std::shared_ptr<andy::lang::object> max_object = execute(*valuedecl, object);
-
-            if(!max_object || max_object->cls != IntegerClass) {
-                throw std::runtime_error("Cannot iterate over a non-integer value");
-            }
-
-            int max = max_object->as<int>();
-            int current = 0;
-
-            while(current < max) {
-                push_context(true);
-                execute_all(*source_code.context(), object);
-                pop_context();
-                current++;
-            }
+        // If the function call has an object (obj.fn()), we have already pushed the context to search for
+        // the function in the object and its class, so we don't need to push it again. If we don't have an
+        // object we need to push the context to execute the function in it's own context.
+        if(!source_code.fn_object()) {
+            push_context();
         }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_yield: {
-            andy::lang::function method;
-            method.name = "yield";
-            method.block_ast = *current_context().given_block;
-            andy::lang::function_call __call = {
-                "yield",
-                nullptr,
-                nullptr,
-                &method,
-                {},
-                {},
-                current_context().given_block
-            };
-            return call(__call);
+
+        andy::lang::function_call __call = {
+            function_name,
+            current_context->cls,
+            current_context->self ? current_context->self->shared_from_this() : nullptr,
+            method_to_call,
+            std::move(positional_params),
+            std::move(named_params),
+            source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
+        };
+
+        if(is_new) {
+            ret = andy::lang::object::instantiate(this, current_context->cls, __call);
+        } else {
+            ret = call(__call);
         }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_declname: {
-            return try_object_from_declname(source_code, object ? object->cls : nullptr, object);
-        }
-        break;
-        case andy::lang::parser::ast_node_type::ast_node_else: {
+    }
+
+// Todo: Use the current_context.return_value and current_context.has_returned to handle returns
+pop_and_return:
+
+    pop_context();
+
+    return ret;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_arraydecl(const andy::lang::parser::ast_node& source_code)
+{
+    std::vector<std::shared_ptr<andy::lang::object>> array;
+    array.reserve(source_code.childrens().size());
+
+    for(auto& child : source_code.childrens()) {
+        array.push_back(node_to_object(child));
+    }
+
+    return andy::lang::object::instantiate(this, ArrayClass, std::move(array));
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_vardecl(const andy::lang::parser::ast_node& source_code)
+{
+    std::string_view var_name = source_code.decname();
+    std::shared_ptr<andy::lang::object> value = std::make_shared<andy::lang::object>(NullClass);
+    value->self = value.get();
+    current_context->variables[var_name] = value;
+
+    if(auto fn_call = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call)) {
+        value = execute(*fn_call);
+    }
+
+    return value;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_conditional(const andy::lang::parser::ast_node& source_code)
+{
+        std::shared_ptr<andy::lang::object> ret = execute(*source_code.condition());
+
+        if(ret && ret->is_present()) {
             auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
-            return execute_all(*context, object);
+
+            ret = execute(*context);
+        } else {
+            auto e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_else);
+            if(!e) {
+                e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_conditional);
+            }
+            if(e) {
+                ret = execute(*e);
+            }
         }
-        break;
-    default:
-        throw std::runtime_error(source_code.token().error_message_at_current_position("interpreter: Unexpected token"));
-        break;
+
+        return ret;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_while(const andy::lang::parser::ast_node& source_code)
+{
+    bool match_condition = source_code.decl_type() == "until";
+
+    while(execute(*source_code.condition())->is_present() != match_condition) {
+        push_context(true);
+        execute(*source_code.context());
+
+        if(current_context->has_returned) {
+            return current_context->return_value;
+        }
+        pop_context();
     }
 
     return nullptr;
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(std::vector<andy::lang::parser::ast_node>::const_iterator begin, std::vector<andy::lang::parser::ast_node>::const_iterator end, std::shared_ptr<andy::lang::object>& object)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_break(const andy::lang::parser::ast_node& source_code)
+{
+        current_context->has_returned = true;
+        return nullptr;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_context(const andy::lang::parser::ast_node& source_code)
+{
+        if(source_code.childrens().size() == 0) {
+            return nullptr;
+        }
+
+        if(source_code.childrens().size() > 1) {
+            if(source_code.childrens().front().type() == andy::lang::parser::ast_node_type::ast_node_fn_object) {
+                auto* fn_object = source_code.childrens().data();
+                std::shared_ptr<andy::lang::object> context_object = node_to_object(
+                    fn_object->childrens().front(),
+                    current_context->self ? current_context->self->cls : nullptr,
+                    current_context->self ? current_context->self->shared_from_this() : nullptr
+                );
+                push_context_with_object(context_object, true);
+                return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end());
+                pop_context();
+            }
+        }
+
+        return execute_all(source_code);
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_condition(const andy::lang::parser::ast_node& source_code)
+{
+    return node_to_object(source_code.childrens().front());
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_return(const andy::lang::parser::ast_node& source_code)
+{
+        if(source_code.childrens().size()) {
+            return node_to_object(
+                source_code.childrens().front(),
+                current_context->self ? current_context->self->cls : nullptr,
+                current_context->self ? current_context->self->shared_from_this() : nullptr
+            );
+        } else {
+            return std::make_shared<andy::lang::object>(NullClass);
+        }
+        return nullptr;
+}
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_foreach(const andy::lang::parser::ast_node& source_code)
+{
+        auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+
+        std::shared_ptr<andy::lang::object> array_or_dictionary = node_to_object(valuedecl->childrens().front());
+
+        auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
+
+        if(array_or_dictionary->cls == ArrayClass) {
+            std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+            for(auto& value : array_values) {
+                push_context(true);
+
+                current_context->variables[vardecl->decname()] = value;
+                execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
+
+                pop_context();
+            }
+        } else if(array_or_dictionary->cls == DictionaryClass) {
+            andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
+            for(auto& [key, value] : dictionary_values) {
+                push_context(true);
+
+                std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
+                std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
+
+                current_context->variables[vardecl->decname()] = params_object;
+
+                execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
+
+                pop_context();
+            }
+        } else {
+            throw std::runtime_error("foreach should iterate over an array or a dictionary");
+        }
+        return nullptr;
+}
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_for(const andy::lang::parser::ast_node& source_code)
+{
+        auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+        if(!valuedecl) {
+            valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+        }
+
+        std::shared_ptr<andy::lang::object> max_object = execute(*valuedecl);
+
+        if(!max_object || max_object->cls != IntegerClass) {
+            throw std::runtime_error("Cannot iterate over a non-integer value");
+        }
+
+        int max = max_object->as<int>();
+        int current = 0;
+
+        while(current < max) {
+            push_context(true);
+            execute_all(*source_code.context());
+            pop_context();
+            current++;
+        }
+
+        return nullptr;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const andy::lang::parser::ast_node& source_code)
+{
+    andy::lang::function method;
+    method.name = "yield";
+    method.block_ast = *current_context->given_block;
+    andy::lang::function_call __call = {
+        "yield",
+        nullptr,
+        nullptr,
+        &method,
+        {},
+        {},
+        current_context->given_block
+    };
+    push_context(true);
+    auto ret = call(__call);
+    pop_context();
+    return ret;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(const andy::lang::parser::ast_node& source_code)
+{
+    push_context_from_node_object_if_any(this, source_code);
+
+    std::string_view name = source_code.token().content();
+    auto it = current_context->variables.find(name);
+
+    if(it != current_context->variables.end()) {
+        pop_context_from_node_object_if_any(this, source_code);
+        return it->second;
+    }
+
+    if(current_context->inherited) {
+        if(previous_context && non_inherited_context) {
+            for(int i = (int)stack.size() - 1; i >= 0; i--) {
+                auto context = stack[i];
+
+                auto it = context->variables.find(name);
+
+                if(it != context->variables.end()) {
+                    pop_context_from_node_object_if_any(this, source_code);
+                    return it->second;
+                }
+
+                if(context == non_inherited_context) {
+                    break;
+                }
+            }
+        }
+    }
+
+    if(current_context != global_context) {
+        auto it = global_context->variables.find(name);
+
+        if(it != global_context->variables.end()) {
+            pop_context_from_node_object_if_any(this, source_code);
+            return it->second;
+        }
+    }
+
+    auto fn_it = current_context->functions.find(name);
+
+    if(fn_it != current_context->functions.end()) {
+        auto __call = andy::lang::function_call{
+            fn_it->first,
+            current_context->cls,
+            current_context->self ? current_context->self->shared_from_this() : nullptr,
+            fn_it->second.get(),
+            {},
+            {},
+            nullptr
+        };
+        auto ret = call(__call);
+        pop_context_from_node_object_if_any(this, source_code);
+        return ret;
+    }
+
+    auto cls = find_class(name);
+
+    if(cls) {
+        pop_context_from_node_object_if_any(this, source_code);
+        return andy::lang::api::to_object(this, cls);
+    }
+
+    throw std::runtime_error("'" + std::string(name) + "' is undefined");
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const andy::lang::parser::ast_node& source_code)
+{
+    auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
+    return execute_all(*context);
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code)
+{
+    static auto executors = std::map<andy::lang::parser::ast_node_type, std::shared_ptr<andy::lang::object>(andy::lang::interpreter::*)(const andy::lang::parser::ast_node&)>{
+        { andy::lang::parser::ast_node_type::ast_node_context,     &andy::lang::interpreter::execute_context },
+        { andy::lang::parser::ast_node_type::ast_node_classdecl,   &andy::lang::interpreter::execute_classdecl },
+        { andy::lang::parser::ast_node_type::ast_node_fn_decl,     &andy::lang::interpreter::execute_fn_decl },
+        { andy::lang::parser::ast_node_type::ast_node_fn_return,   &andy::lang::interpreter::execute_fn_return },
+        { andy::lang::parser::ast_node_type::ast_node_fn_call,     &andy::lang::interpreter::execute_fn_call },
+        { andy::lang::parser::ast_node_type::ast_node_valuedecl,   &andy::lang::interpreter::execute_valuedecl },
+        { andy::lang::parser::ast_node_type::ast_node_arraydecl,   &andy::lang::interpreter::execute_arraydecl },
+        { andy::lang::parser::ast_node_type::ast_node_vardecl,     &andy::lang::interpreter::execute_vardecl },
+        { andy::lang::parser::ast_node_type::ast_node_declname,    &andy::lang::interpreter::execute_declname },
+        { andy::lang::parser::ast_node_type::ast_node_conditional, &andy::lang::interpreter::execute_conditional },
+        { andy::lang::parser::ast_node_type::ast_node_while,       &andy::lang::interpreter::execute_while },
+        { andy::lang::parser::ast_node_type::ast_node_for,         &andy::lang::interpreter::execute_for },
+        { andy::lang::parser::ast_node_type::ast_node_foreach,     &andy::lang::interpreter::execute_foreach },
+        { andy::lang::parser::ast_node_type::ast_node_break,       &andy::lang::interpreter::execute_break },
+        { andy::lang::parser::ast_node_type::ast_node_condition,   &andy::lang::interpreter::execute_condition },
+        { andy::lang::parser::ast_node_type::ast_node_else,        &andy::lang::interpreter::execute_else },
+        { andy::lang::parser::ast_node_type::ast_node_yield,       &andy::lang::interpreter::execute_yield }
+    };
+
+    auto it = executors.find(source_code.type());
+
+    if(it == executors.end()) {
+        andy::lang::error::internal("No executor found for node type " + std::to_string(static_cast<int>(source_code.type())));
+    }
+
+    auto ret = (this->*it->second)(source_code);
+
+    return ret;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(
+    std::vector<andy::lang::parser::ast_node>::const_iterator begin,
+    std::vector<andy::lang::parser::ast_node>::const_iterator end
+)
 {
     std::shared_ptr<andy::lang::object> result = nullptr;
 
@@ -611,31 +691,27 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(std::ve
             break;
         }
 
-        result = execute(node, object);
+        result = execute(node);
 
         if(it->type() == andy::lang::parser::ast_node_type::ast_node_fn_return) {
-            current_context().has_returned = true;
-            current_context().return_value = result;
+            current_context->has_returned = true;
+            current_context->return_value = result;
             return result;
-        } else if(current_context().has_returned) {
-            return current_context().return_value;
+        } else if(current_context->has_returned) {
+            return current_context->return_value;
         }
     }
 
     return nullptr;
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(const andy::lang::parser::ast_node& source_code, std::shared_ptr<andy::lang::object>& object)
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(const andy::lang::parser::ast_node& source_code)
 {
-    return execute_all(source_code.childrens().begin(), source_code.childrens().end(), object);
+    return execute_all(source_code.childrens().begin(), source_code.childrens().end());
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call& call)
 {
-    push_context(call.name == "yield");
-
-    current_context().given_block = call.given_block;
-
     std::shared_ptr<andy::lang::object> ret = nullptr;
 
     if(call.positional_params.size() != call.method->positional_params.size()) {
@@ -655,7 +731,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
             }
         }
     }
-   
+
+    current_context->given_block = call.given_block;
+
     bool is_constructor = call.method->name == "new";
 
     if(is_constructor) {
@@ -668,20 +746,20 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
             call.object->initialize(this);
         }
     }
-   
+
     if(call.method->block_ast.childrens().size()) {
         for(size_t i = 0; i < call.method->positional_params.size(); i++) {
-            current_context().variables[call.method->positional_params[i].name] = call.positional_params[i];
+            current_context->variables[call.method->positional_params[i].name] = call.positional_params[i];
         }
 
         for(auto& [name, value] : call.named_params) {
-            current_context().variables[name] = value;
+            current_context->variables[name] = value;
         }
         
         if(call.method->block_ast.type() == andy::lang::parser::ast_node_type::ast_node_context) {
-            ret = execute_all(call.method->block_ast, call.object);
+            ret = execute_all(call.method->block_ast);
         } else {
-            ret = execute(*call.method->block_ast.block(), call.object);
+            ret = execute(*call.method->block_ast.block());
         }
     } else if(call.method->native_function) {
         ret = call.method->native_function(call);
@@ -695,17 +773,15 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
         ret = call.object;
     }
 
-    for (auto& [name, value] : current_context().variables) {
+    for (auto& [name, value] : current_context->variables) {
         if(value && value->base_instance) {
             if(value.use_count() == 2) {
-                // used by base_instance and current_context().variables
+                // used by base_instance and current_context->variables
                 value->base_instance = nullptr;
                 // Now the use count is 1, it will be destroyed when the current_context is destroyed
             }
         }
     }
-
-    pop_context();
 
     return ret;
 }
@@ -739,10 +815,10 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             auto fn_object_fn_call = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call);
 
             if(fn_object_fn_call) {
-                std::shared_ptr fn_object = execute(*fn_object_fn_call, object);
+                std::shared_ptr fn_object = execute(*fn_object_fn_call);
                 if(fn_object) {
-                    auto it = fn_object->instance_variables.find(node.token().content());
-                    if(it != fn_object->instance_variables.end()) {
+                    auto it = fn_object->variables.find(node.token().content());
+                    if(it != fn_object->variables.end()) {
                         return it->second;
                     }
                     throw std::runtime_error("Class " + std::string(fn_object->cls->name) + " does not have a variable called " + std::string(node.token().content()));
@@ -756,17 +832,17 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
     }
 
     if(object) {
-        auto it = object->instance_variables.find(var_name);
+        auto it = object->variables.find(var_name);
 
-        if(it != object->instance_variables.end()) {
+        if(it != object->variables.end()) {
             return it->second;
         }
 
         if(object->cls == ClassClass) {
             auto cls = object->as<std::shared_ptr<andy::lang::structure>>();
-            auto it = cls->class_variables.find(var_name);
+            auto it = cls->variables.find(var_name);
 
-            if(it != cls->class_variables.end()) {
+            if(it != cls->variables.end()) {
                 return it->second;
             }
         }
@@ -803,48 +879,48 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
     if(fn_object_decname) {
         std::string_view class_name = fn_object_decname->token().content();
             
-        for(auto& cls : classes) {
-            if(cls->name == class_name) {
-                auto it = cls->class_variables.find(var_name);
+        auto cls = find_class(class_name);
 
-                if(it == cls->class_variables.end()) {
-                    // Andy supports calling functions which does not have parameters without parentheses
-                    if(auto it = cls->class_functions.find(var_name); it != cls->class_functions.end()) {
-                        auto __call = andy::lang::function_call{
-                            var_name,
-                            cls,
-                            nullptr,
-                            it->second.get(),
-                            {},
-                            {},
-                            fn_object
-                        };
-                        return call(__call);
-                    }
-                    throw std::runtime_error("class " + std::string(class_name) + " does not have a variable or function called '" + std::string(var_name) + "'");
-                } else {
-                    return it->second;
-                }
-            }
+        if(!cls) {
+            throw std::runtime_error("class or variable '" + std::string(class_name) + "' not found");
         }
 
-        throw std::runtime_error("class or variable '" + std::string(class_name) + "' not found");
+        auto it = cls->variables.find(var_name);
+
+        if(it == cls->variables.end()) {
+            // Andy supports calling functions which does not have parameters without parentheses
+            if(auto it = cls->functions.find(var_name); it != cls->functions.end()) {
+                auto __call = andy::lang::function_call{
+                    var_name,
+                    cls,
+                    nullptr,
+                    it->second.get(),
+                    {},
+                    {},
+                    fn_object
+                };
+                return call(__call);
+            }
+            throw std::runtime_error("class " + std::string(class_name) + " does not have a variable or function called '" + std::string(var_name) + "'");
+        } else {
+            return it->second;
+        }
     }
 
-    auto it = current_context().variables.find(node.token().content());
+    auto it = current_context->variables.find(node.token().content());
 
     for(int i = stack.size() - 1; i >= 0; --i) {
         auto& context = stack[i];
 
-        auto it = context.variables.find(node.token().content());
+        auto it = context->variables.find(node.token().content());
 
-        if(it != context.variables.end()) {
+        if(it != context->variables.end()) {
             return it->second;
         }
 
-        auto fn_it = current_context().functions.find(node.token().content());
+        auto fn_it = current_context->functions.find(node.token().content());
 
-        if(fn_it != current_context().functions.end()) {
+        if(fn_it != current_context->functions.end()) {
             auto method = fn_it->second;
             andy::lang::function_call __call = {
                 method->name,
@@ -859,9 +935,15 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         }
 
         // If the current context is not inherited, we can stop searching
-        if(!context.inherited && i == stack.size() - 1) {
+        if(!context->inherited && i == stack.size() - 1) {
             break;
         }
+    }
+
+    cls = find_class(node.token().content());
+
+    if(cls) {
+        return andy::lang::api::to_object(this, cls);
     }
 
     return nullptr;
@@ -907,7 +989,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
             break;
         }
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
-        return execute(node, object);
+        return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_declname || node.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
         std::shared_ptr<andy::lang::object> obj = try_object_from_declname(node, cls, object);
 
@@ -917,13 +999,8 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
 
         throw std::runtime_error("'" + std::string(node.token().content()) + "' is undefined");
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_arraydecl) {
-        std::vector<std::shared_ptr<andy::lang::object>> array;
-
-        for(auto& child : node.childrens()) {
-            array.push_back(node_to_object(child));
-        }
-
-        return andy::lang::object::instantiate(this, ArrayClass, std::move(array));
+        // Logic moved to execute_arraydecl to support array literals in more places
+        return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_dictionarydecl) {
         andy::lang::dictionary map;
 
@@ -1001,4 +1078,84 @@ void andy::lang::interpreter::load_extension(andy::lang::extension* extension)
 {
     extension->load(this);
     extensions.push_back(extension);
+}
+
+void andy::lang::interpreter::push_context(bool inherited)
+{
+    andy::console::log_debug("Pushing context");
+
+    stack.push_back(std::make_shared<interpreter_context>());
+    stack.back()->inherited = inherited;
+    update_current_context();
+}
+
+void andy::lang::interpreter::push_context(std::shared_ptr<andy::lang::object> object, bool inherited)
+{
+    andy::console::log_debug("Pushing context with object");
+
+    if(object) {
+        push_context_with_object(object, inherited);
+    } else {
+        push_context(inherited);
+    }
+
+    update_current_context();
+}
+
+void andy::lang::interpreter::push_context_with_object(std::shared_ptr<andy::lang::object> object, bool inherited)
+{
+    std::string_view class_name = object->cls ? object->cls->name : "null";
+
+    if(object->cls == ClassClass) {
+        auto cls = object->as<std::shared_ptr<andy::lang::structure>>();
+        stack.push_back(std::static_pointer_cast<interpreter_context>(cls));
+    } else {
+        stack.push_back(std::static_pointer_cast<interpreter_context>(object));
+    }
+
+    andy::console::log_debug("Pushing context with {}#{}", class_name, (void*)object.get());
+
+    update_current_context();
+}
+
+void andy::lang::interpreter::pop_context()
+{
+    if(stack.size() == 1) {
+        throw std::runtime_error("interpreter: unexpected end of context stack");
+    }
+
+    andy::console::log_debug("Popping context");
+
+    stack.pop_back();
+    update_current_context();
+}
+
+void andy::lang::interpreter::update_current_context()
+{
+    if(stack.empty()) {
+        current_context = nullptr;
+        global_context = nullptr;
+        previous_context = nullptr;
+        non_inherited_context = nullptr;
+        return;
+    }
+
+    previous_context = stack.size() >= 2 ? stack[stack.size() - 2] : nullptr;
+    global_context = stack.front();
+    current_context = stack.back();
+
+    if(current_context->inherited) {
+        // Look from the current context untill the global context (excluding it) searching for
+        // a non-inherited context.
+        for(int i = stack.size() - 1; i >= 1; --i) {
+            auto& context = stack[i];
+
+            if(!context->inherited) {
+                non_inherited_context = context;
+                break;
+            }
+        }
+    } else {
+        non_inherited_context = nullptr;
+    }
 }

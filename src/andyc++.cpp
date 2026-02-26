@@ -329,7 +329,7 @@ int main(int argc, char* argv[]) {
                             if(m.storage_type == andy::lang::function_storage_type::instance_function) {
                                 cls->instance_functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
                             } else {
-                                cls->class_functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
+                                cls->functions[m.name] = std::make_shared<andy::lang::function>(std::move(m));
                             }
                         }
 

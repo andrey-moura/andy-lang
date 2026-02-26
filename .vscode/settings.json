@@ -104,16 +104,18 @@
         "xiosbase": "cpp",
         "xlocmes": "cpp",
         "xstddef": "cpp",
-        "xtr1common": "cpp"
+        "xtr1common": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     },
     "cmake.configureArgs": [
 
     ],
     "cmake.debugConfig": {
         "args": [
-            "application.andy",
+            ".",
         ],
-        "cwd": "${workspaceFolder}/lct-comics",
+        "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
         "request": "launch"

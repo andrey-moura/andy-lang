@@ -46,6 +46,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/function.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/preprocessor.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/extension.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/error.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/interpreter.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/object.cpp
@@ -134,6 +135,7 @@ elseif(WIN32)
 
     add_dependencies(andy-lang-installer andy)
     SET_TARGET_PROPERTIES(andy-lang-installer PROPERTIES LINK_FLAGS "/MANIFESTUAC:/level='requireAdministrator' /uiAccess='false'")
+    target_compile_definitions(andy-lang PRIVATE _WIN32_WINNT=0x0A00)
 endif()
 
 target_link_libraries(andy PRIVATE andy-lang)

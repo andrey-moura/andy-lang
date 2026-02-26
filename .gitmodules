@@ -1,33 +1,33 @@
 [submodule "modules/andy"]
 	path = modules/andy
-	url = https://github.com/andrey-moura/andy.git
+	url = git@github.com:andrey-moura/andy.git
 [submodule "modules/andy-core"]
 	path = modules/andy-core
-	url = https://github.com/andrey-moura/andy-core.git
+	url = git@github.com:andrey-moura/andy-core.git
 [submodule "modules/andy-console"]
 	path = modules/andy-console
-	url = https://github.com/andrey-moura/andy-console.git
+	url = git@github.com:andrey-moura/andy-console.git
 [submodule "modules/andy-tests"]
 	path = modules/andy-tests
-	url = https://github.com/andrey-moura/andy-tests.git
+	url = git@github.com:andrey-moura/andy-tests.git
 [submodule "modules/andy-file"]
 	path = modules/andy-file
-	url = https://github.com/andrey-moura/andy-file.git
+	url = git@github.com:andrey-moura/andy-file.git
 [submodule "modules/andy-ui"]
 	path = modules/andy-ui
-	url = https://github.com/andrey-moura/andy-ui.git
+	url = git@github.com:andrey-moura/andy-ui.git
 [submodule "modules/andy-drawing"]
 	path = modules/andy-drawing
-	url = https://github.com/andrey-moura/andy-drawing.git
+	url = git@github.com:andrey-moura/andy-drawing.git
 [submodule "modules/andy-widgets"]
 	path = modules/andy-widgets
-	url = https://github.com/andrey-moura/andy-widgets.git
+	url = git@github.com:andrey-moura/andy-widgets.git
 [submodule "modules/binary"]
 	path = modules/binary
-	url = https://github.com/andrey-moura/binary.git
+	url = git@github.com:andrey-moura/binary.git
 [submodule "modules/andy-net"]
 	path = modules/andy-net
-	url = https://github.com/andrey-moura/andy-net.git
+	url = git@github.com:andrey-moura/andy-net.git
 [submodule "modules/andy-string"]
 	path = modules/andy-string
-	url = https://github.com/andrey-moura/string.git
+	url = git@github.com:andrey-moura/string.git
