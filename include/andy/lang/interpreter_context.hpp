@@ -24,7 +24,8 @@ namespace andy
 
             bool has_returned = false;
             std::shared_ptr<andy::lang::object> return_value;
-            bool inherited = false;
+            bool is_block_context = false;
+            std::shared_ptr<andy::lang::interpreter_context> lexical_parent = nullptr;
         };
     }; // namespace lang
 }; // namespace andy

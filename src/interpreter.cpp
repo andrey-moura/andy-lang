@@ -320,6 +320,17 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
                 }
             }
 
+            // Search the lexical_parent chain for the function if not found yet.
+            if(!method_to_call) {
+                for(auto ctx = current_context->lexical_parent; ctx != nullptr; ctx = ctx->lexical_parent) {
+                    auto it = ctx->functions.find(function_name);
+                    if(it != ctx->functions.end()) {
+                        method_to_call = it->second.get();
+                        break;
+                    }
+                }
+            }
+
             if(!method_to_call) {
                 if(auto inline_it = current_context->inline_functions.find("new"); inline_it != current_context->inline_functions.end()) {
                     auto self_ptr = current_context->self->shared_from_this();
@@ -487,7 +498,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_while(const
     bool match_condition = source_code.decl_type() == "until";
 
     while(execute(*source_code.condition())->is_present() != match_condition) {
-        push_context(true);
+        push_block_context();
         execute(*source_code.context());
 
         if(current_context->has_returned) {
@@ -519,7 +530,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_context(con
                     current_context->self ? current_context->self->cls : nullptr,
                     current_context->self ? current_context->self->shared_from_this() : nullptr
                 );
-                push_context_with_object(context_object, true);
+                push_context_with_object(context_object);
                 return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end());
                 pop_context();
             }
@@ -557,7 +568,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_foreach(con
         if(array_or_dictionary->cls == ArrayClass) {
             std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
             for(auto& value : array_values) {
-                push_context(true);
+                push_block_context();
 
                 current_context->variables[vardecl->decname()] = value;
                 execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
@@ -567,7 +578,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_foreach(con
         } else if(array_or_dictionary->cls == DictionaryClass) {
             andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
             for(auto& [key, value] : dictionary_values) {
-                push_context(true);
+                push_block_context();
 
                 std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
                 std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
@@ -600,7 +611,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_for(const a
         int current = 0;
 
         while(current < max) {
-            push_context(true);
+            push_block_context();
             execute_all(*source_code.context());
             pop_context();
             current++;
@@ -623,7 +634,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const
         {},
         current_context->given_block
     };
-    push_context(true);
+    push_block_context();
     auto ret = call(__call);
     pop_context();
     return ret;
@@ -635,35 +646,18 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
 
     push_context_from_node_object_if_any(this, source_code);
 
-    auto it = current_context->variables.find(name);
-
-    if(it != current_context->variables.end()) {
-        pop_context_from_node_object_if_any(this, source_code);
-        return it->second;
-    }
-
-    if(current_context->inherited) {
-        if(previous_context && non_inherited_context) {
-            for(int i = (int)stack.size() - 2; i >= 0; i--) {
-                auto context = stack[i];
-
-                auto it = context->variables.find(name);
-
-                if(it != context->variables.end()) {
-                    pop_context_from_node_object_if_any(this, source_code);
-                    return it->second;
-                }
-
-                if(context == non_inherited_context) {
-                    break;
-                }
-            }
+    // Walk the lexical_parent chain (starting from the current context) to find the variable.
+    for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
+        auto it = ctx->variables.find(name);
+        if(it != ctx->variables.end()) {
+            pop_context_from_node_object_if_any(this, source_code);
+            return it->second;
         }
     }
 
+    // Always check the global context as a fallback.
     if(current_context != global_context) {
         auto it = global_context->variables.find(name);
-
         if(it != global_context->variables.end()) {
             pop_context_from_node_object_if_any(this, source_code);
             return it->second;
@@ -967,20 +961,15 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         }
     }
 
-    auto it = current_context->variables.find(node.token().content());
-
-    for(int i = stack.size() - 2; i >= 0; --i) {
-        auto& context = stack[i];
-
-        auto it = context->variables.find(node.token().content());
-
-        if(it != context->variables.end()) {
+    // Walk the lexical_parent chain to find the variable.
+    for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
+        auto it = ctx->variables.find(node.token().content());
+        if(it != ctx->variables.end()) {
             return it->second;
         }
 
-        auto fn_it = current_context->functions.find(node.token().content());
-
-        if(fn_it != current_context->functions.end()) {
+        auto fn_it = ctx->functions.find(node.token().content());
+        if(fn_it != ctx->functions.end()) {
             auto method = fn_it->second;
             andy::lang::function_call __call = {
                 method->name,
@@ -993,10 +982,13 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             };
             return call(__call);
         }
+    }
 
-        // If the current context is not inherited, we can stop searching
-        if(!context->inherited && i == stack.size() - 1) {
-            break;
+    // Always check the global context as a fallback.
+    if(current_context != global_context) {
+        auto it = global_context->variables.find(node.token().content());
+        if(it != global_context->variables.end()) {
+            return it->second;
         }
     }
 
@@ -1090,29 +1082,48 @@ void andy::lang::interpreter::load_extension(andy::lang::extension* extension)
     extensions.push_back(extension);
 }
 
-void andy::lang::interpreter::push_context(bool inherited)
+void andy::lang::interpreter::push_context()
 {
     andy::console::log_debug("Pushing context");
 
     stack.push_back(std::make_shared<interpreter_context>());
-    stack.back()->inherited = inherited;
     update_current_context();
 }
 
-void andy::lang::interpreter::push_context(std::shared_ptr<andy::lang::object> object, bool inherited)
+void andy::lang::interpreter::push_block_context()
+{
+    andy::console::log_debug("Pushing block context");
+
+    auto ctx = std::make_shared<interpreter_context>();
+    ctx->is_block_context = true;
+
+    // Find the nearest block context on the stack (excludes global context at index 0,
+    // which is never a valid lexical parent for nested block scopes).
+    for(int i = (int)stack.size() - 1; i >= 1; --i) {
+        if(stack[i]->is_block_context) {
+            ctx->lexical_parent = stack[i];
+            break;
+        }
+    }
+
+    stack.push_back(ctx);
+    update_current_context();
+}
+
+void andy::lang::interpreter::push_context(std::shared_ptr<andy::lang::object> object)
 {
     andy::console::log_debug("Pushing context with object");
 
     if(object) {
-        push_context_with_object(object, inherited);
+        push_context_with_object(object);
     } else {
-        push_context(inherited);
+        push_context();
     }
 
     update_current_context();
 }
 
-void andy::lang::interpreter::push_context_with_object(std::shared_ptr<andy::lang::object> object, bool inherited)
+void andy::lang::interpreter::push_context_with_object(std::shared_ptr<andy::lang::object> object)
 {
     std::string_view class_name = object->cls ? object->cls->name : "null";
 
@@ -1149,27 +1160,9 @@ void andy::lang::interpreter::update_current_context()
     if(stack.empty()) {
         current_context = nullptr;
         global_context = nullptr;
-        previous_context = nullptr;
-        non_inherited_context = nullptr;
         return;
     }
 
-    previous_context = stack.size() >= 2 ? stack[stack.size() - 2] : nullptr;
     global_context = stack.front();
     current_context = stack.back();
-
-    if(current_context->inherited) {
-        // Look from the current context untill the global context (excluding it) searching for
-        // a non-inherited context.
-        for(int i = stack.size() - 1; i >= 1; --i) {
-            auto& context = stack[i];
-
-            if(!context->inherited) {
-                non_inherited_context = context;
-                break;
-            }
-        }
-    } else {
-        non_inherited_context = nullptr;
-    }
 }
