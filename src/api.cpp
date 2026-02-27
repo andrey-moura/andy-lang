@@ -86,6 +86,37 @@ namespace andy
 
                 return ret;
             }
+
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object)
+            {
+                interpreter->push_context_with_object(object);
+
+                if(!object) {
+                    object = andy::lang::object::instantiate(interpreter, interpreter->NullClass);
+                }
+
+                auto run_it = object->cls->instance_functions.find(function_name);
+
+                if(run_it == object->cls->instance_functions.end()) {
+                    throw std::runtime_error("function '" + std::string(function_name) + "' is not defined in type " + std::string(object->cls->name));
+                }
+
+                andy::lang::function_call run_it_call = {
+                    function_name,
+                    object->cls,
+                    object->shared_from_this(),
+                    run_it->second.get(),
+                    {},
+                    {},
+                    nullptr
+                };
+
+                auto ret = interpreter->call(run_it_call);
+
+                interpreter->pop_context();
+
+                return ret;
+            }
         };
     }; // namespace lang
 };

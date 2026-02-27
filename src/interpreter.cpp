@@ -291,9 +291,20 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         }
     } else {
         if(is_new) {
-            auto it = current_context->cls->instance_functions.find("new");
+            if(!current_context->cls) {
+                andy::lang::error::internal("new called without a class");
+            }
 
-            if(it != current_context->cls->instance_functions.end()) {
+            auto it = current_context->cls->functions.find("new");
+
+            if(it == current_context->cls->functions.end()) {
+                if(is_new) {
+                    // Simple default constructor call
+                    ret = andy::lang::object::instantiate(this, current_context->cls);
+                    goto pop_and_return;
+                }
+                throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(current_context->cls->name));
+            } else {
                 method_to_call = it->second.get();
             }
         } else {
@@ -332,14 +343,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
             if(!method_to_call) {
                 if(current_context->self && !is_new) {
                     throw std::runtime_error("function '" + std::string(function_name) + "' not found in object of class " + std::string(current_context->cls->name));
-                }
-                if(current_context->cls) {
-                    if(is_new) {
-                        // Simple default constructor call
-                        ret = andy::lang::object::instantiate(this, current_context->cls);
-                        goto pop_and_return;
-                    }
-                    throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(current_context->cls->name));
                 }
                 throw std::runtime_error("function '" + std::string(function_name) + "' not found in current context");
             }
@@ -628,9 +631,10 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(const andy::lang::parser::ast_node& source_code)
 {
+    std::string_view name = source_code.token().content();
+
     push_context_from_node_object_if_any(this, source_code);
 
-    std::string_view name = source_code.token().content();
     auto it = current_context->variables.find(name);
 
     if(it != current_context->variables.end()) {
@@ -1114,6 +1118,10 @@ void andy::lang::interpreter::push_context_with_object(std::shared_ptr<andy::lan
 
     if(object->cls == ClassClass) {
         auto cls = object->as<std::shared_ptr<andy::lang::structure>>();
+        // Temporary workaround
+        if(!cls->cls) {
+            cls->cls = cls;
+        }
         stack.push_back(std::static_pointer_cast<interpreter_context>(cls));
     } else {
         stack.push_back(std::static_pointer_cast<interpreter_context>(object));

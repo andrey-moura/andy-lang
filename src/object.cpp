@@ -44,9 +44,9 @@ void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::
     interpreter->push_context_with_object(shared_from_this());
     initialize(interpreter);
 
-    auto new_it = functions.find("new");
+    auto new_it = cls->functions.find("new");
 
-    if(new_it == functions.end()) {
+    if(new_it == cls->functions.end()) {
         // default constructor
         if(new_call.positional_params.size() || new_call.named_params.size()) {
             throw std::runtime_error("Default constructor does not accept parameters in class " + std::string(cls->name));

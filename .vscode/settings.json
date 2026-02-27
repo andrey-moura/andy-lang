@@ -113,7 +113,7 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            ".",
+            "lct-comics/application.andy",
         ],
         "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",

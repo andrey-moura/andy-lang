@@ -54,6 +54,12 @@ namespace andy
 
                 return cast_object_to<T>(interpreter, std::move(obj));
             }
+            /// @brief Call a function.
+            /// @param interpreter The interpreter.
+            /// @param object The object.
+            /// @param fn The function name.
+            /// @return Returns a shared pointer to the object.
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object);
             /// @brief Creates the object with a value and automatically determines the class.
             /// @tparam T The type of the value.
             /// @param interpreter The interpreter.
