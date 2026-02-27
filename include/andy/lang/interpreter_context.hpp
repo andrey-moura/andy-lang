@@ -26,6 +26,7 @@ namespace andy
             std::shared_ptr<andy::lang::object> return_value;
             bool is_block_context = false;
             std::shared_ptr<andy::lang::interpreter_context> lexical_parent = nullptr;
+            std::shared_ptr<andy::lang::interpreter_context> given_block_lexical_context = nullptr;
         };
     }; // namespace lang
 }; // namespace andy

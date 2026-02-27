@@ -229,6 +229,16 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
 {
     std::string_view function_name = source_code.decname();
 
+    // Capture the nearest block context visible at the call site (before any pushes).
+    // This becomes the lexical_parent for any DO...END block passed to this call.
+    std::shared_ptr<interpreter_context> call_site_lexical_ctx = nullptr;
+    for(int i = (int)stack.size() - 1; i >= 1; --i) {
+        if(stack[i]->is_block_context) {
+            call_site_lexical_ctx = stack[i];
+            break;
+        }
+    }
+
     std::vector<std::shared_ptr<andy::lang::object>> positional_params;
     std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
 
@@ -365,6 +375,10 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         if(!source_code.fn_object()) {
             push_context();
         }
+
+        // Store the call-site lexical context on the function's execution context so that
+        // execute_yield can use it as the lexical_parent for the DO...END block.
+        current_context->given_block_lexical_context = call_site_lexical_ctx;
 
         andy::lang::function_call __call = {
             function_name,
@@ -634,7 +648,15 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const
         {},
         current_context->given_block
     };
-    push_block_context();
+
+    // Create a block context whose lexical_parent is the context where the DO...END block
+    // was written (captured at call time), not where yield is being executed.
+    auto ctx = std::make_shared<interpreter_context>();
+    ctx->is_block_context = true;
+    ctx->lexical_parent = current_context->given_block_lexical_context;
+    stack.push_back(ctx);
+    update_current_context();
+
     auto ret = call(__call);
     pop_context();
     return ret;
@@ -1097,13 +1119,11 @@ void andy::lang::interpreter::push_block_context()
     auto ctx = std::make_shared<interpreter_context>();
     ctx->is_block_context = true;
 
-    // Find the nearest block context on the stack (excludes global context at index 0,
-    // which is never a valid lexical parent for nested block scopes).
-    for(int i = (int)stack.size() - 1; i >= 1; --i) {
-        if(stack[i]->is_block_context) {
-            ctx->lexical_parent = stack[i];
-            break;
-        }
+    // Only inherit lexical scope from the immediate parent if it is itself a block context.
+    // A non-block context is a function call boundary that isolates lexical scopes, so we
+    // do not traverse past it (excludes global context at index 0).
+    if(stack.size() >= 2 && stack.back()->is_block_context) {
+        ctx->lexical_parent = stack.back();
     }
 
     stack.push_back(ctx);
