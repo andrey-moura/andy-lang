@@ -389,6 +389,61 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_arraydecl(c
     return andy::lang::object::instantiate(this, ArrayClass, std::move(array));
 }
 
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_interpolated_string(const andy::lang::parser::ast_node& source_code) 
+{
+    std::string str;
+    for(size_t i = 0; i < source_code.childrens().size(); i++) {
+        auto& node_child = source_code.childrens()[i];
+        if(node_child.token().type() == andy::lang::lexer::token_type::token_literal)
+        {
+            switch (node_child.token().kind())
+            {
+            case lexer::token_kind::token_string:
+                str += node_child.token().content();
+                break;
+            case lexer::token_kind::token_integer:
+                str += std::to_string(node_child.token().integer_literal);
+                break;
+            case lexer::token_kind::token_float:
+                str += std::to_string(node_child.token().float_literal);
+                break;
+            case lexer::token_kind::token_double:
+                str += std::to_string(node_child.token().double_literal);
+                break;
+            case lexer::token_kind::token_boolean:
+                str += node_child.token().boolean_literal ? "true" : "false";
+                break;
+            case lexer::token_kind::token_null:
+                str += "null";
+                break;
+            default:
+                node_child.token().error_message_at_current_position("interpreter: unknown token kind");
+                break;
+            }
+        } else {
+            std::shared_ptr<andy::lang::object> obj = node_to_object(node_child);
+            if(obj->cls != StringClass) {
+                auto method = obj->cls->instance_functions.find("to_string");
+                if(method == obj->cls->instance_functions.end()) {
+                    throw std::runtime_error("object of class " + std::string(obj->cls->name) + " does not have a function called 'to_string'");
+                }
+                andy::lang::function_call __call = {
+                    "to_string",
+                    obj->cls,
+                    obj,
+                    method->second.get(),
+                    {},
+                    {},
+                    nullptr
+                };
+                obj = call(__call);
+            }
+            str += obj->as<std::string>();
+        }
+    }
+    return andy::lang::object::create(this, StringClass, std::move(str));
+}
+
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_vardecl(const andy::lang::parser::ast_node& source_code)
 {
     std::string_view var_name = source_code.decname();
@@ -647,23 +702,24 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code)
 {
     static auto executors = std::map<andy::lang::parser::ast_node_type, std::shared_ptr<andy::lang::object>(andy::lang::interpreter::*)(const andy::lang::parser::ast_node&)>{
-        { andy::lang::parser::ast_node_type::ast_node_context,     &andy::lang::interpreter::execute_context },
-        { andy::lang::parser::ast_node_type::ast_node_classdecl,   &andy::lang::interpreter::execute_classdecl },
-        { andy::lang::parser::ast_node_type::ast_node_fn_decl,     &andy::lang::interpreter::execute_fn_decl },
-        { andy::lang::parser::ast_node_type::ast_node_fn_return,   &andy::lang::interpreter::execute_fn_return },
-        { andy::lang::parser::ast_node_type::ast_node_fn_call,     &andy::lang::interpreter::execute_fn_call },
-        { andy::lang::parser::ast_node_type::ast_node_valuedecl,   &andy::lang::interpreter::execute_valuedecl },
-        { andy::lang::parser::ast_node_type::ast_node_arraydecl,   &andy::lang::interpreter::execute_arraydecl },
-        { andy::lang::parser::ast_node_type::ast_node_vardecl,     &andy::lang::interpreter::execute_vardecl },
-        { andy::lang::parser::ast_node_type::ast_node_declname,    &andy::lang::interpreter::execute_declname },
-        { andy::lang::parser::ast_node_type::ast_node_conditional, &andy::lang::interpreter::execute_conditional },
-        { andy::lang::parser::ast_node_type::ast_node_while,       &andy::lang::interpreter::execute_while },
-        { andy::lang::parser::ast_node_type::ast_node_for,         &andy::lang::interpreter::execute_for },
-        { andy::lang::parser::ast_node_type::ast_node_foreach,     &andy::lang::interpreter::execute_foreach },
-        { andy::lang::parser::ast_node_type::ast_node_break,       &andy::lang::interpreter::execute_break },
-        { andy::lang::parser::ast_node_type::ast_node_condition,   &andy::lang::interpreter::execute_condition },
-        { andy::lang::parser::ast_node_type::ast_node_else,        &andy::lang::interpreter::execute_else },
-        { andy::lang::parser::ast_node_type::ast_node_yield,       &andy::lang::interpreter::execute_yield }
+        { andy::lang::parser::ast_node_type::ast_node_classdecl,           &andy::lang::interpreter::execute_classdecl           },
+        { andy::lang::parser::ast_node_type::ast_node_context,             &andy::lang::interpreter::execute_context             },
+        { andy::lang::parser::ast_node_type::ast_node_fn_return,           &andy::lang::interpreter::execute_fn_return           },
+        { andy::lang::parser::ast_node_type::ast_node_fn_decl,             &andy::lang::interpreter::execute_fn_decl             },
+        { andy::lang::parser::ast_node_type::ast_node_valuedecl,           &andy::lang::interpreter::execute_valuedecl           },
+        { andy::lang::parser::ast_node_type::ast_node_fn_call,             &andy::lang::interpreter::execute_fn_call             },
+        { andy::lang::parser::ast_node_type::ast_node_interpolated_string, &andy::lang::interpreter::execute_interpolated_string },
+        { andy::lang::parser::ast_node_type::ast_node_arraydecl,           &andy::lang::interpreter::execute_arraydecl           },
+        { andy::lang::parser::ast_node_type::ast_node_vardecl,             &andy::lang::interpreter::execute_vardecl             },
+        { andy::lang::parser::ast_node_type::ast_node_declname,            &andy::lang::interpreter::execute_declname            },
+        { andy::lang::parser::ast_node_type::ast_node_conditional,         &andy::lang::interpreter::execute_conditional         },
+        { andy::lang::parser::ast_node_type::ast_node_while,               &andy::lang::interpreter::execute_while               },
+        { andy::lang::parser::ast_node_type::ast_node_for,                 &andy::lang::interpreter::execute_for                 },
+        { andy::lang::parser::ast_node_type::ast_node_foreach,             &andy::lang::interpreter::execute_foreach             },
+        { andy::lang::parser::ast_node_type::ast_node_break,               &andy::lang::interpreter::execute_break               },
+        { andy::lang::parser::ast_node_type::ast_node_condition,           &andy::lang::interpreter::execute_condition           },
+        { andy::lang::parser::ast_node_type::ast_node_else,                &andy::lang::interpreter::execute_else                },
+        { andy::lang::parser::ast_node_type::ast_node_yield,               &andy::lang::interpreter::execute_yield               }
     };
 
     auto it = executors.find(source_code.type());
@@ -1016,57 +1072,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
 
         return andy::lang::object::instantiate(this, DictionaryClass, std::move(map));
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_interpolated_string) {
-        std::string str;
-        for(size_t i = 0; i < node.childrens().size(); i++) {
-            auto& node_child = node.childrens()[i];
-            if(node_child.token().type() == andy::lang::lexer::token_type::token_literal)
-            {
-                switch (node_child.token().kind())
-                {
-                case lexer::token_kind::token_string:
-                    str += node_child.token().content();
-                    break;
-                case lexer::token_kind::token_integer:
-                    str += std::to_string(node_child.token().integer_literal);
-                    break;
-                case lexer::token_kind::token_float:
-                    str += std::to_string(node_child.token().float_literal);
-                    break;
-                case lexer::token_kind::token_double:
-                    str += std::to_string(node_child.token().double_literal);
-                    break;
-                case lexer::token_kind::token_boolean:
-                    str += node_child.token().boolean_literal ? "true" : "false";
-                    break;
-                case lexer::token_kind::token_null:
-                    str += "null";
-                    break;
-                default:
-                    node_child.token().error_message_at_current_position("interpreter: unknown token kind");
-                    break;
-                }
-            } else {
-                std::shared_ptr<andy::lang::object> obj = node_to_object(node.childrens()[i]);
-                if(obj->cls != StringClass) {
-                    auto method = obj->cls->instance_functions.find("to_string");
-                    if(method == obj->cls->instance_functions.end()) {
-                        throw std::runtime_error("object of class " + std::string(obj->cls->name) + " does not have a function called 'to_string'");
-                    }
-                    andy::lang::function_call __call = {
-                        "to_string",
-                        obj->cls,
-                        obj,
-                        method->second.get(),
-                        {},
-                        {},
-                        nullptr
-                    };
-                    obj = call(__call);
-                }
-                str += obj->as<std::string>();
-            }
-        }
-        return andy::lang::object::create(this, StringClass, std::move(str));
+        return execute(node);
     }
 
     throw std::runtime_error("interpreter: unknown node type");
