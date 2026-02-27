@@ -644,7 +644,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
 
     if(current_context->inherited) {
         if(previous_context && non_inherited_context) {
-            for(int i = (int)stack.size() - 1; i >= 0; i--) {
+            for(int i = (int)stack.size() - 2; i >= 0; i--) {
                 auto context = stack[i];
 
                 auto it = context->variables.find(name);
@@ -969,7 +969,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 
     auto it = current_context->variables.find(node.token().content());
 
-    for(int i = stack.size() - 1; i >= 0; --i) {
+    for(int i = stack.size() - 2; i >= 0; --i) {
         auto& context = stack[i];
 
         auto it = context->variables.find(node.token().content());
