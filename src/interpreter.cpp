@@ -668,49 +668,60 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
 
     push_context_from_node_object_if_any(this, source_code);
 
+    auto try_find_in_context = [&](const std::shared_ptr<interpreter_context>& ctx) -> std::shared_ptr<andy::lang::object> {
+        auto variable_it = ctx->variables.find(name);
+        if(variable_it != ctx->variables.end()) {
+            return variable_it->second;
+        }
+        // If not found as a variable, it could be a function, so we check for that before moving to the next context in the chain.
+        auto function_it = ctx->functions.find(name);
+        if(function_it != ctx->functions.end()) {
+            auto __call = andy::lang::function_call{
+                function_it->first,
+                current_context->cls,
+                current_context->self ? current_context->self->shared_from_this() : nullptr,
+                function_it->second.get(),
+                {},
+                {},
+                nullptr
+            };
+            push_context();
+            auto ret = call(__call);
+            pop_context();
+            if(ret == nullptr) {
+                ret = std::make_shared<andy::lang::object>(NullClass);
+            }
+            return ret;
+        }
+        // If not found as a variable or function, it could be a class (in the case of a declname used as an expression), so we check for that before moving to the next context in the chain.
+        auto class_it = ctx->classes.find(name);
+        if(class_it != ctx->classes.end()) {
+            auto cls_object = andy::lang::object::create(this, ClassClass, class_it->second);
+            return cls_object;
+        }
+
+        return nullptr;
+    };
+
+    std::shared_ptr<andy::lang::object> ret = nullptr;
+
     // Walk the lexical_parent chain (starting from the current context) to find the variable.
     for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
-        auto it = ctx->variables.find(name);
-        if(it != ctx->variables.end()) {
-            pop_context_from_node_object_if_any(this, source_code);
-            return it->second;
-        }
+        ret = try_find_in_context(ctx);
     }
 
     // Always check the global context as a fallback.
-    if(current_context != global_context) {
-        auto it = global_context->variables.find(name);
-        if(it != global_context->variables.end()) {
-            pop_context_from_node_object_if_any(this, source_code);
-            return it->second;
-        }
+    if(ret == nullptr && current_context != global_context) {
+        ret = try_find_in_context(global_context);
     }
 
-    auto fn_it = current_context->functions.find(name);
-
-    if(fn_it != current_context->functions.end()) {
-        auto __call = andy::lang::function_call{
-            fn_it->first,
-            current_context->cls,
-            current_context->self ? current_context->self->shared_from_this() : nullptr,
-            fn_it->second.get(),
-            {},
-            {},
-            nullptr
-        };
-        auto ret = call(__call);
-        pop_context_from_node_object_if_any(this, source_code);
-        return ret;
+    if(ret == nullptr) {
+        throw std::runtime_error("'" + std::string(name) + "' is undefined");
     }
 
-    auto cls = find_class(name);
+    pop_context_from_node_object_if_any(this, source_code);
 
-    if(cls) {
-        pop_context_from_node_object_if_any(this, source_code);
-        return andy::lang::api::to_object(this, cls);
-    }
-
-    throw std::runtime_error("'" + std::string(name) + "' is undefined");
+    return ret;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const andy::lang::parser::ast_node& source_code)
@@ -1065,13 +1076,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
         return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_declname || node.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
-        std::shared_ptr<andy::lang::object> obj = try_object_from_declname(node, cls, object);
-
-        if(obj) {
-            return obj;
-        }
-
-        throw std::runtime_error("'" + std::string(node.token().content()) + "' is undefined");
+        return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_arraydecl) {
         // Logic moved to execute_arraydecl to support array literals in more places
         return execute(node);
