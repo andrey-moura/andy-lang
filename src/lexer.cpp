@@ -261,7 +261,7 @@ void andy::lang::lexer::push_delimiter(token_delimiter_type delimiter)
     m_tokens.back().m_delimiter = delimiter;
 }
 
-char unescape(auto& lexer)
+char unescape(andy::lang::lexer& lexer)
 {
     char c = lexer.discard();
 
