@@ -81,8 +81,8 @@ namespace andy
                     obj->set_native<double>(value);
                     return obj;
                 } else if constexpr(std::is_same_v<T, float>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->DoubleClass);
-                    obj->set_native<double>(value);
+                    auto obj = std::make_shared<andy::lang::object>(interpreter->FloatClass);
+                    obj->set_native<float>(value);
                     return obj;
                 } else if constexpr(std::is_same_v<T, std::vector<std::shared_ptr<andy::lang::object>>>) {
                     auto obj = std::make_shared<andy::lang::object>(interpreter->ArrayClass);
