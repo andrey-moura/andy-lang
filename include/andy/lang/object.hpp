@@ -167,6 +167,22 @@ namespace andy
 
                 return nullptr;
             }
+            void reset(std::shared_ptr<andy::lang::structure> new_cls) {
+                if(native_destructor) {
+                    native_destructor(this);
+                    native_destructor = nullptr;
+                }
+                native_ptr = nullptr;
+                native_copy_ptr = nullptr;
+                native_move_ptr = nullptr;
+                std::memset(native, 0, max_native_size);
+                variables.clear();
+                functions.clear();
+                inline_functions.clear();
+                base_instance = nullptr;
+                derived_instance = nullptr;
+                cls = new_cls;
+            }
         private:
             template <typename T>
             static void set_destructor(object* obj) {

@@ -238,6 +238,20 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         call_site_lexical_ctx = stack.back();
     }
 
+    bool is_super = function_name == "super";
+    bool is_assignment = function_name == "=";
+
+    // For assignment, push the target variable's context first, then delegate to
+    // execute_assignment which handles param evaluation from the AST directly.
+    if(is_assignment) {
+        push_context_from_node_object_if_any(this, source_code);
+        execute_assignment(source_code);
+        pop_context();
+        return nullptr;
+    }
+
+    bool is_new = function_name == "new";
+
     std::vector<std::shared_ptr<andy::lang::object>> positional_params;
     std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
 
@@ -271,34 +285,11 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
     push_context_from_node_object_if_any(this, source_code);
 
     std::string_view object_name = "";
-    bool is_super = function_name == "super";
-    bool is_assignment = function_name == "=";
-    bool is_new = function_name == "new";
     andy::lang::function* method_to_call = nullptr;
-
-    if(is_assignment && !current_context->self) {
-        throw std::runtime_error("assignment operator '=' can only be used with a variable");
-    }
 
     std::shared_ptr<andy::lang::object> ret = nullptr;
 
-    if(is_assignment) {
-        if(positional_params.size() != 1) {
-            throw std::runtime_error("assignment operator '=' requires exactly one parameter");
-        }
-        // If the parameter is only used once (on the right side of the assignment only),
-        // we can move it instead of copying it.
-        auto use_count = positional_params[0].use_count();
-        if(use_count == 1) {
-            *current_context->self = std::move(*positional_params[0].get());
-        } else {
-            auto copy = positional_params[0]->native_copy();
-            if(!copy) {
-                throw std::runtime_error("object of class " + std::string(positional_params[0]->cls->name) + " cannot be assigned because it does not support copying");
-            }
-            *current_context->self = std::move(*copy.get());
-        }
-    } else {
+    {
         if(is_new) {
             if(!current_context->cls) {
                 andy::lang::error::internal("new called without a class");
@@ -404,6 +395,85 @@ pop_and_return:
     return ret;
 }
 
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_assignment(const andy::lang::parser::ast_node& source_code)
+{
+    if(!current_context->self) {
+        throw std::runtime_error("assignment operator '=' can only be used with a variable");
+    }
+
+    auto self = current_context->self->shared_from_this();
+
+    const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+
+    if(!params_node || params_node->childrens().empty()) {
+        throw std::runtime_error("assignment operator '=' requires exactly one parameter");
+    }
+
+    // The RHS of the assignment is the first (and only) parameter.
+    const andy::lang::parser::ast_node* rhs_node = &params_node->childrens()[0];
+
+    // If the RHS is a constructor call, initialize the existing object in-place rather than
+    // creating a temporary and moving it. This preserves any shared_ptr references to self
+    // that the constructor may store (e.g. list.push(self)).
+    if(rhs_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call && rhs_node->decname() == "new") {
+        // Determine the class being constructed.
+        std::shared_ptr<andy::lang::structure> cls;
+        const auto* fn_obj_node = rhs_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+        if(fn_obj_node && !fn_obj_node->childrens().empty()) {
+            auto class_obj = execute(fn_obj_node->childrens().front());
+            if(class_obj && class_obj->cls == ClassClass) {
+                cls = class_obj->as<std::shared_ptr<andy::lang::structure>>();
+            }
+        } else {
+            cls = current_context->cls;
+        }
+
+        if(!cls) {
+            throw std::runtime_error("new called without a class");
+        }
+
+        // Evaluate constructor parameters in the current context (before any class context push).
+        andy::lang::function_call new_call;
+        const andy::lang::parser::ast_node* ctor_params_node = rhs_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+        if(ctor_params_node) {
+            for(auto& ctor_param : ctor_params_node->childrens()) {
+                const andy::lang::parser::ast_node* value_node = &ctor_param;
+                const andy::lang::parser::ast_node* name_node = nullptr;
+                if(ctor_param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
+                    value_node = ctor_param.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+                    name_node = ctor_param.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                }
+                auto val = execute(*value_node);
+                if(name_node) {
+                    new_call.named_params[std::string(name_node->token().content())] = val;
+                } else {
+                    new_call.positional_params.push_back(val);
+                }
+            }
+        }
+
+        // Reset the existing object and run the constructor on it directly.
+        self->reset(cls);
+        self->initialize(this, std::move(new_call));
+    } else {
+        // Regular (non-constructor) assignment: evaluate the RHS and copy/move into self.
+        auto value = execute(*rhs_node);
+
+        auto use_count = value.use_count();
+        if(use_count == 1) {
+            *self = std::move(*value.get());
+        } else {
+            auto copy = value->native_copy();
+            if(!copy) {
+                throw std::runtime_error("object of class " + std::string(value->cls->name) + " cannot be assigned because it does not support copying");
+            }
+            *self = std::move(*copy.get());
+        }
+    }
+
+    return nullptr;
+}
+
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_arraydecl(const andy::lang::parser::ast_node& source_code)
 {
     std::vector<std::shared_ptr<andy::lang::object>> array;
@@ -479,7 +549,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_vardecl(con
     current_context->variables[var_name] = value;
 
     if(auto fn_call = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_call)) {
-        value = execute(*fn_call);
+        execute(*fn_call);
     }
 
     return value;

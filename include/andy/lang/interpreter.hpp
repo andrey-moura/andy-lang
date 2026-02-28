@@ -45,6 +45,7 @@ namespace andy
             std::shared_ptr<andy::lang::object> execute_fn_decl(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_fn_return(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_fn_call(const andy::lang::parser::ast_node& source_code);
+            std::shared_ptr<andy::lang::object> execute_assignment(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_fn_params(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_fn_object(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_valuedecl(const andy::lang::parser::ast_node& source_code);
