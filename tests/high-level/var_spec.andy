@@ -107,4 +107,16 @@ describe 'var' do
             end
         end
     end
+
+    context 'when a function generates nested describe blocks' do
+        fn make_suite(expected_value)
+            describe 'inner suite' do
+                it 'can access the function parameter from inside the it block' do
+                    expect(expected_value).to eq(42)
+                end
+            end
+        end
+
+        make_suite(42)
+    end
 end

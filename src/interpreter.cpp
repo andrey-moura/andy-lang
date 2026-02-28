@@ -229,14 +229,13 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
 {
     std::string_view function_name = source_code.decname();
 
-    // Capture the nearest block context visible at the call site (before any pushes).
-    // This becomes the lexical_parent for any DO...END block passed to this call.
+    // Capture the immediate calling context (excluding global at index 0) before any pushes.
+    // This becomes the lexical_parent for any DO...END block passed to this call, ensuring
+    // that blocks close over the scope where they are *written* — whether that is a block
+    // context (describe/context/it) or a function context (status_tester).
     std::shared_ptr<interpreter_context> call_site_lexical_ctx = nullptr;
-    for(int i = (int)stack.size() - 1; i >= 1; --i) {
-        if(stack[i]->is_block_context) {
-            call_site_lexical_ctx = stack[i];
-            break;
-        }
+    if(stack.size() >= 2) {
+        call_site_lexical_ctx = stack.back();
     }
 
     std::vector<std::shared_ptr<andy::lang::object>> positional_params;
