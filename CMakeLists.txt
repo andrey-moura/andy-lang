@@ -152,6 +152,7 @@ endif()
 install(TARGETS andy-lang DESTINATION lib)
 # Install andy-lang headers
 install(DIRECTORY include/andy DESTINATION include)
+install(DIRECTORY std DESTINATION include/andy)
 
 install(EXPORT andy-langTargets
     FILE andy-langTargets.cmake
