@@ -247,8 +247,10 @@ void andy::lang::lexer::push_delimiter(token_delimiter_type delimiter)
     m_tokens.back().m_delimiter = delimiter;
 }
 
-char unescape(const char& c)
+char unescape(auto& lexer)
 {
+    char c = lexer.discard();
+
     switch(c) {
         case '"':
         case '\'':
@@ -270,11 +272,27 @@ char unescape(const char& c)
             return '\t';
         case 'v':
             return '\v';
+        case 'x': {
+            // Hexadecimal escape sequence
+            int value = 0;
+            for(int i = 0; i < 2; i++) {
+                char hex_digit = lexer.discard();
+                if(hex_digit >= '0' && hex_digit <= '9') {
+                    value = value * 16 + (hex_digit - '0');
+                } else if(hex_digit >= 'a' && hex_digit <= 'f') {
+                    value = value * 16 + (hex_digit - 'a' + 10);
+                } else if(hex_digit >= 'A' && hex_digit <= 'F') {
+                    value = value * 16 + (hex_digit - 'A' + 10);
+                } else {
+                    throw std::runtime_error("lexer: invalid hexadecimal digit in escape sequence");
+                }
+            }
+            return (char)value;
+        }
         default:
+            throw std::runtime_error("lexer: cannot unescape '" + std::string(1, c) + "'");
             break;
     }
-
-    throw std::runtime_error("lexer: cannot unescape '" + std::string(1, c) + "'");
 }
 
 void andy::lang::lexer::read_next_token()
@@ -636,9 +654,7 @@ void andy::lang::lexer::extract_and_push_string(bool is_interpolated)
         {
             case '\\':
                 read(); // Remove the backslash
-                ch = m_current.front();     // Save the escaped character
-                read(); // Remove the escaped character
-                output.push_back(unescape(ch));
+                output.push_back(unescape(*this));
             break;
             case '\"':
                 discard();

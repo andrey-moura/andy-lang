@@ -146,6 +146,9 @@ namespace andy
             std::string_view source(const andy::lang::lexer::token& token) const;
             /// @brief Return the root source code.
             std::string_view source() const { return m_source; }
+
+            /// @brief Discard the first character from the m_current and update the start position.
+            const char& discard();
         protected:
             /// @brief Update the start position (line, column, offset).
             /// @param token The token which should update the position.
@@ -153,8 +156,6 @@ namespace andy
             /// @brief Update the end position (line, column, offset).
             /// @param token The token which should update the position.
             void update_end_position(const char& c);
-            /// @brief Discard the first character from the m_current and update the start position.
-            const char& discard();
             /// @brief Discard all whitespaces from the m_current.
             void discard_whitespaces();
 
