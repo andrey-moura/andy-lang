@@ -9,7 +9,7 @@ namespace andy
             std::filesystem::path src_dir()
             {
                 std::filesystem::path src_dir;
-#ifdef __UVA_DEBUG__
+#ifdef __ANDY_DEBUG__
                 return std::filesystem::absolute(ANDYLANG_PROJECT_DIR);
 #endif
 #ifdef __linux__

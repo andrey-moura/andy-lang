@@ -5,7 +5,7 @@
 
 #include <andy/console.hpp>
 
-#ifdef __UVA_DEBUG__
+#ifdef __ANDY_DEBUG__
     #define try if(true)
     #define catch(e) if(false)
 
