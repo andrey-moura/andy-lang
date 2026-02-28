@@ -1,0 +1,83 @@
+type ExpectationNotMet
+    var message = null
+    static fn new(msg)
+        message = msg
+    end
+end
+
+type EQ
+    var expected = null
+    static fn new(value)
+        expected = value
+    end
+
+    fn match(actual)
+        if actual == expected
+            return true
+        else
+            throw ExpectationNotMet.new("Expected ${expected}, but got ${actual}")
+        end
+    end
+end
+
+type Expect
+    var actual = null
+    static fn new(value)
+        actual = value
+    end
+
+    fn to(matcher)
+        matcher.match(actual)
+    end
+end
+
+var current_describe_level = 0
+
+fn indent(str)
+    var ident_level = "  " * current_describe_level
+    ident_level + str
+end
+
+fn success(str)
+    "\x1b[32m${str}\x1b[0m"
+end
+
+fn error(str)
+    "\x1b[31m${str}\x1b[0m"
+end
+
+fn describe(what)
+    out indent what
+    current_describe_level += 1
+    yield
+    current_describe_level -= 1
+end
+
+fn it(what)
+    var error = null
+    try
+        yield
+    catch(ExpectationNotMet e)
+        error = e.message
+    end
+    if error.present?
+        out error indent "${what}"
+    else
+        out success indent "${what}"
+    end
+end
+
+fn context(what)
+    out indent "${what}"
+    current_describe_level += 1
+    yield
+    current_describe_level -= 1
+end
+
+fn eq(what)
+    EQ.new(what)
+end
+
+fn expect(value)
+    Expect.new(value)
+end

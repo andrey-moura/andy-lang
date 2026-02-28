@@ -18,7 +18,7 @@ andy::lang::parser::parser()
 {
 }
 
-andy::lang::parser::ast_node extract_context(andy::lang::lexer &lexer, andy::lang::parser& parser, bool break_on_else = false)
+andy::lang::parser::ast_node extract_context(andy::lang::lexer &lexer, andy::lang::parser& parser, std::vector<std::string_view>* break_on_keywords = nullptr)
 {
     andy::lang::parser::ast_node output(andy::lang::parser::ast_node_type::ast_node_context);
     while(true) {
@@ -39,9 +39,18 @@ andy::lang::parser::ast_node extract_context(andy::lang::lexer &lexer, andy::lan
             continue;
         } else if(next_token.type() == andy::lang::lexer::token_type::token_eof) {
             throw std::runtime_error(next_token.error_message_at_current_position("Unexpected end of file, expecting 'end'"));
-        } else if (break_on_else && next_token.type() == andy::lang::lexer::token_type::token_keyword && next_token.content() == "else") {
-            // If we are breaking on else, we stop here.
-            break;
+        } else if (next_token.type() == andy::lang::lexer::token_type::token_keyword && break_on_keywords) {
+            bool should_break = false;
+            for (const auto& keyword : *break_on_keywords) {
+                if (next_token.content() == keyword) {
+                    // If we are breaking on a specific keyword, we stop here.
+                    should_break = true;
+                    break;
+                }
+            }
+            if (should_break) {
+                break;
+            }
         }
         
         andy::lang::parser::ast_node context_child = parser.parse_node(lexer);
@@ -605,7 +614,9 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword(andy::lang::lexer
         { "break",     &andy::lang::parser::parse_keyword_break     },
         { "static",    &andy::lang::parser::parse_keyword_static    },
         { "yield",     &andy::lang::parser::parse_keyword_yield     },
-        { "within",    &andy::lang::parser::parse_keyword_within    }
+        { "within",    &andy::lang::parser::parse_keyword_within    },
+        { "throw",     &andy::lang::parser::parse_keyword_throw     },
+        { "try",       &andy::lang::parser::parse_keyword_try       },
     };
 
     auto keyword_parser = keyword_parsers.find(token.content());
@@ -768,7 +779,8 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_if(andy::lang::le
 
     if_node.add_child(std::move(condition_node));
 
-    ast_node if_context = extract_context(lexer, *this, true);
+    static std::vector<std::string_view> valid_following_tokens = { "else" };
+    ast_node if_context = extract_context(lexer, *this, &valid_following_tokens);
     if_node.add_child(std::move(if_context));
     
     andy::lang::lexer::token token = lexer.next_token();
@@ -966,4 +978,98 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_yield(andy::lang:
     }
 
     return node;
+}
+
+andy::lang::parser::ast_node andy::lang::parser::parse_keyword_throw(andy::lang::lexer &lexer)
+{
+    // throw [object_to_throw]
+
+    andy::lang::parser::ast_node node(std::move(lexer.next_token()), ast_node_type::ast_node_throw);
+    auto next_node = parse_identifier_or_literal(lexer);
+    node.add_child(std::move(next_node));
+
+    return node;
+}
+
+andy::lang::parser::ast_node andy::lang::parser::parse_keyword_try(andy::lang::lexer &lexer)
+{
+    /*
+    try
+        [try block]
+    catch [*ExceptionClass variable name]
+        [catch block]
+    end
+    */
+   // * ExceptionClass is optional, if not provided, it will catch all exceptions
+
+    andy::lang::parser::ast_node try_node(std::move(lexer.next_token()), ast_node_type::ast_node_try);
+
+    static std::vector<std::string_view> valid_following_tokens = { "catch" };
+    ast_node try_context = extract_context(lexer, *this, &valid_following_tokens);
+    try_node.add_child(std::move(try_context));
+
+    while(true) {
+        const andy::lang::lexer::token& possible_catch_token = lexer.see_next();
+
+        if(possible_catch_token.type() != andy::lang::lexer::token_type::token_keyword || possible_catch_token.content() != "catch") {
+            break;
+        }
+
+        ast_node catch_node(std::move(lexer.next_token()), ast_node_type::ast_node_catch);
+
+        const andy::lang::lexer::token& possible_parenthesis_token = lexer.see_next();
+
+        if(possible_parenthesis_token.type() == andy::lang::lexer::token_type::token_delimiter && possible_parenthesis_token.content() == "(") {
+            /*
+                catch(ExceptionClass variable_name)
+                        ^ '(' token
+            */
+            lexer.consume_token(); // Consume the '(' token
+
+            const auto& possible_class = lexer.see_next();
+            /*
+                catch(ExceptionClass variable_name)
+                        ^^^^^^^^^^^^^^ Exception class
+            */
+            if(possible_class.type() != andy::lang::lexer::token_type::token_identifier) {
+                throw std::runtime_error(possible_class.error_message_at_current_position("Expected exception class or variable name after 'catch'"));
+            }
+
+            catch_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_decltype));
+
+            const auto& possible_variable_name_token = lexer.see_next();
+            /*
+                catch(ExceptionClass variable_name)
+                                        ^^^^^^^^^^^^^ Variable name
+            */
+            if(possible_variable_name_token.type() != andy::lang::lexer::token_type::token_identifier) {
+                throw std::runtime_error(possible_variable_name_token.error_message_at_current_position("Expected variable name after exception class in 'catch'"));
+            }
+
+            catch_node.add_child(ast_node(std::move(lexer.next_token()), ast_node_type::ast_node_declname));
+
+            const auto& possible_closing_parenthesis = lexer.see_next();
+            /*
+                catch(ExceptionClass variable_name)
+                                                  ^ ')' token
+            */
+            if(possible_closing_parenthesis.type() != andy::lang::lexer::token_type::token_delimiter || possible_closing_parenthesis.content() != ")") {
+                throw std::runtime_error(possible_closing_parenthesis.error_message_at_current_position("Expected closing ')' after exception class and variable name in 'catch'"));
+            }
+            lexer.consume_token(); // Consume the ')' token
+        }
+
+        ast_node catch_context = extract_context(lexer, *this);
+        catch_node.add_child(std::move(catch_context));
+
+        try_node.add_child(std::move(catch_node));
+    }
+
+    if(try_node.childrens().size() == 1) {
+        throw std::runtime_error(try_node.token().error_message_at_current_position("Expected at least one 'catch' block after 'try'"));
+    }
+
+    try_node.set_end_token(lexer.next_token()); // Consume the closing 'end' token
+
+    return try_node;
 }

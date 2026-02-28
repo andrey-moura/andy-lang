@@ -113,11 +113,12 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "tests/high-level/net_spec.andy",
+            "tests/high-level/fn_spec.andy",
         ],
         "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
+        "type": "lldb",
         "request": "launch"
     },
 }

@@ -11,6 +11,7 @@ const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x10
 // Keep ordered as it is used in binary search
 const static std::vector<std::string_view> keywords_lookup = {
     "break",
+    "catch",
     "else",
     "fn",
     "if",
@@ -18,6 +19,8 @@ const static std::vector<std::string_view> keywords_lookup = {
     "namespace",
     "return",
     "static",
+    "throw",
+    "try",
     "type",
     "var",
     "within",

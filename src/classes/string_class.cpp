@@ -206,6 +206,12 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
 
             return nullptr;
         });
+
+    StringClass->instance_functions["size"] = std::make_shared<andy::lang::function>("size", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        const std::string& value = object->as<std::string>();
+        return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, (int)value.size());
+    });
+    
     
     return StringClass;
 }
