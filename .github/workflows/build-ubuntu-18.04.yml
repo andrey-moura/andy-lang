@@ -39,20 +39,6 @@ jobs:
           andy-lang/build/andy-analyzer
           andy-lang/build/andy-pkgr
 
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: Test Results
-        path: andy-lang/build/andy_tests.xml
-
-    - name: Report Test Results
-      uses: dorny/test-reporter@v1
-      with:
-        name: Test Results
-        path: build/andy_tests.xml
-        reporter: java-junit
-        working-directory: andy-lang
-
     - name: Run andy-pkgr
       run: build/andy-pkgr
       working-directory: andy-lang
