@@ -1126,10 +1126,11 @@ void andy::lang::interpreter::push_block_context()
     auto ctx = std::make_shared<interpreter_context>();
     ctx->is_block_context = true;
 
-    // Only inherit lexical scope from the immediate parent if it is itself a block context.
-    // A non-block context is a function call boundary that isolates lexical scopes, so we
-    // do not traverse past it (excludes global context at index 0).
-    if(stack.size() >= 2 && stack.back()->is_block_context) {
+    // Always inherit the immediate parent context as lexical_parent so that a loop or
+    // other block inside a function can see the function's own variables.
+    // Walking past a function boundary is prevented naturally because push_context()
+    // never sets lexical_parent on function contexts (their lexical_parent stays null).
+    if(stack.size() >= 2) {
         ctx->lexical_parent = stack.back();
     }
 
