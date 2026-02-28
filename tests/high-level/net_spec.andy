@@ -14,10 +14,10 @@ end
 describe 'Net' do
     describe 'HTTP' do
         describe 'get' do
-            // status_tester(200);
-            // status_tester(400);
-            // status_tester(404);
-            // status_tester(500);
+            status_tester(200);
+            status_tester(400);
+            status_tester(404);
+            status_tester(500);
             describe 'http://httpbin.org/encoding/utf8' do
                 it 'should have correct body size' do
                     var res = Net::HTTP.get('http://httpbin.org/encoding/utf8')

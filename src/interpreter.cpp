@@ -229,6 +229,15 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
 {
     std::string_view function_name = source_code.decname();
 
+    // Capture the immediate calling context (excluding global at index 0) before any pushes.
+    // This becomes the lexical_parent for any DO...END block passed to this call, ensuring
+    // that blocks close over the scope where they are *written* — whether that is a block
+    // context (describe/context/it) or a function context (status_tester).
+    std::shared_ptr<interpreter_context> call_site_lexical_ctx = nullptr;
+    if(stack.size() >= 2) {
+        call_site_lexical_ctx = stack.back();
+    }
+
     std::vector<std::shared_ptr<andy::lang::object>> positional_params;
     std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
 
@@ -320,6 +329,17 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
                 }
             }
 
+            // Search the lexical_parent chain for the function if not found yet.
+            if(!method_to_call) {
+                for(auto ctx = current_context->lexical_parent; ctx != nullptr; ctx = ctx->lexical_parent) {
+                    auto it = ctx->functions.find(function_name);
+                    if(it != ctx->functions.end()) {
+                        method_to_call = it->second.get();
+                        break;
+                    }
+                }
+            }
+
             if(!method_to_call) {
                 if(auto inline_it = current_context->inline_functions.find("new"); inline_it != current_context->inline_functions.end()) {
                     auto self_ptr = current_context->self->shared_from_this();
@@ -354,6 +374,10 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         if(!source_code.fn_object()) {
             push_context();
         }
+
+        // Store the call-site lexical context on the function's execution context so that
+        // execute_yield can use it as the lexical_parent for the DO...END block.
+        current_context->given_block_lexical_context = call_site_lexical_ctx;
 
         andy::lang::function_call __call = {
             function_name,
@@ -487,7 +511,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_while(const
     bool match_condition = source_code.decl_type() == "until";
 
     while(execute(*source_code.condition())->is_present() != match_condition) {
-        push_context(true);
+        push_block_context();
         execute(*source_code.context());
 
         if(current_context->has_returned) {
@@ -519,7 +543,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_context(con
                     current_context->self ? current_context->self->cls : nullptr,
                     current_context->self ? current_context->self->shared_from_this() : nullptr
                 );
-                push_context_with_object(context_object, true);
+                push_context_with_object(context_object);
                 return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end());
                 pop_context();
             }
@@ -548,65 +572,65 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_return(c
 }
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_foreach(const andy::lang::parser::ast_node& source_code)
 {
-        auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+    auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
 
-        std::shared_ptr<andy::lang::object> array_or_dictionary = node_to_object(valuedecl->childrens().front());
+    std::shared_ptr<andy::lang::object> array_or_dictionary = node_to_object(valuedecl->childrens().front());
 
-        auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
+    auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
 
-        if(array_or_dictionary->cls == ArrayClass) {
-            std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
-            for(auto& value : array_values) {
-                push_context(true);
+    if(array_or_dictionary->cls == ArrayClass) {
+        std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+        for(auto& value : array_values) {
+            push_block_context();
 
-                current_context->variables[vardecl->decname()] = value;
-                execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
+            current_context->variables[vardecl->decname()] = value;
+            execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
 
-                pop_context();
-            }
-        } else if(array_or_dictionary->cls == DictionaryClass) {
-            andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
-            for(auto& [key, value] : dictionary_values) {
-                push_context(true);
-
-                std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
-                std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
-
-                current_context->variables[vardecl->decname()] = params_object;
-
-                execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
-
-                pop_context();
-            }
-        } else {
-            throw std::runtime_error("foreach should iterate over an array or a dictionary");
+            pop_context();
         }
-        return nullptr;
+    } else if(array_or_dictionary->cls == DictionaryClass) {
+        andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
+        for(auto& [key, value] : dictionary_values) {
+            push_block_context();
+
+            std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
+            std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
+
+            current_context->variables[vardecl->decname()] = params_object;
+
+            execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
+
+            pop_context();
+        }
+    } else {
+        throw std::runtime_error("foreach should iterate over an array or a dictionary");
+    }
+    return nullptr;
 }
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_for(const andy::lang::parser::ast_node& source_code)
 {
-        auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
-        if(!valuedecl) {
-            valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-        }
+    auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+    if(!valuedecl) {
+        valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+    }
 
-        std::shared_ptr<andy::lang::object> max_object = execute(*valuedecl);
+    std::shared_ptr<andy::lang::object> max_object = execute(*valuedecl);
 
-        if(!max_object || max_object->cls != IntegerClass) {
-            throw std::runtime_error("Cannot iterate over a non-integer value");
-        }
+    if(!max_object || max_object->cls != IntegerClass) {
+        throw std::runtime_error("Cannot iterate over a non-integer value");
+    }
 
-        int max = max_object->as<int>();
-        int current = 0;
+    int max = max_object->as<int>();
+    int current = 0;
 
-        while(current < max) {
-            push_context(true);
-            execute_all(*source_code.context());
-            pop_context();
-            current++;
-        }
+    while(current < max) {
+        push_block_context();
+        execute_all(*source_code.context());
+        pop_context();
+        current++;
+    }
 
-        return nullptr;
+    return nullptr;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const andy::lang::parser::ast_node& source_code)
@@ -623,7 +647,15 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const
         {},
         current_context->given_block
     };
-    push_context(true);
+
+    // Create a block context whose lexical_parent is the context where the DO...END block
+    // was written (captured at call time), not where yield is being executed.
+    auto ctx = std::make_shared<interpreter_context>();
+    ctx->is_block_context = true;
+    ctx->lexical_parent = current_context->given_block_lexical_context;
+    stack.push_back(ctx);
+    update_current_context();
+
     auto ret = call(__call);
     pop_context();
     return ret;
@@ -635,66 +667,63 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
 
     push_context_from_node_object_if_any(this, source_code);
 
-    auto it = current_context->variables.find(name);
-
-    if(it != current_context->variables.end()) {
-        pop_context_from_node_object_if_any(this, source_code);
-        return it->second;
-    }
-
-    if(current_context->inherited) {
-        if(previous_context && non_inherited_context) {
-            for(int i = (int)stack.size() - 2; i >= 0; i--) {
-                auto context = stack[i];
-
-                auto it = context->variables.find(name);
-
-                if(it != context->variables.end()) {
-                    pop_context_from_node_object_if_any(this, source_code);
-                    return it->second;
-                }
-
-                if(context == non_inherited_context) {
-                    break;
-                }
+    auto try_find_in_context = [&](const std::shared_ptr<interpreter_context>& ctx) -> std::shared_ptr<andy::lang::object> {
+        auto variable_it = ctx->variables.find(name);
+        if(variable_it != ctx->variables.end()) {
+            return variable_it->second;
+        }
+        // If not found as a variable, it could be a function, so we check for that before moving to the next context in the chain.
+        auto function_it = ctx->functions.find(name);
+        if(function_it != ctx->functions.end()) {
+            auto __call = andy::lang::function_call{
+                function_it->first,
+                current_context->cls,
+                current_context->self ? current_context->self->shared_from_this() : nullptr,
+                function_it->second.get(),
+                {},
+                {},
+                nullptr
+            };
+            push_context(current_context->self ? current_context->self->shared_from_this() : nullptr);
+            auto ret = call(__call);
+            pop_context();
+            if(ret == nullptr) {
+                ret = std::make_shared<andy::lang::object>(NullClass);
             }
+            return ret;
+        }
+        // If not found as a variable or function, it could be a class (in the case of a declname used as an expression), so we check for that before moving to the next context in the chain.
+        auto class_it = ctx->classes.find(name);
+        if(class_it != ctx->classes.end()) {
+            auto cls_object = andy::lang::object::create(this, ClassClass, class_it->second);
+            return cls_object;
+        }
+
+        return nullptr;
+    };
+
+    std::shared_ptr<andy::lang::object> ret = nullptr;
+
+    // Walk the lexical_parent chain (starting from the current context) to find the variable.
+    for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
+        ret = try_find_in_context(ctx);
+        if(ret != nullptr) {
+            break;
         }
     }
 
-    if(current_context != global_context) {
-        auto it = global_context->variables.find(name);
-
-        if(it != global_context->variables.end()) {
-            pop_context_from_node_object_if_any(this, source_code);
-            return it->second;
-        }
+    // Always check the global context as a fallback.
+    if(ret == nullptr && current_context != global_context) {
+        ret = try_find_in_context(global_context);
     }
 
-    auto fn_it = current_context->functions.find(name);
-
-    if(fn_it != current_context->functions.end()) {
-        auto __call = andy::lang::function_call{
-            fn_it->first,
-            current_context->cls,
-            current_context->self ? current_context->self->shared_from_this() : nullptr,
-            fn_it->second.get(),
-            {},
-            {},
-            nullptr
-        };
-        auto ret = call(__call);
-        pop_context_from_node_object_if_any(this, source_code);
-        return ret;
+    if(ret == nullptr) {
+        throw std::runtime_error("'" + std::string(name) + "' is undefined");
     }
 
-    auto cls = find_class(name);
+    pop_context_from_node_object_if_any(this, source_code);
 
-    if(cls) {
-        pop_context_from_node_object_if_any(this, source_code);
-        return andy::lang::api::to_object(this, cls);
-    }
-
-    throw std::runtime_error("'" + std::string(name) + "' is undefined");
+    return ret;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const andy::lang::parser::ast_node& source_code)
@@ -967,20 +996,15 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         }
     }
 
-    auto it = current_context->variables.find(node.token().content());
-
-    for(int i = stack.size() - 2; i >= 0; --i) {
-        auto& context = stack[i];
-
-        auto it = context->variables.find(node.token().content());
-
-        if(it != context->variables.end()) {
+    // Walk the lexical_parent chain to find the variable.
+    for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
+        auto it = ctx->variables.find(node.token().content());
+        if(it != ctx->variables.end()) {
             return it->second;
         }
 
-        auto fn_it = current_context->functions.find(node.token().content());
-
-        if(fn_it != current_context->functions.end()) {
+        auto fn_it = ctx->functions.find(node.token().content());
+        if(fn_it != ctx->functions.end()) {
             auto method = fn_it->second;
             andy::lang::function_call __call = {
                 method->name,
@@ -993,10 +1017,13 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             };
             return call(__call);
         }
+    }
 
-        // If the current context is not inherited, we can stop searching
-        if(!context->inherited && i == stack.size() - 1) {
-            break;
+    // Always check the global context as a fallback.
+    if(current_context != global_context) {
+        auto it = global_context->variables.find(node.token().content());
+        if(it != global_context->variables.end()) {
+            return it->second;
         }
     }
 
@@ -1051,13 +1078,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_objec
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
         return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_declname || node.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
-        std::shared_ptr<andy::lang::object> obj = try_object_from_declname(node, cls, object);
-
-        if(obj) {
-            return obj;
-        }
-
-        throw std::runtime_error("'" + std::string(node.token().content()) + "' is undefined");
+        return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_arraydecl) {
         // Logic moved to execute_arraydecl to support array literals in more places
         return execute(node);
@@ -1090,29 +1111,47 @@ void andy::lang::interpreter::load_extension(andy::lang::extension* extension)
     extensions.push_back(extension);
 }
 
-void andy::lang::interpreter::push_context(bool inherited)
+void andy::lang::interpreter::push_context()
 {
     andy::console::log_debug("Pushing context");
 
     stack.push_back(std::make_shared<interpreter_context>());
-    stack.back()->inherited = inherited;
     update_current_context();
 }
 
-void andy::lang::interpreter::push_context(std::shared_ptr<andy::lang::object> object, bool inherited)
+void andy::lang::interpreter::push_block_context()
+{
+    andy::console::log_debug("Pushing block context");
+
+    auto ctx = std::make_shared<interpreter_context>();
+    ctx->is_block_context = true;
+
+    // Always inherit the immediate parent context as lexical_parent so that a loop or
+    // other block inside a function can see the function's own variables.
+    // Walking past a function boundary is prevented naturally because push_context()
+    // never sets lexical_parent on function contexts (their lexical_parent stays null).
+    if(stack.size() >= 2) {
+        ctx->lexical_parent = stack.back();
+    }
+
+    stack.push_back(ctx);
+    update_current_context();
+}
+
+void andy::lang::interpreter::push_context(std::shared_ptr<andy::lang::object> object)
 {
     andy::console::log_debug("Pushing context with object");
 
     if(object) {
-        push_context_with_object(object, inherited);
+        push_context_with_object(object);
     } else {
-        push_context(inherited);
+        push_context();
     }
 
     update_current_context();
 }
 
-void andy::lang::interpreter::push_context_with_object(std::shared_ptr<andy::lang::object> object, bool inherited)
+void andy::lang::interpreter::push_context_with_object(std::shared_ptr<andy::lang::object> object)
 {
     std::string_view class_name = object->cls ? object->cls->name : "null";
 
@@ -1149,27 +1188,9 @@ void andy::lang::interpreter::update_current_context()
     if(stack.empty()) {
         current_context = nullptr;
         global_context = nullptr;
-        previous_context = nullptr;
-        non_inherited_context = nullptr;
         return;
     }
 
-    previous_context = stack.size() >= 2 ? stack[stack.size() - 2] : nullptr;
     global_context = stack.front();
     current_context = stack.back();
-
-    if(current_context->inherited) {
-        // Look from the current context untill the global context (excluding it) searching for
-        // a non-inherited context.
-        for(int i = stack.size() - 1; i >= 1; --i) {
-            auto& context = stack[i];
-
-            if(!context->inherited) {
-                non_inherited_context = context;
-                break;
-            }
-        }
-    } else {
-        non_inherited_context = nullptr;
-    }
 }
