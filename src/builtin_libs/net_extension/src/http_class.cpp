@@ -41,9 +41,10 @@ std::shared_ptr<andy::lang::structure> create_http_class(andy::lang::interpreter
         const auto& url = params[0]->as<std::string>();
 
         auto response = andy::net::http::get(url);
+        int status_code = response.status_code;
+        std::shared_ptr<andy::lang::object> response_object = andy::lang::object::create(interpreter, response_class, std::move(response));
 
-        auto response_object = andy::lang::object::create(interpreter, response_class, std::move(response));
-        response_object->variables["status_code"] = andy::lang::api::to_object(interpreter, response_object->as<andy::net::http::response>().status_code);
+        response_object->variables["status_code"] = andy::lang::api::to_object(interpreter, status_code);
         return response_object;
     });
     andy::lang::api::contained_class(interpreter, http_class, response_class);
