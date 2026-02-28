@@ -2,7 +2,7 @@
 #include <andy/lang/class.hpp>
 #include <andy/lang/function.hpp>
 #include <andy/lang/object.hpp>
-
+#include "andy/lang/api.hpp"
 
 
 #define UNARY_OPERATOR_INLINE(op, T) \
@@ -63,7 +63,7 @@
         default: \
             throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
-        return comparison_result ? std::make_shared<andy::lang::object>(interpreter->TrueClass) : std::make_shared<andy::lang::object>(interpreter->FalseClass); \
+        return andy::lang::api::to_object(interpreter, comparison_result); \
     }
 #define BINARY_ARITHMETIC_OPERATOR_INLINE(op, T) \
     [](andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object>& object, const andy::lang::parser::ast_node& source_code) { \
@@ -131,7 +131,7 @@
         } else { \
             throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
-        return comparison_result ? std::make_shared<andy::lang::object>(interpreter->TrueClass) : std::make_shared<andy::lang::object>(interpreter->FalseClass); \
+        return andy::lang::api::to_object(interpreter, comparison_result); \
     })
 
 #define BINARY_ARITHMETIC_OPERATOR(op, T) \
