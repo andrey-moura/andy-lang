@@ -254,6 +254,8 @@ char unescape(const char& c)
         case '"':
         case '\'':
             return c;
+        case '0':
+            return '\0';
         case 'n':
             return '\n';
         case 't':
