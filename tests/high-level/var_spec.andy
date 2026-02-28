@@ -84,4 +84,39 @@ describe 'var' do
             end
         end
     end
+
+    context 'when a variable is declared in an outer describe scope' do
+        var outer_value = 99
+
+        context 'and accessed from a nested context' do
+            it 'can read the outer variable through lexical scoping' do
+                expect(outer_value).to eq(99)
+            end
+        end
+    end
+
+    context 'when variables are declared at multiple nesting levels' do
+        var level_one = 1
+
+        context 'nested one level deep' do
+            var level_two = 2
+
+            it 'can access variables from all outer scopes' do
+                expect(level_one).to eq(1)
+                expect(level_two).to eq(2)
+            end
+        end
+    end
+
+    context 'when a function generates nested describe blocks' do
+        fn make_suite(expected_value)
+            describe 'inner suite' do
+                it 'can access the function parameter from inside the it block' do
+                    expect(expected_value).to eq(42)
+                end
+            end
+        end
+
+        make_suite(42)
+    end
 end

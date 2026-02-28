@@ -130,8 +130,6 @@ namespace andy
 
             std::shared_ptr<andy::lang::interpreter_context> current_context = nullptr;
             std::shared_ptr<andy::lang::interpreter_context> global_context = nullptr;
-            std::shared_ptr<andy::lang::interpreter_context> previous_context = nullptr;
-            std::shared_ptr<andy::lang::interpreter_context> non_inherited_context = nullptr;
 
             /// @brief The call stack.
             std::vector<std::shared_ptr<interpreter_context>> stack;
@@ -146,10 +144,11 @@ namespace andy
             public:
 
             void update_current_context();
-            void push_context(bool inherit = false);
-            void push_context(std::shared_ptr<andy::lang::object> object, bool inherit = false);
+            void push_context();
+            void push_block_context();
+            void push_context(std::shared_ptr<andy::lang::object> object);
             void pop_context();
-            void push_context_with_object(std::shared_ptr<andy::lang::object> object, bool inherit = false);
+            void push_context_with_object(std::shared_ptr<andy::lang::object> object);
         protected:
             /// @brief Initialize the interpreter. This method will create the global classes and objects. It also load extensions.
             void init();

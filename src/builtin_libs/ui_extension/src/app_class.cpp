@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <andy/lang/api.hpp>
+
 andylang_ui_app::andylang_ui_app(andy::lang::interpreter* __interpreter, std::shared_ptr<andy::lang::object> __app_instance)
     : andy::ui::app(), interpreter(__interpreter)
 {
@@ -10,30 +12,14 @@ andylang_ui_app::andylang_ui_app(andy::lang::interpreter* __interpreter, std::sh
 
 void andylang_ui_app::on_init()
 {
-    auto run_it = app_instance->cls->instance_functions.find("init");
-
-    if(run_it == app_instance->cls->instance_functions.end()) {
-        throw std::runtime_error("function 'init' is not defined in type " + std::string(app_instance->cls->name));
-    }
-
-    andy::lang::function_call run_it_call = {
-        "init",
-        app_instance->cls,
-        app_instance->shared_from_this(),
-        run_it->second.get(),
-        {},
-        {},
-        nullptr
-    };
-
-    interpreter->call(run_it_call);
+    andy::lang::api::call(interpreter, "init", app_instance->shared_from_this());
 }
 
 std::shared_ptr<andy::lang::structure> create_app_class(andy::lang::interpreter* interpreter)
 {
     auto AppClass = std::make_shared<andy::lang::structure>("Application");
 
-    AppClass->instance_functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params){
+    AppClass->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params){
         std::shared_ptr<andylang_ui_app> app = std::make_shared<andylang_ui_app>(interpreter, object->derived_instance);
         object->set_native(app);
         return nullptr;

@@ -54,6 +54,12 @@ namespace andy
 
                 return cast_object_to<T>(interpreter, std::move(obj));
             }
+            /// @brief Call a function.
+            /// @param interpreter The interpreter.
+            /// @param object The object.
+            /// @param fn The function name.
+            /// @return Returns a shared pointer to the object.
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object);
             /// @brief Creates the object with a value and automatically determines the class.
             /// @tparam T The type of the value.
             /// @param interpreter The interpreter.
@@ -63,28 +69,22 @@ namespace andy
             inline std::shared_ptr<andy::lang::object> to_object(andy::lang::interpreter* interpreter, T value)
             {
                 if constexpr(std::is_same_v<T, int>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->IntegerClass);
-                    obj->set_native<int>(value);
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, value);
                     return obj;
                 } else if constexpr(std::is_same_v<T, std::string>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->StringClass);
-                    obj->set_native<std::string>(std::move(value));
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(value));
                     return obj;
                 } else if constexpr(std::is_same_v<T, double>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->DoubleClass);
-                    obj->set_native<double>(value);
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->DoubleClass, value);
                     return obj;
                 } else if constexpr(std::is_same_v<T, float>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->DoubleClass);
-                    obj->set_native<double>(value);
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->FloatClass, value);
                     return obj;
                 } else if constexpr(std::is_same_v<T, std::vector<std::shared_ptr<andy::lang::object>>>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->ArrayClass);
-                    obj->set_native<std::vector<std::shared_ptr<andy::lang::object>>>(std::move(value));
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->ArrayClass, std::move(value));
                     return obj;
                 } else if constexpr(std::is_same_v<T, andy::lang::dictionary>) {
-                    auto obj = std::make_shared<andy::lang::object>(interpreter->DictionaryClass);
-                    obj->set_native<andy::lang::dictionary>(std::move(value));
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->DictionaryClass, std::move(value));
                     return obj;
                 } else if constexpr(std::is_same_v<T, const char*> || std::is_same_v<T, char*> || std::is_same_v<T, std::string_view>) {
                     return to_object(interpreter, std::string(value));
@@ -95,12 +95,12 @@ namespace andy
                     return class_object;
                 } else if constexpr(std::is_same_v<T, bool>) {
                     if(value) {
-                        return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+                        return andy::lang::object::instantiate(interpreter, interpreter->TrueClass);
                     } else {
-                        return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+                        return andy::lang::object::instantiate(interpreter, interpreter->FalseClass);
                     }
                 } else if constexpr(std::is_same_v<T, std::shared_ptr<andy::lang::function>>) {
-                    auto function_object = andy::lang::object::create(
+                    auto function_object = andy::lang::object::instantiate(
                         interpreter,
                         interpreter->FunctionClass,
                         std::move(value)
