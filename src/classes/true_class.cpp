@@ -1,9 +1,14 @@
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
+#include <andy/lang/api.hpp>
 
 std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter* interpreter)
 {
     auto TrueClass = std::make_shared<andy::lang::structure>("True");
+
+    TrueClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", andy::lang::function_storage_type::instance_function, [interpreter, TrueClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        return andy::lang::api::to_object(interpreter, "true");
+    });
 
     TrueClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", andy::lang::function_storage_type::instance_function, [TrueClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         return std::make_shared<andy::lang::object>(TrueClass);
