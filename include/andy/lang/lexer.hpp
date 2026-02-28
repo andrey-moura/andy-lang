@@ -36,6 +36,11 @@ namespace andy
                 token_string,
                 token_interpolated_string
             };
+            // Cannot use token_delimiter as the name of the enum because it will conflict with the token_delimiter type in the token class.
+            enum token_delimiter_type {
+                delimiter_comma,
+                delimiter_end
+            };
             enum operator_type {
                 operator_null,
                 operator_plus,
@@ -68,6 +73,7 @@ namespace andy
                 token_type m_type;
                 operator_type m_operator;
             public:
+                token_delimiter_type m_delimiter;
                 token_kind m_kind;
             public:
                 struct {
@@ -174,6 +180,7 @@ namespace andy
             }
 
             void push_token(token_type type, token_kind kind = token_kind::token_null, operator_type op = operator_type::operator_max);
+            void push_delimiter(token_delimiter_type delimiter);
             void read_next_token();
             public:
                 /// @brief Tokenize the source code. Equivalent to the constructor.
@@ -181,7 +188,7 @@ namespace andy
                 /// @param __source The source code.
                 void tokenize(std::string_view __file_name, std::string_view __source);
             public:
-                void extract_and_push_string();
+                void extract_and_push_string(bool is_interpolated = false);
         // iterating
         public:
             /// @brief Increment the iterator

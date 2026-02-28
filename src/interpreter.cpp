@@ -448,7 +448,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_interpolate
                 break;
             }
         } else {
-            std::shared_ptr<andy::lang::object> obj = node_to_object(node_child);
+            std::shared_ptr<andy::lang::object> obj = execute(node_child);
             if(obj->cls != StringClass) {
                 auto method = obj->cls->instance_functions.find("to_string");
                 if(method == obj->cls->instance_functions.end()) {

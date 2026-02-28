@@ -241,6 +241,12 @@ void andy::lang::lexer::push_token(token_type type, token_kind kind, operator_ty
     m_tokens.emplace_back(std::move(t));
 }
 
+void andy::lang::lexer::push_delimiter(token_delimiter_type delimiter)
+{
+    push_token(token_type::token_delimiter, token_kind::token_null, operator_type::operator_max);
+    m_tokens.back().m_delimiter = delimiter;
+}
+
 char unescape(const char& c)
 {
     switch(c) {
@@ -618,7 +624,7 @@ std::string_view andy::lang::lexer::token::human_type() const
     return types[(int)m_type];
 }
 
-void andy::lang::lexer::extract_and_push_string()
+void andy::lang::lexer::extract_and_push_string(bool is_interpolated)
 {
     std::string output;
     while(m_current.size()) {
@@ -647,6 +653,9 @@ void andy::lang::lexer::extract_and_push_string()
                     push_token(token_type::token_literal, token_kind::token_interpolated_string);
                     m_tokens.back().string_literal = std::move(output);
 
+                    // Insert a separation between tokens
+                    push_delimiter(token_delimiter_type::delimiter_comma);
+
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
                         read_next_token();
@@ -660,12 +669,16 @@ void andy::lang::lexer::extract_and_push_string()
                     if(m_current.size() && m_current.front() == '\"') {
                         discard(); // Remove the closing quote
                     } else {
+                        // If the string is not finished, it means there are more parts to
+                        // read, so we need to push a delimiter to separate the string parts from the expressions.
+                        push_delimiter(token_delimiter_type::delimiter_comma);
+
                         // Read the continuation of the string after the variable or expression
-                        extract_and_push_string();
+                        extract_and_push_string(true);
                     }
 
                     // So the parser knows where the string ends
-                    push_token(token_type::token_delimiter);
+                    push_delimiter(token_delimiter_type::delimiter_end);
                     return;
                 }
 
