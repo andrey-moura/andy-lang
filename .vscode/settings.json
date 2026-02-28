@@ -118,6 +118,7 @@
         "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",
         "showDisplayString": true,
+        "type": "lldb",
         "request": "launch"
     },
 }

@@ -5,6 +5,23 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
 {
     auto StringClass = std::make_shared<andy::lang::structure>("String");
 
+    StringClass->instance_functions["*"] = std::make_shared<andy::lang::function>("*", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        const std::string& value = object->as<std::string>();
+        std::string result;
+
+        if(params[0]->cls != interpreter->IntegerClass) {
+            throw std::runtime_error("undefined operator * (" + std::string(object->cls->name) + ", " + std::string(params[0]->cls->name) + ")");
+        }
+   
+        int times = params[0]->as<int>();
+
+        for(int i = 0; i < times; i++) {
+            result += value;
+        }
+
+        return andy::lang::object::instantiate(interpreter, StringClass, result);
+    });
+
         StringClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", andy::lang::function_storage_type::instance_function, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
 

@@ -11,6 +11,7 @@ const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x10
 // Keep ordered as it is used in binary search
 const static std::vector<std::string_view> keywords_lookup = {
     "break",
+    "catch",
     "else",
     "fn",
     "if",
@@ -18,6 +19,8 @@ const static std::vector<std::string_view> keywords_lookup = {
     "namespace",
     "return",
     "static",
+    "throw",
+    "try",
     "type",
     "var",
     "within",
@@ -241,32 +244,58 @@ void andy::lang::lexer::push_token(token_type type, token_kind kind, operator_ty
     m_tokens.emplace_back(std::move(t));
 }
 
-char unescape(const char& c)
+void andy::lang::lexer::push_delimiter(token_delimiter_type delimiter)
 {
+    push_token(token_type::token_delimiter, token_kind::token_null, operator_type::operator_max);
+    m_tokens.back().m_delimiter = delimiter;
+}
+
+char unescape(auto& lexer)
+{
+    char c = lexer.discard();
+
     switch(c) {
-        case '\\':
         case '"':
         case '\'':
+        case '\\':
             return c;
-        case 'n':
-            return '\n';
-        case 't':
-            return '\t';
-        case 'r':
-            return '\r';
-        case 'b':
-            return '\b';
+        case '0':
+            return '\0';
         case 'a':
+            return '\a';
+        case 'b':
             return '\b';
         case 'f':
             return '\f';
+        case 'n':
+            return '\n';
+        case 'r':
+            return '\r';
+        case 't':
+            return '\t';
         case 'v':
             return '\v';
+        case 'x': {
+            // Hexadecimal escape sequence
+            int value = 0;
+            for(int i = 0; i < 2; i++) {
+                char hex_digit = lexer.discard();
+                if(hex_digit >= '0' && hex_digit <= '9') {
+                    value = value * 16 + (hex_digit - '0');
+                } else if(hex_digit >= 'a' && hex_digit <= 'f') {
+                    value = value * 16 + (hex_digit - 'a' + 10);
+                } else if(hex_digit >= 'A' && hex_digit <= 'F') {
+                    value = value * 16 + (hex_digit - 'A' + 10);
+                } else {
+                    throw std::runtime_error("lexer: invalid hexadecimal digit in escape sequence");
+                }
+            }
+            return (char)value;
+        }
         default:
+            throw std::runtime_error("lexer: cannot unescape '" + std::string(1, c) + "'");
             break;
     }
-
-    throw std::runtime_error("lexer: cannot unescape '" + std::string(1, c) + "'");
 }
 
 void andy::lang::lexer::read_next_token()
@@ -618,7 +647,7 @@ std::string_view andy::lang::lexer::token::human_type() const
     return types[(int)m_type];
 }
 
-void andy::lang::lexer::extract_and_push_string()
+void andy::lang::lexer::extract_and_push_string(bool is_interpolated)
 {
     std::string output;
     while(m_current.size()) {
@@ -628,9 +657,7 @@ void andy::lang::lexer::extract_and_push_string()
         {
             case '\\':
                 read(); // Remove the backslash
-                ch = m_current.front();     // Save the escaped character
-                read(); // Remove the escaped character
-                output.push_back(unescape(ch));
+                output.push_back(unescape(*this));
             break;
             case '\"':
                 discard();
@@ -647,6 +674,9 @@ void andy::lang::lexer::extract_and_push_string()
                     push_token(token_type::token_literal, token_kind::token_interpolated_string);
                     m_tokens.back().string_literal = std::move(output);
 
+                    // Insert a separation between tokens
+                    push_delimiter(token_delimiter_type::delimiter_comma);
+
                     // Read the variable or expression
                     while(m_current.size() && m_current.front() != '}') {
                         read_next_token();
@@ -660,12 +690,16 @@ void andy::lang::lexer::extract_and_push_string()
                     if(m_current.size() && m_current.front() == '\"') {
                         discard(); // Remove the closing quote
                     } else {
+                        // If the string is not finished, it means there are more parts to
+                        // read, so we need to push a delimiter to separate the string parts from the expressions.
+                        push_delimiter(token_delimiter_type::delimiter_comma);
+
                         // Read the continuation of the string after the variable or expression
-                        extract_and_push_string();
+                        extract_and_push_string(true);
                     }
 
                     // So the parser knows where the string ends
-                    push_token(token_type::token_delimiter);
+                    push_delimiter(token_delimiter_type::delimiter_end);
                     return;
                 }
 

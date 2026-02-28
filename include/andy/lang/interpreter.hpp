@@ -67,6 +67,8 @@ namespace andy
             std::shared_ptr<andy::lang::object> execute_else(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_condition(const andy::lang::parser::ast_node& source_code);
             std::shared_ptr<andy::lang::object> execute_yield(const andy::lang::parser::ast_node& source_code);
+            std::shared_ptr<andy::lang::object> execute_try(const andy::lang::parser::ast_node& source_code);
+            std::shared_ptr<andy::lang::object> execute_throw(const andy::lang::parser::ast_node& source_code);
             /// @brief The global false class.
             std::shared_ptr<andy::lang::structure> FalseClass;
             /// @brief The global true class.

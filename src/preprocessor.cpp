@@ -112,11 +112,33 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
         throw std::runtime_error(file_name_token.error_message_at_current_position("Expected string literal after include directive"));
     }
 
-    std::string_view file_path_string = file_name_token.content();
+    std::string file_path_string(file_name_token.content());
 
     std::filesystem::path file_path = __lexer.path();
 
-    auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
+    std::vector<std::string> files;
+    // auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
+    std::vector<std::filesystem::path> include_paths;
+#ifndef _NDEBUG
+    std::filesystem::path lib_path = std::filesystem::current_path();
+#elif defined(__linux__)
+    std::filesystem::path lib_path = "/usr/lib/andy-lang";
+#else
+    throw std::runtime_error("unsupported platform");
+#endif
+
+    include_paths.push_back(lib_path);
+
+    if(!file_path_string.ends_with(".andy")) {
+        file_path_string += ".andy";
+    }
+
+    for(const std::filesystem::path& include_path : include_paths) {
+        std::filesystem::path full_path = include_path / file_path_string;
+        if(std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
+            files.push_back(full_path.string());
+        }
+    }
 
     __lexer.erase_tokens(2); // Remove the directive and the file name token
 

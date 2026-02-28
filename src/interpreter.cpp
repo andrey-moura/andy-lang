@@ -106,6 +106,9 @@ static void push_context_from_node_object_if_any(andy::lang::interpreter* interp
     if(object_node) {
         object_node = object_node->childrens().data();
         auto object = interpreter->execute(*object_node);
+        if(object == nullptr) {
+            object = andy::lang::object::instantiate(interpreter, interpreter->NullClass);
+        }
         if(object) {
             interpreter->push_context_with_object(object);
         }
@@ -222,7 +225,44 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_classdecl(c
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(const andy::lang::parser::ast_node& source_code)
 {
-    return node_to_object(source_code);
+    switch(source_code.token().kind())
+    {
+        case lexer::token_kind::token_boolean: {
+            if(source_code.token().boolean_literal) {
+                return std::make_shared<andy::lang::object>(TrueClass);
+            } else {
+                return std::make_shared<andy::lang::object>(FalseClass);
+            }
+        }
+        break;
+        case lexer::token_kind::token_integer: {
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, IntegerClass, source_code.token().integer_literal);
+            return obj;
+        }
+        case lexer::token_kind::token_float: {
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, FloatClass, source_code.token().float_literal);
+            return obj;
+        }
+        break;
+        case lexer::token_kind::token_double: {
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, DoubleClass, source_code.token().double_literal);
+            return obj;
+        }
+        break;
+        case lexer::token_kind::token_string: {
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(source_code.token().content())));
+            return obj;
+        }
+        break;
+        case lexer::token_kind::token_null: {
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, NullClass);
+            return obj;
+        }
+        break;
+        default:
+            throw std::runtime_error("interpreter: unknown node kind");
+        break;
+    }
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(const andy::lang::parser::ast_node& source_code)
@@ -310,7 +350,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
                 if(is_new) {
                     // Simple default constructor call
                     ret = andy::lang::object::instantiate(this, current_context->cls);
-                    goto pop_and_return;
+                    pop_context_from_node_object_if_any(this, source_code);
+                    return ret;
                 }
                 throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(current_context->cls->name));
             } else {
@@ -344,7 +385,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
                 if(auto inline_it = current_context->inline_functions.find("new"); inline_it != current_context->inline_functions.end()) {
                     auto self_ptr = current_context->self->shared_from_this();
                     ret = (*inline_it->second)(this, self_ptr, source_code);
-                    goto pop_and_return;
+                    pop_context_from_node_object_if_any(this, source_code);
+                    return ret;
                 }
             }
         }
@@ -397,7 +439,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
     }
 
 // Todo: Use the current_context.return_value and current_context.has_returned to handle returns
-pop_and_return:
 
     pop_context();
 
@@ -448,7 +489,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_interpolate
                 break;
             }
         } else {
-            std::shared_ptr<andy::lang::object> obj = node_to_object(node_child);
+            std::shared_ptr<andy::lang::object> obj = execute(node_child);
             if(obj->cls != StringClass) {
                 auto method = obj->cls->instance_functions.find("to_string");
                 if(method == obj->cls->instance_functions.end()) {
@@ -531,25 +572,25 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_break(const
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_context(const andy::lang::parser::ast_node& source_code)
 {
-        if(source_code.childrens().size() == 0) {
-            return nullptr;
-        }
+    if(source_code.childrens().size() == 0) {
+        return nullptr;
+    }
 
-        if(source_code.childrens().size() > 1) {
-            if(source_code.childrens().front().type() == andy::lang::parser::ast_node_type::ast_node_fn_object) {
-                auto* fn_object = source_code.childrens().data();
-                std::shared_ptr<andy::lang::object> context_object = node_to_object(
-                    fn_object->childrens().front(),
-                    current_context->self ? current_context->self->cls : nullptr,
-                    current_context->self ? current_context->self->shared_from_this() : nullptr
-                );
-                push_context_with_object(context_object);
-                return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end());
-                pop_context();
-            }
+    if(source_code.childrens().size() > 1) {
+        if(source_code.childrens().front().type() == andy::lang::parser::ast_node_type::ast_node_fn_object) {
+            auto* fn_object = source_code.childrens().data();
+            std::shared_ptr<andy::lang::object> context_object = node_to_object(
+                fn_object->childrens().front(),
+                current_context->self ? current_context->self->cls : nullptr,
+                current_context->self ? current_context->self->shared_from_this() : nullptr
+            );
+            push_context_with_object(context_object);
+            return execute_all(source_code.childrens().begin() + 1, source_code.childrens().end());
+            pop_context();
         }
+    }
 
-        return execute_all(source_code);
+    return execute_all(source_code);
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_condition(const andy::lang::parser::ast_node& source_code)
@@ -732,6 +773,65 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const 
     return execute_all(*context);
 }
 
+struct andy_lang_runtime_exception {
+    andy_lang_runtime_exception(std::shared_ptr<andy::lang::object> exception_object)
+        : exception_object(std::move(exception_object))
+    {
+        
+    }
+    std::shared_ptr<andy::lang::object> exception_object;
+};
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_try(const andy::lang::parser::ast_node& source_code)
+{
+    push_block_context();
+
+    std::map<std::string_view, const andy::lang::parser::ast_node*> catchers;
+
+    for(const auto& child : source_code.childrens()) {
+        if(child.type() != andy::lang::parser::ast_node_type::ast_node_catch) {
+            continue;
+        }
+        std::string_view exception_type = child.decl_type();
+        catchers[exception_type] = &child;
+    }
+
+    try {
+        current_context->catching_exception = true;
+
+        auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
+        execute(*context);
+    } catch(const andy_lang_runtime_exception& e) {
+        // Go back to the push_context on the beginning of this function
+        while(current_context && !current_context->catching_exception) {
+            pop_context();
+        }
+        auto catcher = catchers.find(e.exception_object->cls->name);
+        if(catcher == catchers.end()) {
+            // If we don't have a catcher for the exception type, we have to throw it again to be caught by an outer try...catch or to terminate the program if it's uncaught.
+            throw;
+        }
+        auto catch_context = catcher->second->child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
+        push_block_context();
+        current_context->variables[catcher->second->decname()] = e.exception_object;
+        execute(*catch_context);
+        pop_context();
+    }
+
+    pop_context();
+
+    return nullptr;
+}
+
+std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_throw(const andy::lang::parser::ast_node& source_code)
+{
+    auto exception_object = execute(source_code.childrens().front());
+
+    throw andy_lang_runtime_exception(exception_object);
+
+    return exception_object;
+}
+
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code)
 {
     static auto executors = std::map<andy::lang::parser::ast_node_type, std::shared_ptr<andy::lang::object>(andy::lang::interpreter::*)(const andy::lang::parser::ast_node&)>{
@@ -752,7 +852,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
         { andy::lang::parser::ast_node_type::ast_node_break,               &andy::lang::interpreter::execute_break               },
         { andy::lang::parser::ast_node_type::ast_node_condition,           &andy::lang::interpreter::execute_condition           },
         { andy::lang::parser::ast_node_type::ast_node_else,                &andy::lang::interpreter::execute_else                },
-        { andy::lang::parser::ast_node_type::ast_node_yield,               &andy::lang::interpreter::execute_yield               }
+        { andy::lang::parser::ast_node_type::ast_node_yield,               &andy::lang::interpreter::execute_yield               },
+        { andy::lang::parser::ast_node_type::ast_node_try,                 &andy::lang::interpreter::execute_try                 },
+        { andy::lang::parser::ast_node_type::ast_node_throw,               &andy::lang::interpreter::execute_throw               }
     };
 
     auto it = executors.find(source_code.type());
@@ -791,7 +893,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(
         }
     }
 
-    return nullptr;
+    return result;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(const andy::lang::parser::ast_node& source_code)
@@ -1039,42 +1141,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_object(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)
 {
     if(node.token().type() == andy::lang::lexer::token_type::token_literal) {
-        switch(node.token().kind())
-        {
-            case lexer::token_kind::token_boolean: {
-                if(node.token().boolean_literal) {
-                    return std::make_shared<andy::lang::object>(TrueClass);
-                } else {
-                    return std::make_shared<andy::lang::object>(FalseClass);
-                }
-            }
-            break;
-            case lexer::token_kind::token_integer: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, IntegerClass, node.token().integer_literal);
-                return obj;
-            }
-            case lexer::token_kind::token_float: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, FloatClass, node.token().float_literal);
-                return obj;
-            }
-            break;
-            case lexer::token_kind::token_double: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, DoubleClass, node.token().double_literal);
-                return obj;
-            }
-            break;
-            case lexer::token_kind::token_string: {
-                std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(node.token().content())));
-                return obj;
-            }
-            break;
-            case lexer::token_kind::token_null:
-                return std::make_shared<andy::lang::object>(NullClass);
-            break;
-            default:    
-                throw std::runtime_error("interpreter: unknown node kind");
-            break;
-        }
+        return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
         return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_declname || node.type() == andy::lang::parser::ast_node_type::ast_node_valuedecl) {
@@ -1125,6 +1192,7 @@ void andy::lang::interpreter::push_block_context()
 
     auto ctx = std::make_shared<interpreter_context>();
     ctx->is_block_context = true;
+    ctx->given_block = current_context->given_block;
 
     // Always inherit the immediate parent context as lexical_parent so that a loop or
     // other block inside a function can see the function's own variables.
