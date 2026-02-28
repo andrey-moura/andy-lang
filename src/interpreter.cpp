@@ -1193,6 +1193,7 @@ void andy::lang::interpreter::push_block_context()
     auto ctx = std::make_shared<interpreter_context>();
     ctx->is_block_context = true;
     ctx->given_block = current_context->given_block;
+    ctx->given_block_lexical_context = current_context->given_block_lexical_context;
 
     // Always inherit the immediate parent context as lexical_parent so that a loop or
     // other block inside a function can see the function's own variables.
