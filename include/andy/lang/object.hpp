@@ -220,12 +220,12 @@ namespace andy
                     dest->functions = std::move(src->functions);
                     dest->inline_functions = std::move(src->inline_functions);
 
+                    T value = std::move(src->as<T>());
+                    dest->set_native<T>(std::move(value));
+
                     dest->native_destructor = src->native_destructor;
                     dest->native_copy_ptr = src->native_copy_ptr;
                     dest->native_ptr = src->native_ptr;
-
-                    T value = std::move(src->as<T>());
-                    dest->set_native<T>(std::move(value));
 
                     src->native_destructor = nullptr;
                     src->native_copy_ptr = nullptr;
