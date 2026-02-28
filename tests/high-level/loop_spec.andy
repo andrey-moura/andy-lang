@@ -1,4 +1,4 @@
-import :tests
+#include 'std/tests'
 
 fn count_up_to(limit)
     var i = 0

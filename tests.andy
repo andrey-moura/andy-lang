@@ -1,0 +1,4 @@
+#include 'std/tests'
+#include 'tests/high-level/*.andy'
+
+print_summary

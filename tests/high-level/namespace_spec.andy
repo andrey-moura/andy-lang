@@ -1,4 +1,4 @@
-import :tests
+#include 'std/tests'
 
 describe 'namespace' do
     context 'when defining a namespace' do
