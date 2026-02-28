@@ -263,7 +263,7 @@ char unescape(const char& c)
         case 'b':
             return '\b';
         case 'a':
-            return '\b';
+            return '\a';
         case 'f':
             return '\f';
         case 'v':
