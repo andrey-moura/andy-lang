@@ -165,7 +165,19 @@ namespace andy
                     return native_copy_ptr(this);
                 }
 
-                return nullptr;
+                auto obj = std::make_shared<andy::lang::object>(cls);
+                for(const auto& [var_name, var_value] : variables) {
+                    obj->variables[var_name] = var_value->native_copy();
+                }
+                obj->functions = functions;
+                obj->inline_functions = inline_functions;
+                if(base_instance) {
+                    obj->base_instance = base_instance->native_copy();
+                }
+                if(derived_instance) {
+                    obj->derived_instance = derived_instance->native_copy();
+                }
+                return obj;
             }
         private:
             template <typename T>
