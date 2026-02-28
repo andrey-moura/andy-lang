@@ -59,11 +59,21 @@ int main(int argc, char** argv) {
             }
 
             if(!std::filesystem::exists(file_path)) {
-                throw std::runtime_error("input file does not exist");
+                if(file_path.extension() != ".andy") {
+                    file_path.replace_extension(".andy");
+                }
+                if(!std::filesystem::exists(file_path)) {
+                    throw std::runtime_error("input file does not exist");
+                }
             }
 
             if(!std::filesystem::is_regular_file(file_path)) {
-                throw std::runtime_error("input file is not a regular file");
+                if(file_path.extension() != ".andy") {
+                    file_path.replace_extension(".andy");
+                }
+                if(!std::filesystem::is_regular_file(file_path)) {
+                    throw std::runtime_error("input file is not a regular file");
+                }
             }
         }
 
