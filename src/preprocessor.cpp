@@ -47,11 +47,13 @@ std::vector<std::string> list_files_with_wildcard(const std::filesystem::path& b
             }
         } else {
             std::string_view match_end = pattern;
-            for(auto& f : std::filesystem::directory_iterator(path)) {
-                if(f.is_regular_file()) {
-                    std::string file_name = f.path().filename().string();
-                    if(file_name.ends_with(pattern)) {
-                        files.push_back(f.path().string());
+            if(std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+                for(auto& f : std::filesystem::directory_iterator(path)) {
+                    if(f.is_regular_file()) {
+                        std::string file_name = f.path().filename().string();
+                        if(file_name.ends_with(pattern)) {
+                            files.push_back(f.path().string());
+                        }
                     }
                 }
             }
@@ -119,7 +121,7 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     std::vector<std::string> files;
     // auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
     std::vector<std::filesystem::path> include_paths;
-#ifndef _NDEBUG
+#ifdef __ANDY_DEBUG__
     std::filesystem::path lib_path = std::filesystem::current_path();
 #elif defined(__linux__)
     std::filesystem::path lib_path = "/usr/lib/andy-lang";
@@ -127,33 +129,42 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     throw std::runtime_error("unsupported platform");
 #endif
 
+    include_paths.push_back(file_path.parent_path());
     include_paths.push_back(lib_path);
 
     if(!file_path_string.ends_with(".andy")) {
         file_path_string += ".andy";
     }
 
+    std::sort(include_paths.begin(), include_paths.end());
+    include_paths.erase(std::unique(include_paths.begin(), include_paths.end()), include_paths.end());
+
     for(const std::filesystem::path& include_path : include_paths) {
+        if(!std::filesystem::exists(include_path)) {
+            continue;
+        }
         std::filesystem::path full_path = include_path / file_path_string;
         if(std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
             files.push_back(full_path.string());
+        } else {
+            auto wildcard_files = list_files_with_wildcard(include_path, file_path_string);
+            files.insert(files.end(), wildcard_files.begin(), wildcard_files.end());
         }
     }
+
+    std::sort(files.begin(), files.end());
+    files.erase(std::unique(files.begin(), files.end()), files.end());
 
     __lexer.erase_tokens(2); // Remove the directive and the file name token
 
     // After this the iterator is at the position of the next token
-    
+
     for(std::string& file : files) {
+        if(__lexer.includes(file)) {
+            continue;
+        }
         std::string file_content = andy::file::read_all_text<char>(file);
-        andy::lang::lexer l(file, file_content);
-
-        process(file, l);
-
-        l.erase_eof();
-
-        __lexer.insert(l.tokens());
-        __lexer.include(std::move(file), std::move(file_content));
+        __lexer.include(file, std::move(file_content));
     }
 }
 

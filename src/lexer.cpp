@@ -132,12 +132,23 @@ static bool is_digit(const char& c)
 
 andy::lang::lexer::lexer(std::string_view __file_name, std::string_view __source)
 {
+    m_file_name  = __file_name;
+    m_current    = __source;
+    m_source     = __source;
     tokenize(__file_name, __source);
 }
 
 void andy::lang::lexer::include(std::string __file_name, std::string __source)
 {
-    m_includes[std::move(__file_name)] = std::move(__source);
+    std::string& source = m_includes[__file_name] = std::move(__source);
+
+    andy::lang::lexer new_lexer(__file_name, source);
+
+    auto tokens = std::move(new_lexer.m_tokens);
+
+    tokens.pop_back(); // Remove the EOF token, because we will add it back after including the new file.
+
+    m_tokens.insert(m_tokens.begin() + iterator, tokens.begin(), tokens.end());
 }
 
 std::string_view andy::lang::lexer::source(const andy::lang::lexer::token& token) const
@@ -484,10 +495,6 @@ void andy::lang::lexer::read_next_token()
 
 void andy::lang::lexer::tokenize(std::string_view __file_name, std::string_view __source)
 {
-    m_file_name  = __file_name;
-    m_current    = __source;
-    m_source     = __source;
-
     do {
         read_next_token();
     } while(!m_tokens.back().is_eof());

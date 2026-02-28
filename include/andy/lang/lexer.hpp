@@ -141,6 +141,10 @@ namespace andy
         public:
             std::string_view path() const { return m_file_name; }
             void include(std::string __file_name, std::string __source);
+            /// @brief Check if the file is included.
+            /// @param file_name The name of the file.
+            /// @return True if the file is included, false otherwise.
+            bool includes(const std::string& file_name) const { return m_includes.find(file_name) != m_includes.end(); }
             /// @brief Return the source code where the token is located.
             /// @param token The token.
             std::string_view source(const andy::lang::lexer::token& token) const;
