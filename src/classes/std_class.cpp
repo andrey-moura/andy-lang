@@ -68,13 +68,13 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
         });
 
     StdClass->functions["system"] = std::make_shared<andy::lang::function>("system",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"command"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::shared_ptr<andy::lang::object> command = params[0]->cls->instance_functions["to_string"]->call(params[0]);
-            int code = std::system(command->as<std::string>().c_str());
+        std::shared_ptr<andy::lang::object> command = params[0]->cls->instance_functions["to_string"]->call(params[0]);
+        int code = std::system(command->as<std::string>().c_str());
 #ifdef __linux__
-            code = WEXITSTATUS(code);
+        code = WEXITSTATUS(code);
 #endif
-            return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, code);
-        });
+        return andy::lang::object::instantiate(interpreter, interpreter->IntegerClass, code);
+    });
 
     StdClass->functions["import"] = std::make_shared<andy::lang::function>("import",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"module"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         auto current_context = interpreter->current_context;
@@ -88,7 +88,6 @@ std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*
 
         return nullptr;
     });
-
 
     return StdClass;
 }
