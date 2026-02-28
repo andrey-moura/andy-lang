@@ -572,65 +572,65 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_return(c
 }
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_foreach(const andy::lang::parser::ast_node& source_code)
 {
-        auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+    auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
 
-        std::shared_ptr<andy::lang::object> array_or_dictionary = node_to_object(valuedecl->childrens().front());
+    std::shared_ptr<andy::lang::object> array_or_dictionary = node_to_object(valuedecl->childrens().front());
 
-        auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
+    auto* vardecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
 
-        if(array_or_dictionary->cls == ArrayClass) {
-            std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
-            for(auto& value : array_values) {
-                push_block_context();
+    if(array_or_dictionary->cls == ArrayClass) {
+        std::vector<std::shared_ptr<andy::lang::object>>& array_values = array_or_dictionary->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+        for(auto& value : array_values) {
+            push_block_context();
 
-                current_context->variables[vardecl->decname()] = value;
-                execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
+            current_context->variables[vardecl->decname()] = value;
+            execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
 
-                pop_context();
-            }
-        } else if(array_or_dictionary->cls == DictionaryClass) {
-            andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
-            for(auto& [key, value] : dictionary_values) {
-                push_block_context();
-
-                std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
-                std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
-
-                current_context->variables[vardecl->decname()] = params_object;
-
-                execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
-
-                pop_context();
-            }
-        } else {
-            throw std::runtime_error("foreach should iterate over an array or a dictionary");
+            pop_context();
         }
-        return nullptr;
+    } else if(array_or_dictionary->cls == DictionaryClass) {
+        andy::lang::dictionary& dictionary_values = array_or_dictionary->as<andy::lang::dictionary>();
+        for(auto& [key, value] : dictionary_values) {
+            push_block_context();
+
+            std::vector<std::shared_ptr<andy::lang::object>> params = { key, value };
+            std::shared_ptr<andy::lang::object> params_object = andy::lang::object::instantiate(this, ArrayClass, params);
+
+            current_context->variables[vardecl->decname()] = params_object;
+
+            execute_all(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context));
+
+            pop_context();
+        }
+    } else {
+        throw std::runtime_error("foreach should iterate over an array or a dictionary");
+    }
+    return nullptr;
 }
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_for(const andy::lang::parser::ast_node& source_code)
 {
-        auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
-        if(!valuedecl) {
-            valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-        }
+    auto* valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+    if(!valuedecl) {
+        valuedecl = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+    }
 
-        std::shared_ptr<andy::lang::object> max_object = execute(*valuedecl);
+    std::shared_ptr<andy::lang::object> max_object = execute(*valuedecl);
 
-        if(!max_object || max_object->cls != IntegerClass) {
-            throw std::runtime_error("Cannot iterate over a non-integer value");
-        }
+    if(!max_object || max_object->cls != IntegerClass) {
+        throw std::runtime_error("Cannot iterate over a non-integer value");
+    }
 
-        int max = max_object->as<int>();
-        int current = 0;
+    int max = max_object->as<int>();
+    int current = 0;
 
-        while(current < max) {
-            push_block_context();
-            execute_all(*source_code.context());
-            pop_context();
-            current++;
-        }
+    while(current < max) {
+        push_block_context();
+        execute_all(*source_code.context());
+        pop_context();
+        current++;
+    }
 
-        return nullptr;
+    return nullptr;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const andy::lang::parser::ast_node& source_code)
@@ -684,7 +684,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
                 {},
                 nullptr
             };
-            push_context();
+            push_context(current_context->self ? current_context->self->shared_from_this() : nullptr);
             auto ret = call(__call);
             pop_context();
             if(ret == nullptr) {
@@ -707,6 +707,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
     // Walk the lexical_parent chain (starting from the current context) to find the variable.
     for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
         ret = try_find_in_context(ctx);
+        if(ret != nullptr) {
+            break;
+        }
     }
 
     // Always check the global context as a fallback.
