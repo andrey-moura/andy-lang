@@ -250,24 +250,24 @@ void andy::lang::lexer::push_delimiter(token_delimiter_type delimiter)
 char unescape(const char& c)
 {
     switch(c) {
-        case '\\':
         case '"':
         case '\'':
+        case '\\':
             return c;
         case '0':
             return '\0';
-        case 'n':
-            return '\n';
-        case 't':
-            return '\t';
-        case 'r':
-            return '\r';
-        case 'b':
-            return '\b';
         case 'a':
             return '\a';
+        case 'b':
+            return '\b';
         case 'f':
             return '\f';
+        case 'n':
+            return '\n';
+        case 'r':
+            return '\r';
+        case 't':
+            return '\t';
         case 'v':
             return '\v';
         default:
