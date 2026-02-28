@@ -127,6 +127,8 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     std::filesystem::path lib_path = "/usr/lib/andy-lang";
 #else
     throw std::runtime_error("unsupported platform");
+
+    std::filesystem::path lib_path;
 #endif
 
     include_paths.push_back(file_path.parent_path());
