@@ -20,6 +20,7 @@ namespace andy
                 std::string path_str = path.string();
 
                 andy::lang::lexer l(path_str, source);
+                l.tokenize();
         
                 andy::lang::preprocessor preprocessor;
                 preprocessor.process(path_str, l);
@@ -44,6 +45,7 @@ namespace andy
             std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
                 if(__call.name == "yield") {
                     andy::lang::lexer lexer("", __call.name);
+                    lexer.tokenize();
                     andy::lang::parser parser;
                     auto ast = parser.parse_all(lexer);
                     ast = ast.childrens().front();
@@ -68,6 +70,7 @@ namespace andy
 
                     if(method == interpreter->StdClass->functions.end()) {
                         andy::lang::lexer lexer("", __call.name);
+                        lexer.tokenize();
                         andy::lang::parser parser;
                         auto ast = parser.parse_all(lexer);
                         ast = ast.childrens().front();

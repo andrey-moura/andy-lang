@@ -5,8 +5,8 @@
 andy::lang::fn_parameter::fn_parameter(std::string_view __name)
 {
     name.reserve(__name.size());
-    andy::lang::lexer* lexer = new andy::lang::lexer();
-    lexer->tokenize("", __name);
+    andy::lang::lexer* lexer = new andy::lang::lexer("", __name);
+    lexer->tokenize();
     if(lexer->tokens().size() == 1) {
         name = __name;
         return;

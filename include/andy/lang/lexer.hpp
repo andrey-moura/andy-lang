@@ -191,7 +191,7 @@ namespace andy
                 /// @brief Tokenize the source code. Equivalent to the constructor.
                 /// @param __file_name The name of the file.
                 /// @param __source The source code.
-                void tokenize(std::string_view __file_name, std::string_view __source);
+                void tokenize();
             public:
                 void extract_and_push_string(bool is_interpolated = false);
         // iterating
