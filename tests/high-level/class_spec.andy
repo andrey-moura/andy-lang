@@ -1,4 +1,4 @@
-import :tests
+#include 'std/tests'
 
 describe 'type' do
     context 'when creating a new instance' do

@@ -1,4 +1,4 @@
-import :tests
+#include 'std/tests'
 
 fn add(a, b)
     return a + b

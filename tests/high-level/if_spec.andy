@@ -1,4 +1,4 @@
-import :tests
+#include 'std/tests'
 
 describe 'if/else' do
     context 'when condition is true' do

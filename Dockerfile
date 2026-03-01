@@ -21,8 +21,8 @@ ENTRYPOINT ["bash", "-c", "\
   cd /andy-lang && \
   cmake -DCMAKE_BUILD_TYPE=Release -B build . && \
   cmake --build build --config Release --parallel && \
-  build/andy-test tests && \
+  cmake --install build && \
+  andy tests && \
   cp -r build/andy ../andy-build && \
   cp -r build/andy-analyzer ../andy-build && \
-  cp -r build/andy-pkgr ../andy-build && \
-  cp andy_tests.xml ../andy-build/"]
+  cp -r build/andy-pkgr ../andy-build"]

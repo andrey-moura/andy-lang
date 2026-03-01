@@ -1,5 +1,5 @@
 import :net
-import :tests
+#include 'std/tests'
 
 fn status_tester(status_code)
     var url = "http://httpbin.org/status/${status_code}"

@@ -76,8 +76,6 @@ add_library(andy-lang
 
     ${CMAKE_CURRENT_LIST_DIR}/modules/andy-tests/src/andy-tests.cpp
     
-    ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs/tests_extension.cpp
-
     ${ANDY_UI_EXTENSION_SOURCES}
     ${ANDY_DRAWING_EXTENSION_SOURCES}
     ${ANDY_NET_EXTENSION_SOURCES}
@@ -154,6 +152,7 @@ endif()
 install(TARGETS andy-lang DESTINATION lib)
 # Install andy-lang headers
 install(DIRECTORY include/andy DESTINATION include)
+install(DIRECTORY std DESTINATION include/andy)
 
 install(EXPORT andy-langTargets
     FILE andy-langTargets.cmake

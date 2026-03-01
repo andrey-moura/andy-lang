@@ -1,4 +1,4 @@
-import :tests
+#include 'std/tests'
 
 describe 'var' do
     context 'when declaring a variable with an initial value' do

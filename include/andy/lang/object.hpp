@@ -25,7 +25,7 @@ namespace andy
         public:
             std::shared_ptr<object> base_instance = nullptr;
             std::shared_ptr<object> derived_instance = nullptr;
-            // #ifdef __UVA_DEBUG__
+            // #ifdef __ANDY_DEBUG__
             // andy::lang::object* debug_object = this;
 
             // __attribute__((noinline)) __attribute__((used)) std::string debug_string()
@@ -45,7 +45,7 @@ namespace andy
             void (*native_move_ptr)(object* dest, object* src) = nullptr;
             // The native object copy function ptr.
             std::shared_ptr<object> (*native_copy_ptr)(andy::lang::object* obj) = nullptr;
-#ifdef __UVA_DEBUG__
+#ifdef __ANDY_DEBUG__
             int* native_int = (int*)native;
 #endif
         public:
@@ -165,7 +165,19 @@ namespace andy
                     return native_copy_ptr(this);
                 }
 
-                return nullptr;
+                auto obj = std::make_shared<andy::lang::object>(cls);
+                for(const auto& [var_name, var_value] : variables) {
+                    obj->variables[var_name] = var_value->native_copy();
+                }
+                obj->functions = functions;
+                obj->inline_functions = inline_functions;
+                if(base_instance) {
+                    obj->base_instance = base_instance->native_copy();
+                }
+                if(derived_instance) {
+                    obj->derived_instance = derived_instance->native_copy();
+                }
+                return obj;
             }
         private:
             template <typename T>

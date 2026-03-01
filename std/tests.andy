@@ -20,6 +20,21 @@ type EQ
     end
 end
 
+type Include
+    var expected = null
+    static fn new(value)
+        expected = value
+    end
+
+    fn match(actual)
+        if actual.include?(expected)
+            return true
+        else
+            throw ExpectationNotMet.new("Expected ${actual} to include ${expected}")
+        end
+    end
+end
+
 type Expect
     var actual = null
     static fn new(value)
@@ -32,6 +47,10 @@ type Expect
 end
 
 var current_describe_level = 0
+var total_tests = 0
+var failed_tests = 0
+var pending_tests = 0
+var passed_tests = 0
 
 fn indent(str)
     var ident_level = "  " * current_describe_level
@@ -44,6 +63,10 @@ end
 
 fn error(str)
     "\x1b[31m${str}\x1b[0m"
+end
+
+fn warning(str)
+    "\x1b[33m${str}\x1b[0m"
 end
 
 fn describe(what)
@@ -60,10 +83,13 @@ fn it(what)
     catch(ExpectationNotMet e)
         error = e.message
     end
+    total_tests += 1
     if error.present?
         out error indent "${what}"
+        failed_tests += 1
     else
         out success indent "${what}"
+        passed_tests += 1
     end
 end
 
@@ -78,6 +104,27 @@ fn eq(what)
     EQ.new(what)
 end
 
+fn include(what)
+    Include.new(what)
+end
+
 fn expect(value)
     Expect.new(value)
+end
+
+fn pending(what)
+    out indent warning "${what} (pending)"
+    total_tests += 1
+    pending_tests += 1
+end
+
+fn print_summary()
+    var summary = "\n${total_tests} total, ${passed_tests} passed, ${pending_tests} pending, ${failed_tests} failed"
+    if failed_tests > 0
+        out error summary
+    else if pending_tests > 0
+        out warning summary
+    else
+        out success summary
+    end
 end

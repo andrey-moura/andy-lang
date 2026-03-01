@@ -1,6 +1,8 @@
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
 
+#include <andy/lang/api.hpp>
+
 std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interpreter* interpreter)
 {
     auto FalseClass = std::make_shared<andy::lang::structure>("False");
@@ -8,7 +10,11 @@ std::shared_ptr<andy::lang::structure> create_false_class(andy::lang::interprete
     FalseClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", andy::lang::function_storage_type::instance_function, [FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         return std::make_shared<andy::lang::object>(FalseClass);
     });
-    
+
+    FalseClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", andy::lang::function_storage_type::instance_function, [interpreter, FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        return andy::lang::api::to_object(interpreter, "false");
+    });
+
     FalseClass->instance_functions["||"] = std::make_shared<andy::lang::function>("||" ,andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"other"}, [FalseClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         andy::lang::function_call call = {
             "present?",
