@@ -74,9 +74,6 @@ namespace andy
             /// @brief The global true class.
             std::shared_ptr<andy::lang::structure> TrueClass;
 
-            /// @brief The global std class.
-            std::shared_ptr<andy::lang::structure> StdClass;
-
             /// @brief The global string class.
             std::shared_ptr<andy::lang::structure> StringClass;
 
