@@ -210,7 +210,7 @@ static std::shared_ptr<andy::lang::structure> do_execute_classdecl(andy::lang::i
         }
         break;
         default:
-            class_child.token().error_message_at_current_position("unexpected token in class declaration");
+            throw std::runtime_error(class_child.token().error_message_at_current_position("unexpected token in class declaration"));
             break;
         }
     }
