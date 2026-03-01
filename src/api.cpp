@@ -63,24 +63,6 @@ namespace andy
                     }
 
                     __call.method = method->second.get();
-                } else {
-                    interpreter->push_context();
-
-                    auto method = interpreter->StdClass->functions.find(__call.name);
-
-                    if(method == interpreter->StdClass->functions.end()) {
-                        andy::lang::lexer lexer("", __call.name);
-                        lexer.tokenize();
-                        andy::lang::parser parser;
-                        auto ast = parser.parse_all(lexer);
-                        ast = ast.childrens().front();
-                        auto ret = interpreter->execute(ast);
-                        interpreter->pop_context();
-                        return ret;
-                    } else {
-                        __call.method = method->second.get();
-                    }
-
                 }
 
                 std::shared_ptr<andy::lang::object> ret = interpreter->call(__call);
