@@ -135,7 +135,6 @@ andy::lang::lexer::lexer(std::string_view __file_name, std::string_view __source
     m_file_name  = __file_name;
     m_current    = __source;
     m_source     = __source;
-    tokenize(__file_name, __source);
 }
 
 void andy::lang::lexer::include(std::string __file_name, std::string __source)
@@ -143,6 +142,7 @@ void andy::lang::lexer::include(std::string __file_name, std::string __source)
     std::string& source = m_includes[__file_name] = std::move(__source);
 
     andy::lang::lexer new_lexer(__file_name, source);
+    new_lexer.tokenize();
 
     auto tokens = std::move(new_lexer.m_tokens);
 
@@ -493,7 +493,7 @@ void andy::lang::lexer::read_next_token()
     throw std::runtime_error("lexer: unknown token");
 }
 
-void andy::lang::lexer::tokenize(std::string_view __file_name, std::string_view __source)
+void andy::lang::lexer::tokenize()
 {
     do {
         read_next_token();

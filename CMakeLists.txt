@@ -55,6 +55,7 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/config.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/builtin_libs.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/function_call.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/src/std_functions.cpp
 
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/andy_config_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/array_class.cpp
@@ -69,7 +70,6 @@ add_library(andy-lang
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/integer_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/null_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/path_class.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/src/classes/std_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/string_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/system_class.cpp
     ${CMAKE_CURRENT_LIST_DIR}/src/classes/true_class.cpp

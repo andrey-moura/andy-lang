@@ -392,12 +392,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         }
 
         if(!method_to_call) {
-            auto it = StdClass->functions.find(function_name);
-            if(it != StdClass->functions.end()) {
-                method_to_call = it->second.get();
-            }
-        }
-        if(!method_to_call) {
             auto it = global_context->functions.find(function_name);
             if(it != global_context->functions.end()) {
                 method_to_call = it->second.get();

@@ -238,11 +238,11 @@ int main(int argc, char** argv) {
 
         andy::lang::interpreter interpreter;
         create_builtin_libs();
-        andy::lang::lexer l;
         std::string file_path_str = file_path.string();
+        andy::lang::lexer l(file_path_str, source);
 
         try {
-            l.tokenize(file_path_str, source);
+            l.tokenize();
         } catch (const std::exception& e) {
             (void)e;
         }

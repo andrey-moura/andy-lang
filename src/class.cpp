@@ -16,11 +16,12 @@ extern std::shared_ptr<andy::lang::structure> create_float_class(andy::lang::int
 extern std::shared_ptr<andy::lang::structure> create_integer_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_null_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter*);
-extern std::shared_ptr<andy::lang::structure> create_std_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter*);
 extern std::shared_ptr<andy::lang::structure> create_function_class(andy::lang::interpreter*);
+
+void create_std_functions(andy::lang::interpreter*);
 
 void andy::lang::structure::create_structures(andy::lang::interpreter* interpreter)
 {
@@ -31,7 +32,6 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
     interpreter->load(interpreter->DoubleClass      = create_double_class      (interpreter) );
     interpreter->load(interpreter->FloatClass       = create_float_class       (interpreter) );
     interpreter->load(interpreter->FileClass        = create_file_class        (interpreter) );
-    interpreter->load(interpreter->StdClass         = create_std_class         (interpreter) );
     interpreter->load(interpreter->ArrayClass       = create_array_class       (interpreter) );
     interpreter->load(interpreter->NullClass        = create_null_class        (interpreter) );
     interpreter->load(interpreter->DictionaryClass  = create_dictionary_class  (interpreter) );
@@ -44,6 +44,7 @@ void andy::lang::structure::create_structures(andy::lang::interpreter* interpret
     // These are not named on Interpreter because they are not used too often
     // Some of the one which are named should be moved to here soon.
     interpreter->load(create_directory_class(interpreter));
+    create_std_functions(interpreter);
 }
 
 andy::lang::structure::structure(std::string_view __name, std::vector<andy::lang::function> __methods)

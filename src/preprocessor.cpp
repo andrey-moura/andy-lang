@@ -122,7 +122,7 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     // auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
     std::vector<std::filesystem::path> include_paths;
 #ifdef __ANDY_DEBUG__
-    std::filesystem::path system_include_path = std::filesystem::current_path();
+    std::filesystem::path system_include_path = ANDYLANG_PROJECT_DIR;
 #elif defined(__linux__)
     std::filesystem::path system_include_path = "/usr/local/include/andy";
 #elif defined(_WIN32)
@@ -143,17 +143,29 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     std::sort(include_paths.begin(), include_paths.end());
     include_paths.erase(std::unique(include_paths.begin(), include_paths.end()), include_paths.end());
 
+    bool has_wildcard = file_path_string.find('*') != std::string::npos;
+
     for(const std::filesystem::path& include_path : include_paths) {
         if(!std::filesystem::exists(include_path)) {
             continue;
         }
         std::filesystem::path full_path = include_path / file_path_string;
-        if(std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
-            files.push_back(full_path.string());
+        if(has_wildcard) {
+            if(std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
+                files.push_back(full_path.string());
+            }
         } else {
             auto wildcard_files = list_files_with_wildcard(include_path, file_path_string);
             files.insert(files.end(), wildcard_files.begin(), wildcard_files.end());
         }
+    }
+
+    if(!has_wildcard && files.empty()) {
+        std::string error_message = "File '" + file_path_string + "' not found in include paths:\n";
+        for(const auto& include_path : include_paths) {
+            error_message += "  " + include_path.string() + "\n";
+        }
+        throw std::runtime_error(file_name_token.error_message_at_current_position(error_message));
     }
 
     std::sort(files.begin(), files.end());
