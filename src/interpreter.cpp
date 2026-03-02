@@ -31,7 +31,7 @@ andy::lang::function execute_method_definition(const andy::lang::parser::ast_nod
                 fn_param.has_default_value = fn_param.default_value_node != nullptr;
                 named_params.push_back(std::move(fn_param));
             } else {
-                fn_param.name = std::string(param.token().content());
+                fn_param.name = std::string(param.token().content);
                 positional_params.push_back(std::move(fn_param));
             }
         }
@@ -226,7 +226,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_classdecl(c
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(const andy::lang::parser::ast_node& source_code)
 {
-    switch(source_code.token().kind())
+    switch(source_code.token().kind)
     {
         case lexer::token_kind::token_boolean: {
             if(source_code.token().boolean_literal) {
@@ -251,7 +251,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(c
         }
         break;
         case lexer::token_kind::token_string: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(source_code.token().content())));
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(source_code.token().content)));
             return obj;
         }
         break;
@@ -298,7 +298,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
             value = execute(*value_node);
 
             if(name) {
-                std::string content = std::string(name->token().content());
+                std::string content = std::string(name->token().content);
                 named_params[content] = value;
             } else {
                 positional_params.push_back(value);
@@ -457,12 +457,12 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_interpolate
     std::string str;
     for(size_t i = 0; i < source_code.childrens().size(); i++) {
         auto& node_child = source_code.childrens()[i];
-        if(node_child.token().type() == andy::lang::lexer::token_type::token_literal)
+        if(node_child.token().type == andy::lang::lexer::token_type::token_literal)
         {
-            switch (node_child.token().kind())
+            switch (node_child.token().kind)
             {
             case lexer::token_kind::token_string:
-                str += node_child.token().content();
+                str += node_child.token().string_literal;
                 break;
             case lexer::token_kind::token_integer:
                 str += std::to_string(node_child.token().integer_literal);
@@ -699,7 +699,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(const andy::lang::parser::ast_node& source_code)
 {
-    std::string_view name = source_code.token().content();
+    std::string_view name = source_code.token().content;
 
     push_context_from_node_object_if_any(this, source_code);
 
@@ -873,7 +873,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(
     for(auto it = begin; it != end; it++) {
         const andy::lang::parser::ast_node& node = *it;
 
-        if(node.type() == andy::lang::parser::ast_node_type::ast_node_undefined && node.token().type() == andy::lang::lexer::token_type::token_eof) {
+        if(node.type() == andy::lang::parser::ast_node_type::ast_node_undefined && node.token().type == andy::lang::lexer::token_type::token_eof) {
             break;
         }
 
@@ -987,7 +987,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 {
     auto* fn_object = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
     const andy::lang::parser::ast_node* fn_object_decname = nullptr;
-    std::string_view var_name = node.token().content();
+    std::string_view var_name = node.token().content;
 
     if(fn_object) {
         fn_object_decname = fn_object->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
@@ -1003,16 +1003,16 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
             if(fn_object_fn_call) {
                 std::shared_ptr fn_object = execute(*fn_object_fn_call);
                 if(fn_object) {
-                    auto it = fn_object->variables.find(node.token().content());
+                    auto it = fn_object->variables.find(node.token().content);
                     if(it != fn_object->variables.end()) {
                         return it->second;
                     }
-                    throw std::runtime_error("Class " + std::string(fn_object->cls->name) + " does not have a variable called " + std::string(node.token().content()));
+                    throw std::runtime_error("Class " + std::string(fn_object->cls->name) + " does not have a variable called " + std::string(node.token().content));
                 } else {
-                    throw std::runtime_error("Cannot read property '" + std::string(node.token().content()) + "' of null");
+                    throw std::runtime_error("Cannot read property '" + std::string(node.token().content) + "' of null");
                 }
             } else {
-                throw std::runtime_error("Cannot determine the object for '" + std::string(node.token().content()) + "'");
+                throw std::runtime_error("Cannot determine the object for '" + std::string(node.token().content) + "'");
             }
         }
     }
@@ -1058,12 +1058,12 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
         }
 
         if(fn_object) {
-            throw std::runtime_error("type " + std::string(object->cls->name) + " does not have a variable or function called '" + std::string(node.token().content()) + "'");
+            throw std::runtime_error("type " + std::string(object->cls->name) + " does not have a variable or function called '" + std::string(node.token().content) + "'");
         }
     }
 
     if(fn_object_decname) {
-        std::string_view class_name = fn_object_decname->token().content();
+        std::string_view class_name = fn_object_decname->token().content;
             
         auto cls = find_class(class_name);
 
@@ -1095,12 +1095,12 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 
     // Walk the lexical_parent chain to find the variable.
     for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
-        auto it = ctx->variables.find(node.token().content());
+        auto it = ctx->variables.find(node.token().content);
         if(it != ctx->variables.end()) {
             return it->second;
         }
 
-        auto fn_it = ctx->functions.find(node.token().content());
+        auto fn_it = ctx->functions.find(node.token().content);
         if(fn_it != ctx->functions.end()) {
             auto method = fn_it->second;
             andy::lang::function_call __call = {
@@ -1118,13 +1118,13 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 
     // Always check the global context as a fallback.
     if(current_context != global_context) {
-        auto it = global_context->variables.find(node.token().content());
+        auto it = global_context->variables.find(node.token().content);
         if(it != global_context->variables.end()) {
             return it->second;
         }
     }
 
-    cls = find_class(node.token().content());
+    cls = find_class(node.token().content);
 
     if(cls) {
         return andy::lang::api::to_object(this, cls);
@@ -1135,7 +1135,7 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
 
 const std::shared_ptr<andy::lang::object> andy::lang::interpreter::node_to_object(const andy::lang::parser::ast_node& node, std::shared_ptr<andy::lang::structure> cls, std::shared_ptr<andy::lang::object> object)
 {
-    if(node.token().type() == andy::lang::lexer::token_type::token_literal) {
+    if(node.token().type == andy::lang::lexer::token_type::token_literal) {
         return execute(node);
     } else if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
         return execute(node);

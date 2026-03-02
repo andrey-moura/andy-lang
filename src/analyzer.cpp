@@ -11,6 +11,15 @@
 #include "andy/lang/extension.hpp"
 #include "andy/lang/preprocessor.hpp"
 
+struct analyzer_error
+{
+    std::string_view type;
+    std::string message;
+    std::string_view file_name;
+    andy::lang::lexer::token_position start;
+    andy::lang::lexer::token_position end;
+};
+
 std::string buffer;
 size_t num_linter_warnings = 0;
 extern void create_builtin_libs();
@@ -57,13 +66,15 @@ void print_help(std::string_view program_name) {
     std::cout << "Usage:\n"
                 << "  " << program_name << " <path> [--stdin | --temp <temp-path>]\n\n"
                 << "Arguments:\n"
-                << "  <path>                 Logical file path. Required.\n"
-                << "                         Used for resolving relative #includes and identifying the source logically.\n\n"
+                << "  <path>                   Logical file path. Required.\n"
+                << "                           Used for resolving relative #includes and identifying the source logically.\n\n"
                 << "Options:\n"
-                << "  --stdin                Read the file contents from standard input (stdin),\n"
-                << "                         but treat the content as if it came from <path>.\n\n"
-                << "  --temp <temp-path>     Read file contents from the specified temporary file,\n"
-                << "                         but treat it as if it was read from <path>.\n\n"
+                << "  --stdin                  Read the file contents from standard input (default),\n"
+                << "                           but treat the content as if it came from <path>.\n\n"
+                << "  --temp <temp-path>       Read file contents from the specified temporary file,\n"
+                << "                           but treat it as if it was read from <path>.\n\n"
+                << "  --stdout                 Write the output to standard output (default).\n\n"
+                << "  --output <output-path>   Write the output to the specified file instead of standard output.\n\n"
                 << "Description:\n"
                 << "  The <path> argument is mandatory and always defines the logical origin of the file.\n"
                 << "  This affects relative #include resolution and error messages.\n\n"
@@ -99,14 +110,18 @@ int main(int argc, char** argv) {
     switch_option read_from_stdin { false, false };
     switch_option read_from_temp { false, true };
     switch_option is_server { false, false };
+    switch_option write_to_stdout { true, false };
+    switch_option write_to_output { false, true };
 
     std::string tokenization_error;
     std::string parse_error;
 
     std::map<std::string_view, switch_option*> options = {
         { "--stdin",  &read_from_stdin },
-        { "--temp",   &read_from_temp },
-        { "--server", &is_server }
+        { "--temp",   &read_from_temp  },
+        { "--server", &is_server       },
+        { "--stdout", &write_to_stdout },
+        { "--out",    &write_to_output }
     };
 
     if(argc < 2) {
@@ -203,22 +218,12 @@ int main(int argc, char** argv) {
             size_t offset;
         };
 
-        struct error {
-            std::string_view type;
-            std::string message;
-            std::string_view file;
-            size_t line;
-            size_t column;
-            size_t offset;
-            size_t length;
-        };
-
         using reference = declaration;
-        using linter_warning = error;
+        using linter_warning = analyzer_error;
 
         std::vector<declaration> declarations;
         std::vector<reference> references;
-        std::vector<error> errors;
+        std::vector<analyzer_error> errors;
         std::vector<linter_warning> linter_warnings;
 
         declarations.reserve(16);
@@ -237,7 +242,7 @@ int main(int argc, char** argv) {
         }
 
         andy::lang::interpreter interpreter;
-        create_builtin_libs();
+        // create_builtin_libs();
         std::string file_path_str = file_path.string();
         andy::lang::lexer l(file_path_str, source);
 
@@ -248,16 +253,16 @@ int main(int argc, char** argv) {
         }
         struct analyzer_token {
             std::string_view type;
-            const andy::lang::lexer::token* token;
+            andy::lang::lexer::token token;
             std::string_view modifier;
         };
         std::vector<analyzer_token> tokens_to_write;
 
         // Preprocessor must be processed before the preprocessor run
         for(const auto& token : l.tokens()) {
-            switch(token.type()) {    
+            switch(token.type) {    
                 case andy::lang::lexer::token_type::token_preprocessor:
-                    tokens_to_write.push_back({ "preprocessor", &token });
+                    tokens_to_write.push_back({ "preprocessor", token });
                 break;
             }
         }
@@ -283,7 +288,7 @@ int main(int argc, char** argv) {
             if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
                 const andy::lang::parser::ast_node* fn_declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
                 const andy::lang::lexer::token& fn_declname_token = fn_declname_node->token();
-                std::string_view fn_declname = fn_declname_token.content();
+                std::string_view fn_declname = fn_declname_token.content;
                 
                 if(fn_declname != "import") {
                     return;
@@ -302,172 +307,243 @@ int main(int argc, char** argv) {
                 }
 
                 const andy::lang::lexer::token& import_declname_token = import_node->token();
-                std::string_view import_declname = import_declname_token.content();
+                std::string_view import_declname = import_declname_token.content;
 
-                if(andy::lang::extension::exists(file_directory, import_declname)) {
-                    andy::lang::extension::import(&interpreter, import_declname);
-                    return;
-                }
+                // if(andy::lang::extension::exists(file_directory, import_declname)) {
+                //     andy::lang::extension::import(&interpreter, import_declname);
+                //     return;
+                // }
 
-                errors.push_back(error{
-                    "missing-import",
-                    "Cannot find import " + std::string(import_declname),
-                    import_declname_token.m_file_name,
-                    import_declname_token.start.line,
-                    import_declname_token.start.column,
-                    import_declname_token.start.offset,
-                    import_declname_token.end.offset - import_declname_token.start.offset
-                });
+                // errors.push_back(error{
+                //     "missing-import",
+                //     "Cannot find import " + std::string(import_declname),
+                //     import_declname_token.m_file_name,
+                //     import_declname_token.start.line,
+                //     import_declname_token.start.column,
+                //     import_declname_token.start.offset,
+                //     import_declname_token.end.offset - import_declname_token.start.offset
+                // });
             }
         };
-        std::function<void(const andy::lang::parser::ast_node& node)> recursive_inspect_node;
-        std::function<void(const andy::lang::parser::ast_node& node)> switch_type;
-        recursive_inspect_node = [&](const andy::lang::parser::ast_node& node) {
-            switch_type = [&](const andy::lang::parser::ast_node& child) {
-                switch(child.type()) {
-                    case andy::lang::parser::ast_node_type::ast_node_classdecl: {
-                        interpreter.execute_classdecl(child);
-                        auto dectype_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_decltype);
-                        auto* declname_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                        auto* declname_token = &declname_node->token();
-                        tokens_declarations.push_back({ "class", declname_token, "declaration" });
-                        auto* base_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_classdecl_base);
-                        if(base_node) {
-                            auto* dectype_node = base_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_decltype);
-                            if(dectype_node) {
-                                auto* base_declname_node = base_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                                if(base_declname_node) {
-                                    auto* base_declname_token = &base_declname_node->token();
-                                    tokens_to_write.push_back({ "keyword", &dectype_node->token() });
-                                }
-                            }
-                        }
-                    }
-                    break;
-                    case andy::lang::parser::ast_node_type::ast_node_fn_decl: {
-                        auto* declname_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                        auto* declname_token = &declname_node->token();
-                        tokens_declarations.push_back({ "function", declname_token });
-                    }
-                    break;
-                    case andy::lang::parser::ast_node_type::ast_node_fn_call: {
-                        auto* declname_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                        auto* declname_token = &declname_node->token();
-                        auto* params = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
-                        if(params) {
-                            for(const auto& param : params->childrens())
-                            {
-                                if(param.type() == andy::lang::parser::ast_node_type::ast_node_pair) {
-                                    switch_type(param);
-                                }
-                            }
-                        }
-                        tokens_to_write.push_back({ "function", declname_token });
-                    }
-                    break;
-                    case andy::lang::parser::ast_node_type::ast_node_vardecl: {
-                        auto* declname_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                        auto* declname_token = &declname_node->token();
-                        auto& value_node = child.childrens()[2];
-                        switch_type(value_node);
-                        tokens_declarations.push_back({ "variable", declname_token });
-                    }
-                    break;
-                    case andy::lang::parser::ast_node_type::ast_node_declname: {
-                        if(auto object_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object)) {
-                            auto* declname_token = &child.token();
-                            tokens_to_write.push_back({ "function", declname_token });
-                        }
-                    }
-                    break;
-                    case andy::lang::parser::ast_node_type::ast_node_for:
-                    case andy::lang::parser::ast_node_type::ast_node_while:
-                    case andy::lang::parser::ast_node_type::ast_node_foreach: {
-                        auto* vardecl_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
-                        if(vardecl_node) {
-                            // Foreach only
-                            auto* declname_node = vardecl_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                            if(declname_node) {
-                                auto* declname_token = &declname_node->token();
-                                tokens_declarations.push_back({ "variable", declname_token });
-                                
-                                auto& tokens = l.tokens();
-                                auto& next_token = tokens[declname_token->index + 1];
-                                if(next_token.type() == andy::lang::lexer::token_type::token_identifier &&
-                                   next_token.content() == "in") {
-                                    tokens_to_write.push_back({ "keyword", &next_token });
-                                }
-                            }
-                        }
-                        auto decltype_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_decltype);
-                        if(decltype_node) {
-                            tokens_to_write.push_back({ "keyword", &decltype_node->token() });
-                        }
-                    }
-                    break;
-                    case andy::lang::parser::ast_node_type::ast_node_pair: {
-                        auto* key_node = child.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-                        if(key_node) {
-                            auto* key_token = &key_node->token();
-                            tokens_to_write.push_back({ "variable", key_token });
-                        }
-                    }
-                    break;
-                }
-                if(auto context = child.context()) {
-                    recursive_inspect_node(*context);
-                }
-            };
-            for(auto const & child : node.childrens()) {
-                switch_type(child);
-                inspect_node_for_errors(child);
-            }
+        struct analyzer_class
+        {
+            std::string_view name;
+            std::vector<std::string_view> functions;
+            std::vector<std::string_view> variables;
         };
+        struct analyzer_context
+        {
+            std::string_view name;
 
-        recursive_inspect_node(root_node);
-
-        for(const auto& token : tokens_declarations) {
-            tokens_to_write.push_back({ token.type, token.token, "declaration" });
+            std::vector<analyzer_class> classes;
+            std::vector<std::string_view> variables;
+            std::vector<std::string_view> functions;
+        };
+        std::vector<analyzer_context> stack;
+        analyzer_context* current_context = nullptr;
+        analyzer_context* global_context = nullptr;
+        auto push_context = [&]() {
+            stack.push_back(analyzer_context{});
+            current_context = &stack.back();
+            global_context = &stack.front();
+        };
+        auto pop_context = [&]() {
+            stack.pop_back();
+            current_context = stack.empty() ? nullptr : &stack.back();
+            global_context = &stack.front();
+        };
+        push_context();
+        for(const auto& var : interpreter.stack[0]->variables) {
+            if(var.first.ends_with("?")) {
+                current_context->functions.push_back(var.first);
+            } else {
+                current_context->variables.push_back(var.first);
+            }
         }
+        for(const auto& func : interpreter.stack[0]->functions) {
+            current_context->functions.push_back(func.first);
+        }
+        for(const auto& cls : interpreter.stack[0]->classes) {
+            analyzer_class analyzer_cls;
+            analyzer_cls.name = cls.first;
+            for(const auto& func : cls.second->functions) {
+                analyzer_cls.functions.push_back(func.first);
+            }
+            for(const auto& var : cls.second->variables) {
+                analyzer_cls.variables.push_back(var.first);
+            }
+            current_context->classes.push_back(analyzer_cls);
+        }
+        std::function<void(const andy::lang::parser::ast_node& node)> inspect_node;
+        std::function<void(const andy::lang::parser::ast_node& node)> switch_type;
+        auto push_context_from_node_object_if_any = [&](const andy::lang::parser::ast_node& node) {
+            const andy::lang::parser::ast_node* object_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+
+            if(object_node) {
+                push_context();
+                auto& child = object_node->childrens().front();
+                std::string_view object_name = child.token().content;
+                for(const auto& cls : global_context->classes) {
+                    if(cls.name == object_name) {
+                        for(const auto& func : cls.functions) {
+                            current_context->functions.push_back(func);
+                        }
+                        for(const auto& var : cls.variables) {
+                            if(var.ends_with("?")) {
+                                current_context->functions.push_back(var);
+                            } else {
+                                current_context->variables.push_back(var);
+                            }
+                        }
+                        break;
+                    }
+                }
+                inspect_node(child);
+            }
+        };
+        auto pop_context_from_node_object_if_any = [&](const andy::lang::parser::ast_node& node) {
+            const andy::lang::parser::ast_node* object_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+
+            if(object_node) {
+                pop_context();
+            }
+        };
+        inspect_node = [&](const andy::lang::parser::ast_node& node) {
+            switch(node.type()) {
+                case andy::lang::parser::ast_node_type::ast_node_unit:
+                    for(const auto& child : node.childrens()) {
+                        inspect_node(child);
+                    }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_classdecl:
+                {
+                    auto* declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                    std::string_view class_name = declname_node->token().content;
+                    tokens_to_write.push_back({ "class", declname_node->token() });
+
+                    analyzer_class cls;
+                    cls.name = class_name;
+                    current_context->classes.push_back(cls);
+                    push_context();
+                    for(const auto& child : node.context()->childrens()) {
+                        inspect_node(child);
+                    }
+                    pop_context();
+                }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_vardecl:
+                {
+                    auto* declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                    std::string_view variable_name = declname_node->token().content;
+                    tokens_to_write.push_back({ "variable", declname_node->token() });
+                    
+                    current_context->variables.push_back(variable_name);
+                }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_declname:
+                {
+                    std::string_view name = node.token().content;
+
+                    push_context_from_node_object_if_any(node);
+
+                    if(std::find_if(current_context->classes.begin(), current_context->classes.end(), [&](const analyzer_class& cls) {
+                        return cls.name == name; }) != current_context->classes.end()) {
+                        tokens_to_write.push_back({ "class", node.token() });
+                        break;
+                    } else if(std::find(current_context->variables.begin(), current_context->variables.end(), name) != current_context->variables.end()) {
+                        tokens_to_write.push_back({ "variable", node.token() });
+                        break;
+                    } else if(std::find(current_context->functions.begin(), current_context->functions.end(), name) != current_context->functions.end()) {
+                        tokens_to_write.push_back({ "function", node.token() });
+                        break;
+                    }
+                    // Fallback to global context
+                    if(stack.size() > 1) {
+                        const auto& global_context = stack.front();
+                        if(std::find_if(global_context.classes.begin(), global_context.classes.end(), [&](const analyzer_class& cls) {
+                            return cls.name == name; }) != global_context.classes.end()) {
+                            tokens_to_write.push_back({ "class", node.token() });
+                            break;
+                        } else if(std::find(global_context.variables.begin(), global_context.variables.end(), name) != global_context.variables.end()) {
+                            tokens_to_write.push_back({ "variable", node.token() });
+                            break;
+                        } else if(std::find(global_context.functions.begin(), global_context.functions.end(), name) != global_context.functions.end()) {
+                            tokens_to_write.push_back({ "function", node.token() });
+                            break;
+                        }
+                    }
+                    analyzer_error error;
+                    error.type = "undefined-symbol";
+                    error.message = "Undefined symbol '" + std::string(name) + "'";
+                    error.file_name = *node.token().file_name;
+                    error.start = node.token().start;
+                    error.end = node.token().end;
+                    errors.push_back(error);
+                }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_fn_call: {
+                    inspect_node(*node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname));
+                }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_conditional:
+                {
+                    auto* condition = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_condition);
+                    auto* condition_child = condition->childrens().data();
+                    inspect_node(*condition_child);
+                    push_context();
+                    for(const auto& child : node.context()->childrens()) {
+                        inspect_node(child);
+                    }
+                    pop_context();
+                    for(const auto& child : node.childrens()) {
+                        if(child.type() == andy::lang::parser::ast_node_type::ast_node_conditional) {
+                            inspect_node(child);
+                        }
+                    }
+                }
+                break;
+            }
+        };
+
+        inspect_node(root_node);
+
+        // for(const auto& tokens_declarations : tokens_declarations) {
+        //     tokens_to_write.push_back(tokens_declarations);
+        // }
 
         for(size_t i = 0; i < l.tokens().size(); ++i) {
             const auto& token = l.tokens()[i];
-            switch(token.type()) {
+            switch(token.type) {
                 case andy::lang::lexer::token_type::token_comment:
-                    tokens_to_write.push_back({ "comment", &token });
+                    tokens_to_write.push_back({ "comment", token });
                 break;
                 case andy::lang::lexer::token_type::token_keyword:
-                    tokens_to_write.push_back({ "keyword", &token });
+                    tokens_to_write.push_back({ "keyword", token });
                 break;
                 case andy::lang::lexer::token_type::token_identifier: {
-                    if(token.content() == "super") {
-                        tokens_to_write.push_back({ "keyword", &token });
-                    }
-                    auto it = std::find_if(tokens_declarations.begin(), tokens_declarations.end(),
-                        [&token](const analyzer_token& t) { return t.token->content() == token.content(); });
-                    if(it != tokens_declarations.end()) {
-                        tokens_to_write.push_back({ it->type, &token });
+                    if(token.content == "super") {
+                        tokens_to_write.push_back({ "keyword", token });
                     }
                 }
                 break;
                 case andy::lang::lexer::token_type::token_literal:
-                    switch(token.kind()) {
+                    switch(token.kind) {
                         case andy::lang::lexer::token_kind::token_integer:
                         case andy::lang::lexer::token_kind::token_float:
                         case andy::lang::lexer::token_kind::token_double:
-                            tokens_to_write.push_back({ "number", &token });
+                            tokens_to_write.push_back({ "number", token });
                         break;
                         case andy::lang::lexer::token_kind::token_string:
-                            tokens_to_write.push_back({ "string", &token });
+                            tokens_to_write.push_back({ "string", token });
                         break;
                         case andy::lang::lexer::token_kind::token_boolean:
-                            tokens_to_write.push_back({ "keyword", &token });
+                            tokens_to_write.push_back({ "keyword", token });
                         break;
                     }
                 break;
                 case andy::lang::lexer::token_type::token_delimiter:
-                    if(token.content() == "end") {
-                        tokens_to_write.push_back({ "keyword", &token });
+                    if(token.content == "end") {
+                        tokens_to_write.push_back({ "keyword", token });
                     }
                 break;
             }
@@ -484,21 +560,32 @@ int main(int argc, char** argv) {
             buffer += "\",\n\t\t\t\"modifier\": \"";
             buffer += token.modifier;
             buffer += "\",\n\t\t\t\"content\": \"";
-            buffer += token.token->content();
+            for(const auto& c : token.token.content)
+            {
+                switch (c)
+                {
+                    case '\\':
+                        buffer += "\\\\";
+                        break;
+                    default:
+                        buffer.push_back(c);
+                        break;
+                }
+            }
             buffer += "\",\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
-            write_path(token.token->m_file_name);
+            write_path(*token.token.file_name);
             buffer += "\",\n\t\t\t\t\"start\": {\n\t\t\t\t\t\"line\": ";
-            buffer += std::to_string(token.token->start.line);
+            buffer += std::to_string(token.token.start.line);
             buffer += ",\n\t\t\t\t\t\"column\": ";
-            buffer += std::to_string(token.token->start.column);
+            buffer += std::to_string(token.token.start.column);
             buffer += ",\n\t\t\t\t\t\"offset\": ";
-            buffer += std::to_string(token.token->start.offset);
+            buffer += std::to_string(token.token.start.offset);
             buffer += "\n\t\t\t\t},\n\t\t\t\t\"end\": {\n\t\t\t\t\t\"line\": ";
-            buffer += std::to_string(token.token->end.line);
+            buffer += std::to_string(token.token.end.line);
             buffer += ",\n\t\t\t\t\t\"column\": ";
-            buffer += std::to_string(token.token->end.column);
+            buffer += std::to_string(token.token.end.column);
             buffer += ",\n\t\t\t\t\t\"offset\": ";
-            buffer += std::to_string(token.token->end.offset);
+            buffer += std::to_string(token.token.end.offset);
             buffer += "\n\t\t\t\t}\n\t\t\t}\n\t\t}";
         }
 
@@ -520,7 +607,7 @@ int main(int argc, char** argv) {
         //             const andy::lang::lexer::token& decname_token = *node.child_token_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
 
         //             declarations.push_back(declaration{
-        //                 decname_token.content(),
+        //                 decname_token.content,
         //                 decl_type,
         //                 decname_token.m_file_name,
         //                 decname_token.start.line,
@@ -546,7 +633,7 @@ int main(int argc, char** argv) {
         //     if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
         //         const andy::lang::parser::ast_node* fn_declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
         //         const andy::lang::lexer::token& fn_declname_token = fn_declname_node->token();
-        //         std::string_view fn_declname = fn_declname_token.content();
+        //         std::string_view fn_declname = fn_declname_token.content;
 
         //         auto it = std::find_if(declarations.begin(), declarations.end(), [&](const declaration& d) {
         //             return d.name == fn_declname;
@@ -579,9 +666,9 @@ int main(int argc, char** argv) {
         // // Token level linting/references
         // for(size_t i = 0; i < l.tokens().size(); i++) {
         //     const auto& token = l.tokens()[i];
-            //std::string_view content = token.content();
+            //std::string_view content = token.content;
 
-            // if(token.type() == andy::lang::lexer::token_type::token_identifier) {
+            // if(token.type == andy::lang::lexer::token_type::token_identifier) {
             //     if(auto it = std::find_if(declarations.begin(), declarations.end(), [&](const declaration& d) {
             //         return d.name == content;
             //     }); it != declarations.end()) {
@@ -629,7 +716,7 @@ int main(int argc, char** argv) {
             //     write_linter_warning("trailing-whitespace", "Trailing whitespace", token.m_file_name, token.end, has_whitespace);
             // }
 
-        //     switch(token.type()) {
+        //     switch(token.type) {
         //         case andy::lang::lexer::token_type::token_literal:
         //             switch(token.kind()) {
         //                 case andy::lang::lexer::token_kind::token_string:
@@ -638,8 +725,8 @@ int main(int argc, char** argv) {
         //                     switch(c)
         //                     {
         //                         case '\"':
-        //                             if(token.content().find("${") == std::string::npos) {
-        //                                 write_linter_warning("string-default-single-quotes", "String literal without interpolation should use single quotes", token.m_file_name, token.start, token.content().size() + 2 /* 2 for the quotes */);
+        //                             if(token.content.find("${") == std::string::npos) {
+        //                                 write_linter_warning("string-default-single-quotes", "String literal without interpolation should use single quotes", token.m_file_name, token.start, token.content.size() + 2 /* 2 for the quotes */);
         //                             }
         //                         break;
         //                     }
@@ -704,22 +791,27 @@ int main(int argc, char** argv) {
 
         for(size_t i = 0; i < errors.size(); i++) {
             const auto& error = errors[i];
+            if(i) {
+                buffer += ",\n";
+            }
             buffer += "\t\t{\n\t\t\t\"message\": \"";
             buffer += error.message;
-            buffer += "'\",";
+            buffer += "\",";
             buffer += "\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
-            write_path(error.file);
-            buffer += "\",\n";
-            buffer += "\t\t\t\t\"line\": ";
-            buffer += std::to_string(error.line);
-            buffer += ",\n\t\t\t\t\"column\": ";
-            buffer += std::to_string(error.column);
-            buffer += ",\n\t\t\t\t\"offset\": ";
-            buffer += std::to_string(error.offset);
-            buffer += ",\n\t\t\t\t\"length\": ";
-            buffer += std::to_string(error.length);
-            buffer += "\n\t\t\t}";
-            buffer += "\n\t\t}";
+            write_path(error.file_name);
+            buffer += "\",\n\t\t\t\t\"start\": {\n\t\t\t\t\t\"line\": ";
+            buffer += std::to_string(error.start.line);
+            buffer += ",\n\t\t\t\t\t\"column\": ";
+            buffer += std::to_string(error.start.column);
+            buffer += ",\n\t\t\t\t\t\"offset\": ";
+            buffer += std::to_string(error.start.offset);
+            buffer += "\n\t\t\t\t},\n\t\t\t\t\"end\": {\n\t\t\t\t\t\"line\": ";
+            buffer += std::to_string(error.end.line);
+            buffer += ",\n\t\t\t\t\t\"column\": ";
+            buffer += std::to_string(error.end.column);
+            buffer += ",\n\t\t\t\t\t\"offset\": ";
+            buffer += std::to_string(error.end.offset);
+            buffer += "\n\t\t\t\t}\n\t\t\t}\n\t\t}";
         }
 
         buffer += "\n\t],\n";
@@ -785,7 +877,17 @@ int main(int argc, char** argv) {
             // std::string size_str = andy::binary::to_hex_string(size);
 
             // std::cout << size_str;
+        if(write_to_output) {
+            std::ofstream output_file(write_to_output.argument.data());
+            if(!output_file) {
+                std::cerr << "Failed to open output file '" << write_to_output.argument << "' for writing" << std::endl;
+                return 1;
+            }
+            output_file << buffer;
+            output_file.close();
+        } else if(write_to_stdout) {
             std::cout << buffer;
+        }
         //} else {
             //std::cout << buffer << std::endl;
         //}

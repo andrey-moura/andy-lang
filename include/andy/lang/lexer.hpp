@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <string_view>
+#include <memory>
 
 namespace andy
 {
@@ -12,7 +14,7 @@ namespace andy
         {
         public:
             lexer() = default;
-            lexer(std::string_view __file_name, std::string_view __source);
+            lexer(std::string __file_name, std::string __source);
             ~lexer() = default;
         public:
             enum token_type {
@@ -68,14 +70,29 @@ namespace andy
                 size_t offset = 0;
             };
             class token {
-            protected:
-                std::string_view m_content;
-                token_type m_type;
-                operator_type m_operator;
             public:
-                token_delimiter_type m_delimiter;
-                token_kind m_kind;
+                token() 
+                    : type(token_type::token_undefined), kind(token_kind::token_null)
+                    {
+
+                    }
+                ~token() = default;
             public:
+                bool is_eof() const { return type == token_type::token_eof; }
+            public:
+                std::string error_message_at_current_position(std::string_view what) const;
+                std::string unexpected_eof_message() const;
+                std::string human_start_position() const;
+
+                void merge(const token& other);
+            public:
+                /// @brief Return the human type of the token.
+                std::string_view human_type() const;
+            public:
+                std::shared_ptr<std::string> file_name;
+
+                token_position start;
+                token_position end;
                 struct {
                     union {
                         int integer_literal;
@@ -85,71 +102,36 @@ namespace andy
                     };
                 };
                 std::string string_literal;
-            public:
-                std::string_view m_file_name;
+                std::string   content;
+                token_type    type;
+                operator_type op_type;
+                token_delimiter_type delimiter;
+                token_kind kind;
                 size_t index;
-            public:
-                token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op = operator_type::operator_max);
-                token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind = token_kind::token_null);
-                token(token&& other) = default;
-                token(const token&) = default;
-                token() 
-                    : m_type(token_type::token_undefined), m_kind(token_kind::token_null)
-                    {
-
-                    }
-                ~token() = default;
-            public:
-            public:
-                bool is_eof() const { return m_type == token_type::token_eof; }
-            public:
-                std::string error_message_at_current_position(std::string_view what) const;
-                std::string unexpected_eof_message() const;
-                std::string_view human_start_position() const;
-
-                void merge(const token& other);
-            public:
-                /// @brief Return the content of the token.
-                std::string_view content() const;
-                /// @brief Return the type of the token.
-                token_type type() const { return m_type; }
-                /// @brief Return the kind of the token.
-                token_kind kind() const { return m_kind; }
-                /// @brief Return the operator type of the token.
-                operator_type op() const { return m_operator; }
-                /// @brief Return the human type of the token.
-                std::string_view human_type() const;
-            public:
-                token_position start;
-                token_position end;
             public:
                 andy::lang::lexer::token& operator=(const andy::lang::lexer::token& other) = default;
             };
         protected:
-            std::string_view m_file_name;
-            std::string_view m_source;
-            std::map<std::string, std::string, std::less<>> m_includes;
+            std::string m_source;
+            std::shared_ptr<std::string> m_file_name;
+
+            std::vector<std::string> m_includes;            
+            std::vector<andy::lang::lexer::token> m_tokens;
+            
+            // iterating
             std::string_view m_current;
             std::string_view m_buffer;
-            std::vector<andy::lang::lexer::token> m_tokens;
-
             token_position m_start;
             token_position m_end;
 
-            // iterating
             size_t iterator = 0;
         public:
-            std::string_view path() const { return m_file_name; }
+            const std::string& path() const { return *m_file_name; }
             void include(std::string __file_name, std::string __source);
             /// @brief Check if the file is included.
             /// @param file_name The name of the file.
             /// @return True if the file is included, false otherwise.
-            bool includes(const std::string& file_name) const { return m_includes.find(file_name) != m_includes.end(); }
-            /// @brief Return the source code where the token is located.
-            /// @param token The token.
-            std::string_view source(const andy::lang::lexer::token& token) const;
-            /// @brief Return the root source code.
-            std::string_view source() const { return m_source; }
+            bool includes(const std::string& file_name);
 
             /// @brief Discard the first character from the m_current and update the start position.
             const char& discard();
@@ -225,9 +207,6 @@ namespace andy
             void erase_tokens(size_t count);
             /// @brief Erase the EOF token.
             void erase_eof();
-            /// @brief Insert new tokens at the current iterator and update it.
-            /// @param tokens The tokens to insert.
-            void insert(const std::vector<andy::lang::lexer::token>& tokens);
             /// @brief The tokens.
             /// @return The tokens.
             const std::vector<andy::lang::lexer::token>& tokens() const { return m_tokens; }

@@ -5,19 +5,19 @@
 andy::lang::fn_parameter::fn_parameter(std::string_view __name)
 {
     name.reserve(__name.size());
-    andy::lang::lexer* lexer = new andy::lang::lexer("", __name);
-    lexer->tokenize();
-    if(lexer->tokens().size() == 1) {
+    andy::lang::lexer lexer("", std::string(__name));
+    lexer.tokenize();
+    if(lexer.tokens().size() == 1) {
         name = __name;
         return;
     }
 
-    andy::lang::parser* parser = new andy::lang::parser();
-    auto* node = new andy::lang::parser::ast_node(std::move(parser->parse_all(*lexer)));
+    andy::lang::parser parser;
+    auto* node = new andy::lang::parser::ast_node(std::move(parser.parse_all(lexer)));
     node = node->childrens().data();
     switch(node->type()) {
         case andy::lang::parser::ast_node_type::ast_node_declname:
-            name = node->token().content();
+            name = node->token().content;
             break;
         case andy::lang::parser::ast_node_type::ast_node_pair:
             name = node->child_content_from_type(andy::lang::parser::ast_node_type::ast_node_declname);

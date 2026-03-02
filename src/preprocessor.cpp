@@ -84,12 +84,12 @@ void andy::lang::preprocessor::process(const std::filesystem::path &__file_name,
     andy::lang::lexer::token token = __lexer.next_token();
 
     while(!token.is_eof()) {
-        switch(token.type()) {
+        switch(token.type) {
             case andy::lang::lexer::token_type::token_comment:
                 // Do nothing
             break;
             case andy::lang::lexer::token_type::token_preprocessor: {
-                if(auto it = preprocessor_directives.find(token.content()); it != preprocessor_directives.end()) {
+                if(auto it = preprocessor_directives.find(token.content); it != preprocessor_directives.end()) {
                     (this->*it->second)(__file_name, __lexer);
                 } else {
                     throw std::runtime_error(token.error_message_at_current_position("unknown preprocessor directive"));
@@ -110,11 +110,11 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     andy::lang::lexer::token directive       = std::move(__lexer.current_token());
     andy::lang::lexer::token file_name_token = std::move(__lexer.see_next());
 
-    if(file_name_token.type() != lexer::token_type::token_literal || file_name_token.kind() != lexer::token_kind::token_string) {
+    if(file_name_token.type != lexer::token_type::token_literal || file_name_token.kind != lexer::token_kind::token_string) {
         throw std::runtime_error(file_name_token.error_message_at_current_position("Expected string literal after include directive"));
     }
 
-    std::string file_path_string(file_name_token.content());
+    std::string file_path_string(file_name_token.content);
 
     std::filesystem::path file_path = __lexer.path();
 
@@ -192,11 +192,11 @@ void andy::lang::preprocessor::process_compile(const std::filesystem::path &__fi
 
     __lexer.erase_tokens(2); // Remove the directive and the file name token
 
-    if(file_name_token.type() != lexer::token_type::token_literal || file_name_token.kind() != lexer::token_kind::token_string) {
+    if(file_name_token.type != lexer::token_type::token_literal || file_name_token.kind != lexer::token_kind::token_string) {
         throw std::runtime_error(file_name_token.error_message_at_current_position("Expected string literal after compile directive"));
     }
 
-    std::string_view file_path_string = file_name_token.content();
+    std::string_view file_path_string = file_name_token.content;
 
     std::filesystem::path file_path = __file_name.parent_path();
 

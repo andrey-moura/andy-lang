@@ -44,7 +44,7 @@ namespace andy
 
             std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
                 if(__call.name == "yield") {
-                    andy::lang::lexer lexer("", __call.name);
+                    andy::lang::lexer lexer("", std::string(__call.name));
                     lexer.tokenize();
                     andy::lang::parser parser;
                     auto ast = parser.parse_all(lexer);
