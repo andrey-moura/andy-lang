@@ -158,7 +158,7 @@ namespace andy
                 }
 
                 const std::string_view child_content_from_type(const ast_node_type& __type) const {
-                    return child_token_from_type(__type)->content();
+                    return child_token_from_type(__type)->content;
                 }
 
                 const std::string_view decname() const {

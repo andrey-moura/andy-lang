@@ -130,18 +130,19 @@ static bool is_digit(const char& c)
     return c >= '0' && c <= '9';
 }
 
-andy::lang::lexer::lexer(std::string_view __file_name, std::string_view __source)
+andy::lang::lexer::lexer(std::string __file_name, std::string __source)
+    : m_file_name(std::make_shared<std::string>(std::move(__file_name))),
+    m_source(std::move(__source)),
+    m_current(m_source)
 {
-    m_file_name  = __file_name;
-    m_current    = __source;
-    m_source     = __source;
+
 }
 
-void andy::lang::lexer::include(std::string __file_name, std::string __source)
+void andy::lang::lexer::include(std::string file_name, std::string source)
 {
-    std::string& source = m_includes[__file_name] = std::move(__source);
+    m_includes.push_back(file_name);
 
-    andy::lang::lexer new_lexer(__file_name, source);
+    andy::lang::lexer new_lexer(std::move(file_name), std::move(source));
     new_lexer.tokenize();
 
     auto tokens = std::move(new_lexer.m_tokens);
@@ -151,19 +152,9 @@ void andy::lang::lexer::include(std::string __file_name, std::string __source)
     m_tokens.insert(m_tokens.begin() + iterator, tokens.begin(), tokens.end());
 }
 
-std::string_view andy::lang::lexer::source(const andy::lang::lexer::token& token) const
+bool andy::lang::lexer::includes(const std::string& file_name)
 {
-    if(token.m_file_name == m_file_name) {
-        return m_source;
-    }
-
-    auto it = m_includes.find(token.m_file_name);
-
-    if(it != m_includes.end()) {
-        return it->second;
-    }
-
-    throw std::runtime_error("lexer: cannot find source for token");
+    return std::find(m_includes.begin(), m_includes.end(), file_name) != m_includes.end();
 }
 
 void andy::lang::lexer::update_start_position(const char &c)
@@ -220,27 +211,35 @@ void andy::lang::lexer::read(size_t c)
 
 void andy::lang::lexer::push_token(token_type type, token_kind kind, operator_type op)
 {
-    token t(m_start, m_end, m_buffer, type, kind, m_file_name, m_source, op);
+    token t;
+    t.start = m_start;
+    t.end = m_end;
+    t.content = m_buffer;
+    t.type = type;
+    t.kind = kind;
+    t.op_type = op;
+    t.file_name = m_file_name;
+
     m_start = m_end;
     
     t.index = m_tokens.size();
 
     m_buffer = "";
 
-    if(t.type() == token_type::token_literal) {
-        switch(t.kind())
+    if(t.type == token_type::token_literal) {
+        switch(t.kind)
         {
         case token_kind::token_integer:
-            t.integer_literal = atoi(t.content().data());
+            t.integer_literal = atoi(t.content.data());
             break;
         case token_kind::token_float:
-            t.float_literal = atof(t.content().data());
+            t.float_literal = atof(t.content.data());
             break;
         case token_kind::token_double:
-            t.double_literal = atof(t.content().data());
+            t.double_literal = atof(t.content.data());
             break;
         case token_kind::token_boolean:
-            t.boolean_literal = t.content() == "true";
+            t.boolean_literal = t.content == "true";
             break;
         case token_kind::token_string:
         case token_kind::token_interpolated_string:
@@ -258,7 +257,7 @@ void andy::lang::lexer::push_token(token_type type, token_kind kind, operator_ty
 void andy::lang::lexer::push_delimiter(token_delimiter_type delimiter)
 {
     push_token(token_type::token_delimiter, token_kind::token_null, operator_type::operator_max);
-    m_tokens.back().m_delimiter = delimiter;
+    m_tokens.back().delimiter = delimiter;
 }
 
 char unescape(andy::lang::lexer& lexer)
@@ -573,23 +572,6 @@ void andy::lang::lexer::erase_eof()
     }
 }
 
-void andy::lang::lexer::insert(const std::vector<andy::lang::lexer::token> &tokens)
-{
-    m_tokens.insert(m_tokens.begin() + iterator, tokens.begin(), tokens.end());
-    iterator += tokens.size();
-}
-
-andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind, std::string_view file_name, std::string_view source, operator_type op)
-    : start(start), end(end), m_content(content), m_type(type), m_kind(kind), m_file_name(file_name), m_operator(op)
-{
-}
-
-andy::lang::lexer::token::token(token_position start, token_position end, std::string_view content, token_type type, token_kind kind)
-    : start(start), end(end), m_content(content), m_type(type), m_kind(kind)
-{
-
-}
-
 std::string andy::lang::lexer::token::error_message_at_current_position(std::string_view what) const
 {
     std::string output(what);
@@ -604,12 +586,12 @@ std::string andy::lang::lexer::token::unexpected_eof_message() const
     return error_message_at_current_position("unexpected end of file");
 }
 
-std::string_view andy::lang::lexer::token::human_start_position() const
+std::string andy::lang::lexer::token::human_start_position() const
 {
-    static std::string result;
+    std::string result;
     result.clear();
 
-    result += m_file_name;
+    result += *file_name;
     result.push_back(':');
     result += std::to_string(start.line+1);
     result.push_back(':');
@@ -621,21 +603,13 @@ std::string_view andy::lang::lexer::token::human_start_position() const
 void andy::lang::lexer::token::merge(const token &other)
 {
     if(string_literal.empty()) {
-        string_literal = m_content;
+        string_literal = content;
     }
-    string_literal += other.m_content;
+    string_literal += other.content;
 
     end = other.end;
 }
 
-std::string_view andy::lang::lexer::token::content() const
-{
-    if(string_literal.size()) {
-        return string_literal;
-    }
-
-    return m_content;
-}
 
 std::string_view andy::lang::lexer::token::human_type() const
 {
@@ -651,7 +625,7 @@ std::string_view andy::lang::lexer::token::human_type() const
         "eof",
     };
 
-    return types[(int)m_type];
+    return types[(int)type];
 }
 
 void andy::lang::lexer::extract_and_push_string(bool is_interpolated)

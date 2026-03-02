@@ -15,18 +15,21 @@ namespace andy
         {
             std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path)
             {
-                std::string source = andy::file::read_all_text<char>(path);
+                andy::lang::parser::ast_node root_node;
 
-                std::string path_str = path.string();
-
-                andy::lang::lexer l(path_str, source);
-                l.tokenize();
-        
-                andy::lang::preprocessor preprocessor;
-                preprocessor.process(path_str, l);
-        
-                andy::lang::parser p;
-                andy::lang::parser::ast_node root_node = p.parse_all(l);
+                {
+                    std::string source = andy::file::read_all_text<char>(path);
+    
+                    std::string path_str = path.string();
+                    andy::lang::lexer l(std::move(path_str), std::move(source));
+                    l.tokenize();
+            
+                    andy::lang::preprocessor preprocessor;
+                    preprocessor.process(path_str, l);
+            
+                    andy::lang::parser p;
+                    root_node = p.parse_all(l);
+                }
 
                 create_builtin_libs();
         
@@ -44,7 +47,7 @@ namespace andy
 
             std::shared_ptr<andy::lang::object> call(andy::lang::interpreter *interpreter, andy::lang::function_call __call) {
                 if(__call.name == "yield") {
-                    andy::lang::lexer lexer("", __call.name);
+                    andy::lang::lexer lexer("", std::string(__call.name));
                     lexer.tokenize();
                     andy::lang::parser parser;
                     auto ast = parser.parse_all(lexer);
