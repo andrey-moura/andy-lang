@@ -19,7 +19,7 @@ describe of("lexer", []() {
               {
                 andy::lang::lexer l("", std::string(1, c));
                 l.tokenize();
-                expect(l.tokens().front().type()).to<eq>(andy::lang::lexer::token_type::token_delimiter);
+                expect(l.tokens().front().type).to<eq>(andy::lang::lexer::token_type::token_delimiter);
               }
               break;
               default:
@@ -49,7 +49,7 @@ describe of("lexer", []() {
               {
                 andy::lang::lexer l("", std::string(1, c));
                 l.tokenize();
-                expect(l.tokens().front().type()).to_not<eq>(andy::lang::lexer::token_type::token_delimiter);
+                expect(l.tokens().front().type).to_not<eq>(andy::lang::lexer::token_type::token_delimiter);
               }
               break;
             }
@@ -80,7 +80,7 @@ describe of("lexer", []() {
               case '.': {
                 andy::lang::lexer l("", std::string(1, c));
                 l.tokenize();
-                expect(l.tokens().front().type()).to<eq>(andy::lang::lexer::token_type::token_operator);
+                expect(l.tokens().front().type).to<eq>(andy::lang::lexer::token_type::token_operator);
               }
               break;
               case '"':
@@ -121,7 +121,7 @@ describe of("lexer", []() {
               {
                 andy::lang::lexer l("", std::string(1, c));
                 l.tokenize();
-                expect(l.tokens().front().type()).to_not<eq>(andy::lang::lexer::token_type::token_operator);
+                expect(l.tokens().front().type).to_not<eq>(andy::lang::lexer::token_type::token_operator);
               }
               break;
             }
