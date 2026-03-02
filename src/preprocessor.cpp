@@ -151,12 +151,12 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
         }
         std::filesystem::path full_path = include_path / file_path_string;
         if(has_wildcard) {
+            auto wildcard_files = list_files_with_wildcard(include_path, file_path_string);
+            files.insert(files.end(), wildcard_files.begin(), wildcard_files.end());
+        } else {
             if(std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
                 files.push_back(full_path.string());
             }
-        } else {
-            auto wildcard_files = list_files_with_wildcard(include_path, file_path_string);
-            files.insert(files.end(), wildcard_files.begin(), wildcard_files.end());
         }
     }
 
