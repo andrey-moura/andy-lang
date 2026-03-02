@@ -20,10 +20,10 @@
         } \
         const auto& param = params_node->childrens()[0]; \
         T& value = object->as<T>(); \
-        if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type() != andy::lang::lexer::token_type::token_literal) { \
+        if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type != andy::lang::lexer::token_type::token_literal) { \
             throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
-        switch(param.token().kind()) { \
+        switch(param.token().kind) { \
         case andy::lang::lexer::token_kind::token_integer: \
             value op param.token().integer_literal; \
             break; \
@@ -47,10 +47,10 @@
         const auto& param = params_node->childrens()[0]; \
         T& value = object->as<T>(); \
         bool comparison_result = false; \
-        if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type() != andy::lang::lexer::token_type::token_literal) { \
+        if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type != andy::lang::lexer::token_type::token_literal) { \
             throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
-        switch(param.token().kind()) { \
+        switch(param.token().kind) { \
         case andy::lang::lexer::token_kind::token_integer: \
             comparison_result = value op param.token().integer_literal; \
             break; \
@@ -73,10 +73,10 @@
         } \
         const auto& param = params_node->childrens()[0]; \
         T value = object->as<T>(); \
-        if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type() != andy::lang::lexer::token_type::token_literal) { \
+        if (param.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl || param.token().type != andy::lang::lexer::token_type::token_literal) { \
             throw std::runtime_error(std::string(object->cls->name) + "::operator " #op " requires a numeric literal"); \
         } \
-        switch(param.token().kind()) { \
+        switch(param.token().kind) { \
         case andy::lang::lexer::token_kind::token_integer: \
             value = value op param.token().integer_literal; \
             break; \
@@ -213,8 +213,8 @@ namespace andy
                     }
                     const auto& other = params_node->childrens()[0];
                     if(other.type() != andy::lang::parser::ast_node_type::ast_node_valuedecl ||
-                       other.token().type() != andy::lang::lexer::token_type::token_literal ||
-                       other.token().kind() != andy::lang::lexer::token_kind::token_integer) {
+                       other.token().type != andy::lang::lexer::token_type::token_literal ||
+                       other.token().kind != andy::lang::lexer::token_kind::token_integer) {
                         throw std::runtime_error(std::string(object->cls->name) + "::operator % requires an integer literal");
                     }
                     int value = object->as<int>();

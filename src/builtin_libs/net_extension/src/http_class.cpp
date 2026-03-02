@@ -25,7 +25,7 @@ std::shared_ptr<andy::lang::structure> create_http_class(andy::lang::interpreter
 
         std::string_view json_text(reinterpret_cast<const char*>(response.raw_body.data()), response.raw_body.size());
 
-        andy::lang::lexer l("", json_text);
+        andy::lang::lexer l("", std::string(json_text));
         l.tokenize();
 
         andy::lang::parser p;
