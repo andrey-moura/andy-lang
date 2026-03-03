@@ -86,6 +86,13 @@ namespace andy
                 } else if constexpr(std::is_same_v<T, andy::lang::dictionary>) {
                     auto obj = andy::lang::object::instantiate(interpreter, interpreter->DictionaryClass, std::move(value));
                     return obj;
+                } else if constexpr(std::is_same_v<T, std::map<std::string, std::shared_ptr<andy::lang::object>>>) {
+                    andy::lang::dictionary dict;
+                    for(auto& [key, val] : value) {
+                        dict.emplace_back(to_object(interpreter, key), std::move(val));
+                    }
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->DictionaryClass, std::move(dict));
+                    return obj;
                 } else if constexpr(std::is_same_v<T, const char*> || std::is_same_v<T, char*> || std::is_same_v<T, std::string_view>) {
                     return to_object(interpreter, std::string(value));
                 }
