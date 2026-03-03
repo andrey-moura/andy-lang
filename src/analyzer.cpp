@@ -209,24 +209,29 @@ int main(int argc, char** argv) {
 
         auto start = std::chrono::high_resolution_clock::now();
 
-        struct declaration {
+        struct analyzer_declaration
+        {
             std::string_view name;
             std::string_view type;
             std::string_view file;
-            size_t line;
-            size_t column;
-            size_t offset;
+            andy::lang::lexer::token_position start;
+            andy::lang::lexer::token_position end;
+
+            std::vector<analyzer_declaration> functions;
+            std::vector<analyzer_declaration> variables;
         };
 
-        using reference = declaration;
+        struct analyzer_reference : public analyzer_declaration
+        {
+            analyzer_declaration declaration;
+        };
+
         using linter_warning = analyzer_error;
 
-        std::vector<declaration> declarations;
-        std::vector<reference> references;
+        std::vector<analyzer_reference> references;
         std::vector<analyzer_error> errors;
         std::vector<linter_warning> linter_warnings;
 
-        declarations.reserve(16);
         references.reserve(16);
         errors.reserve(16);
         linter_warnings.reserve(16);
@@ -262,7 +267,7 @@ int main(int argc, char** argv) {
         for(const auto& token : l.tokens()) {
             switch(token.type) {    
                 case andy::lang::lexer::token_type::token_preprocessor:
-                    tokens_to_write.push_back({ "preprocessor", token });
+                    tokens_to_write.push_back({ "keyword", token });
                 break;
             }
         }
@@ -281,7 +286,6 @@ int main(int argc, char** argv) {
             (void)e;
         }
 
-        std::vector<analyzer_token> tokens_declarations;
         size_t i = 0;
         std::function<void(const andy::lang::parser::ast_node& node)> inspect_node_for_errors;
         inspect_node_for_errors = [&](const andy::lang::parser::ast_node& node) {
@@ -325,54 +329,84 @@ int main(int argc, char** argv) {
                 // });
             }
         };
-        struct analyzer_class
-        {
-            std::string_view name;
-            std::vector<std::string_view> functions;
-            std::vector<std::string_view> variables;
-        };
         struct analyzer_context
         {
             std::string_view name;
 
-            std::vector<analyzer_class> classes;
-            std::vector<std::string_view> variables;
-            std::vector<std::string_view> functions;
+            std::vector<analyzer_declaration> classes;
+            std::vector<analyzer_declaration> variables;
+            std::vector<analyzer_declaration> functions;
         };
         std::vector<analyzer_context> stack;
         analyzer_context* current_context = nullptr;
         analyzer_context* global_context = nullptr;
-        auto push_context = [&]() {
+        analyzer_context* previous_context = nullptr;
+        auto push_context = [&](bool inherit_previous = false) {
             stack.push_back(analyzer_context{});
+            previous_context = stack.size() > 1 ? &stack[stack.size() - 2] : nullptr;
             current_context = &stack.back();
             global_context = &stack.front();
+
+            if(inherit_previous && previous_context) {
+                // Bring previous declarations to the current_context
+                for(const auto& var : previous_context->variables) {
+                    current_context->variables.push_back(var);
+                }
+
+                for(const auto& func : previous_context->functions) {
+                    current_context->functions.push_back(func);
+                }
+
+                for(const auto& cls : previous_context->classes) {
+                    current_context->classes.push_back(cls);
+                }
+            }
         };
         auto pop_context = [&]() {
             stack.pop_back();
             current_context = stack.empty() ? nullptr : &stack.back();
+            previous_context = stack.empty() ? nullptr : &stack.back();
             global_context = &stack.front();
         };
         push_context();
         for(const auto& var : interpreter.stack[0]->variables) {
             if(var.first.ends_with("?")) {
-                current_context->functions.push_back(var.first);
+                analyzer_declaration decl;
+                decl.name = var.first;
+                decl.type = "function";
+                current_context->functions.push_back(std::move(decl));
             } else {
-                current_context->variables.push_back(var.first);
+                analyzer_declaration decl;
+                decl.name = var.first;
+                decl.type = "variable";
+                current_context->variables.push_back(std::move(decl));
             }
         }
         for(const auto& func : interpreter.stack[0]->functions) {
-            current_context->functions.push_back(func.first);
+            analyzer_declaration decl;
+            decl.name = func.first;
+            decl.type = "function";
+            current_context->functions.push_back(std::move(decl));
         }
         for(const auto& cls : interpreter.stack[0]->classes) {
-            analyzer_class analyzer_cls;
-            analyzer_cls.name = cls.first;
-            for(const auto& func : cls.second->functions) {
-                analyzer_cls.functions.push_back(func.first);
-            }
+            analyzer_declaration cls_decl;
+            cls_decl.name = cls.first;
+            cls_decl.type = "class";
+
             for(const auto& var : cls.second->variables) {
-                analyzer_cls.variables.push_back(var.first);
+                if(var.first.ends_with("?")) {
+                    analyzer_declaration decl;
+                    decl.name = var.first;
+                    decl.type = "function";
+                    cls_decl.functions.push_back(std::move(decl));
+                } else {
+                    analyzer_declaration decl;
+                    decl.name = var.first;
+                    decl.type = "variable";
+                    cls_decl.variables.push_back(std::move(decl));
+                }
             }
-            current_context->classes.push_back(analyzer_cls);
+            current_context->classes.push_back(cls_decl);
         }
         std::function<void(const andy::lang::parser::ast_node& node)> inspect_node;
         std::function<void(const andy::lang::parser::ast_node& node)> switch_type;
@@ -389,7 +423,7 @@ int main(int argc, char** argv) {
                             current_context->functions.push_back(func);
                         }
                         for(const auto& var : cls.variables) {
-                            if(var.ends_with("?")) {
+                            if(var.name.ends_with("?")) {
                                 current_context->functions.push_back(var);
                             } else {
                                 current_context->variables.push_back(var);
@@ -421,8 +455,9 @@ int main(int argc, char** argv) {
                     std::string_view class_name = declname_node->token().content;
                     tokens_to_write.push_back({ "class", declname_node->token() });
 
-                    analyzer_class cls;
+                    analyzer_declaration cls;
                     cls.name = class_name;
+                    cls.type = "class";
                     current_context->classes.push_back(cls);
                     push_context();
                     for(const auto& child : node.context()->childrens()) {
@@ -431,13 +466,88 @@ int main(int argc, char** argv) {
                     pop_context();
                 }
                 break;
+                case andy::lang::parser::ast_node_type::ast_node_fn_decl:
+                {
+                    auto* declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                    std::string_view function_name = declname_node->token().content;
+
+                    tokens_to_write.push_back({ "function", declname_node->token() });
+
+                    analyzer_declaration decl;
+                    decl.name = function_name;
+                    decl.type = "function";
+                    decl.file = *declname_node->token().file_name;
+                    decl.start = declname_node->token().start;
+                    decl.end = declname_node->token().end;
+
+                    current_context->functions.push_back(std::move(decl));
+                    push_context();
+
+                    auto fn_params = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+                    if(fn_params) {
+                        for(const auto& param : fn_params->childrens()) {
+                            if(param.type() == andy::lang::parser::ast_node_type::ast_node_declname) {
+                                analyzer_declaration decl;
+                                decl.name = param.token().content;
+                                decl.type = "variable";
+                                decl.file = *param.token().file_name;
+                                decl.start = param.token().start;
+                                decl.end = param.token().end;
+
+                                tokens_to_write.push_back({ "variable", param.token() });
+                                current_context->variables.push_back(std::move(decl));
+                            }
+                        }
+                    }
+                    for(const auto& child : node.context()->childrens()) {
+                        inspect_node(child);
+                    }
+                    pop_context();
+                }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_fn_call: {
+                    auto* declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                    std::string_view function_name = declname_node->token().content;
+                    if(function_name == "=") {
+                        tokens_to_write.push_back({ "function", declname_node->token() });
+                    } else {
+                        inspect_node(*declname_node);
+                    }
+                    auto* fn_params_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
+                    if(fn_params_node) {
+                        for(const auto& param : fn_params_node->childrens()) {
+                            inspect_node(param);
+                        }
+                    }
+                    auto* fn_object_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_object);
+                    if(fn_object_node) {
+                        inspect_node(fn_object_node->childrens().front());
+                    }
+                    auto* yield_block_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
+                    if(yield_block_node) {
+                        const auto& token = yield_block_node->token();
+                        tokens_to_write.push_back({ "keyword", token });
+                        push_context();
+                        for(const auto& child : yield_block_node->childrens()) {
+                            inspect_node(child);
+                        }
+                        pop_context();
+                    }
+                }
+                break;
                 case andy::lang::parser::ast_node_type::ast_node_vardecl:
                 {
                     auto* declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
                     std::string_view variable_name = declname_node->token().content;
                     tokens_to_write.push_back({ "variable", declname_node->token() });
-                    
-                    current_context->variables.push_back(variable_name);
+
+                    analyzer_declaration decl;
+                    decl.name = variable_name;
+                    decl.type = "variable";
+                    decl.file = *declname_node->token().file_name;
+                    decl.start = declname_node->token().start;
+                    decl.end = declname_node->token().end;
+                    current_context->variables.push_back(std::move(decl));
                 }
                 break;
                 case andy::lang::parser::ast_node_type::ast_node_declname:
@@ -445,44 +555,51 @@ int main(int argc, char** argv) {
                     std::string_view name = node.token().content;
 
                     push_context_from_node_object_if_any(node);
-
-                    if(std::find_if(current_context->classes.begin(), current_context->classes.end(), [&](const analyzer_class& cls) {
-                        return cls.name == name; }) != current_context->classes.end()) {
-                        tokens_to_write.push_back({ "class", node.token() });
-                        break;
-                    } else if(std::find(current_context->variables.begin(), current_context->variables.end(), name) != current_context->variables.end()) {
-                        tokens_to_write.push_back({ "variable", node.token() });
-                        break;
-                    } else if(std::find(current_context->functions.begin(), current_context->functions.end(), name) != current_context->functions.end()) {
-                        tokens_to_write.push_back({ "function", node.token() });
-                        break;
-                    }
-                    // Fallback to global context
-                    if(stack.size() > 1) {
-                        const auto& global_context = stack.front();
-                        if(std::find_if(global_context.classes.begin(), global_context.classes.end(), [&](const analyzer_class& cls) {
-                            return cls.name == name; }) != global_context.classes.end()) {
-                            tokens_to_write.push_back({ "class", node.token() });
-                            break;
-                        } else if(std::find(global_context.variables.begin(), global_context.variables.end(), name) != global_context.variables.end()) {
-                            tokens_to_write.push_back({ "variable", node.token() });
-                            break;
-                        } else if(std::find(global_context.functions.begin(), global_context.functions.end(), name) != global_context.functions.end()) {
-                            tokens_to_write.push_back({ "function", node.token() });
-                            break;
+                    auto search_for_name_in_context = [&](analyzer_context* context) {
+                        auto cls_it = std::find_if(context->classes.begin(), context->classes.end(), [&](const analyzer_declaration& cls) { return cls.name == name; });
+                        if (cls_it != context->classes.end()) {
+                            return &*cls_it;
                         }
+                        auto func_it = std::find_if(context->functions.begin(), context->functions.end(), [&](const analyzer_declaration& func) { return func.name == name; });
+                        if (func_it != context->functions.end()) {
+                            return &*func_it;
+                        }
+                        auto var_it = std::find_if(context->variables.begin(), context->variables.end(), [&](const analyzer_declaration& var) { return var.name == name; });
+                        if (var_it != context->variables.end()) {
+                            return &*var_it;
+                        }
+
+                        return (analyzer_declaration*)nullptr;
+                    };
+
+                    analyzer_declaration* type = search_for_name_in_context(current_context);
+
+                    search_for_name_in_context(current_context);
+
+                    if(type == nullptr && current_context != global_context) {
+                        type = search_for_name_in_context(global_context);
                     }
-                    analyzer_error error;
-                    error.type = "undefined-symbol";
-                    error.message = "Undefined symbol '" + std::string(name) + "'";
-                    error.file_name = *node.token().file_name;
-                    error.start = node.token().start;
-                    error.end = node.token().end;
-                    errors.push_back(error);
-                }
-                break;
-                case andy::lang::parser::ast_node_type::ast_node_fn_call: {
-                    inspect_node(*node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname));
+
+                    if(type == nullptr) {
+                        analyzer_error error;
+                        error.type = "undefined-symbol";
+                        error.message = "Undefined symbol '" + std::string(name) + "'";
+                        error.file_name = *node.token().file_name;
+                        error.start = node.token().start;
+                        error.end = node.token().end;
+                        errors.push_back(std::move(error));
+                    } else {
+                        analyzer_reference reference;
+                        reference.name = name;
+                        reference.start = node.token().start;
+                        reference.end = node.token().end;
+                        reference.file = *node.token().file_name;
+                        reference.type = type->type;
+                        reference.declaration = *type;
+                        references.push_back(std::move(reference));
+
+                        tokens_to_write.push_back({ type->type, node.token()});
+                    }
                 }
                 break;
                 case andy::lang::parser::ast_node_type::ast_node_conditional:
@@ -490,14 +607,21 @@ int main(int argc, char** argv) {
                     auto* condition = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_condition);
                     auto* condition_child = condition->childrens().data();
                     inspect_node(*condition_child);
-                    push_context();
+                    push_context(true);
                     for(const auto& child : node.context()->childrens()) {
                         inspect_node(child);
                     }
                     pop_context();
                     for(const auto& child : node.childrens()) {
-                        if(child.type() == andy::lang::parser::ast_node_type::ast_node_conditional) {
-                            inspect_node(child);
+                        switch(child.type()) {
+                            case andy::lang::parser::ast_node_type::ast_node_conditional:
+                                inspect_node(child);
+                            break;
+                            case andy::lang::parser::ast_node_type::ast_node_else:
+                                for(const auto& else_child : child.context()->childrens()) {
+                                    inspect_node(else_child);
+                                 }
+                            break;
                         }
                     }
                 }
@@ -507,10 +631,6 @@ int main(int argc, char** argv) {
 
         inspect_node(root_node);
 
-        // for(const auto& tokens_declarations : tokens_declarations) {
-        //     tokens_to_write.push_back(tokens_declarations);
-        // }
-
         for(size_t i = 0; i < l.tokens().size(); ++i) {
             const auto& token = l.tokens()[i];
             switch(token.type) {
@@ -519,12 +639,6 @@ int main(int argc, char** argv) {
                 break;
                 case andy::lang::lexer::token_type::token_keyword:
                     tokens_to_write.push_back({ "keyword", token });
-                break;
-                case andy::lang::lexer::token_type::token_identifier: {
-                    if(token.content == "super") {
-                        tokens_to_write.push_back({ "keyword", token });
-                    }
-                }
                 break;
                 case andy::lang::lexer::token_type::token_literal:
                     switch(token.kind) {
@@ -591,109 +705,6 @@ int main(int argc, char** argv) {
 
         buffer += "\n\t],\n";
 
-        // size_t declaration_it = 0;
-        // std::vector<std::string_view> class_names;
-        // std::vector<std::string_view> variable_names;
-        // std::vector<std::string_view> function_names;
-
-        // std::function<void(const andy::lang::parser::ast_node& node)> inspect_node_for_declarations;
-        // inspect_node_for_declarations = [&](const andy::lang::parser::ast_node& node) {
-        //     switch(node.type()) {
-        //         case andy::lang::parser::ast_node_type::ast_node_classdecl:
-        //         case andy::lang::parser::ast_node_type::ast_node_fn_decl:
-        //         case andy::lang::parser::ast_node_type::ast_node_vardecl: {
-        //             std::string_view decname = node.decname();
-        //             std::string_view decl_type = node.decl_type();
-        //             const andy::lang::lexer::token& decname_token = *node.child_token_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-
-        //             declarations.push_back(declaration{
-        //                 decname_token.content,
-        //                 decl_type,
-        //                 decname_token.m_file_name,
-        //                 decname_token.start.line,
-        //                 decname_token.start.column,
-        //                 decname_token.start.offset
-        //             });
-
-        //             if(auto context = node.context()) {
-        //                 for(const auto& child : context->childrens()) {
-        //                     inspect_node_for_declarations(child);
-        //                 }
-        //             }
-        //             break;
-        //         }
-        //     }
-        // };
-
-  
-
-        // std::function<void(const andy::lang::parser::ast_node& node)> inspect_node_for_references;
-        // inspect_node_for_references = [&](const andy::lang::parser::ast_node& node) {
-        //     std::vector<declaration> current_declarations;
-        //     if(node.type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
-        //         const andy::lang::parser::ast_node* fn_declname_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
-        //         const andy::lang::lexer::token& fn_declname_token = fn_declname_node->token();
-        //         std::string_view fn_declname = fn_declname_token.content;
-
-        //         auto it = std::find_if(declarations.begin(), declarations.end(), [&](const declaration& d) {
-        //             return d.name == fn_declname;
-        //         });
-
-        //         if(it != declarations.end()) {
-        //             references.push_back(reference{
-        //                 it->name,
-        //                 it->type,
-        //                 it->file,
-        //                 it->line,
-        //                 it->column,
-        //                 it->offset
-        //             });
-        //         }
-        //     }
-        // };
-
-        // // First we have to find all the declarations
-        // for(const auto& node : root_node.childrens()) {
-        //     inspect_node_for_declarations(node);
-
-        //     // Also uses the loop to find erros
-        //     inspect_node_for_errors(node);
-
-        //     // And references
-        //     inspect_node_for_references(node);
-        // }
-
-        // // Token level linting/references
-        // for(size_t i = 0; i < l.tokens().size(); i++) {
-        //     const auto& token = l.tokens()[i];
-            //std::string_view content = token.content;
-
-            // if(token.type == andy::lang::lexer::token_type::token_identifier) {
-            //     if(auto it = std::find_if(declarations.begin(), declarations.end(), [&](const declaration& d) {
-            //         return d.name == content;
-            //     }); it != declarations.end()) {
-            //         references.push_back({
-            //             it->name,
-            //             it->type,
-            //             token.m_file_name,
-            //             token.start.line,
-            //             token.start.column,
-            //             token.start.offset
-            //         });
-            //     } else if(auto it = std::find_if(interpreter.classes.begin(), interpreter.classes.end(), [&](const std::shared_ptr<andy::lang::structure>& cls) {
-            //         return cls->name == content;
-            //     }); it != interpreter.classes.end()) {
-            //         references.push_back({
-            //             (*it)->name,
-            //             "class",
-            //             token.m_file_name,
-            //             token.start.line,
-            //             token.start.column,
-            //             token.start.offset
-            //         });
-            //     }
-            // }
-
             // size_t offset = token.start.offset;
             // size_t end_offset = token.end.offset;
             // std::string_view source = l.source(token);
@@ -736,56 +747,59 @@ int main(int argc, char** argv) {
         //     }
         // }
 
-        // buffer += "\t\"declarations\": [";
+        buffer += "\t\"references\": [";
 
-        // for(size_t i = 0; i < declarations.size(); i++) {
-        //     const auto& dec = declarations[i];
-        //     if(i) {
-        //         buffer += ",";
-        //     }
-        //     buffer += "\n\t\t{\n\t\t\t\"type\": ";
-        //     buffer += "\"";
-        //     buffer += dec.type;
-        //     buffer += "\",\n\t\t\t\"name\": \"";
-        //     buffer += dec.name;
-        //     buffer += "\",\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
-        //     write_path(dec.file);
-        //     buffer += "\",\n";
-        //     buffer += "\t\t\t\t\"line\": ";
-        //     buffer += std::to_string(dec.line);
-        //     buffer += ",\n\t\t\t\t\"column\": ";
-        //     buffer += std::to_string(dec.column);
-        //     buffer += ",\n\t\t\t\t\"offset\": ";
-        //     buffer += std::to_string(dec.offset);
-        //     buffer += "\n\t\t\t}";
-        //     buffer += "\n\t\t}";
-        // }
-        
-        // buffer += "\n\t],\n\t\"references\": [";
+        for(size_t i = 0; i < references.size(); i++) {
+            const auto& reference = references[i];
+            if(i) {
+                buffer += ",";
+            }
 
-        // for(size_t i = 0; i < references.size(); i++) {
-        //     const auto& reference = references[i];
-        //     if(i) {
-        //         buffer += ",";
-        //     }
+            buffer += "\n\t\t{\n\t\t\t\"type\": \"";
+            buffer += reference.type;
+            buffer += "\",\n\t\t\t\"name\": \"";
+            buffer += reference.name;
+            buffer += "\",\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
+            write_path(reference.file);
+            buffer += "\",\n\t\t\t\t\"start\": {\n\t\t\t\t\t\"line\": ";
+            buffer += std::to_string(reference.start.line);
+            buffer += ",\n\t\t\t\t\t\"column\": ";
+            buffer += std::to_string(reference.start.column);
+            buffer += ",\n\t\t\t\t\t\"offset\": ";
+            buffer += std::to_string(reference.start.offset);
+            buffer += "\n\t\t\t\t},\n\t\t\t\t\"end\": {\n\t\t\t\t\t\"line\": ";
+            buffer += std::to_string(reference.end.line);
+            buffer += ",\n\t\t\t\t\t\"column\": ";
+            buffer += std::to_string(reference.end.column);
+            buffer += ",\n\t\t\t\t\t\"offset\": ";
+            buffer += std::to_string(reference.end.offset);
+            buffer += "\n\t\t\t\t}";
+            buffer += "\n\t\t\t},";
+            buffer += "\n\t\t\t\"declaration\": {";
+            buffer += "\n\t\t\t\t\"type\": \"";
+            buffer += reference.declaration.type;
+            buffer += "\",\n\t\t\t\t\"name\": \"";
+            buffer += reference.declaration.name;
+            buffer += "\",\n\t\t\t\t\"location\": {\n\t\t\t\t\t\"file\": \"";
+            write_path(reference.declaration.file);
+            buffer += "\",\n\t\t\t\t\t\"start\": {\n\t\t\t\t\t\t\"line\": ";
+            buffer += std::to_string(reference.declaration.start.line);
+            buffer += ",\n\t\t\t\t\t\t\"column\": ";
+            buffer += std::to_string(reference.declaration.start.column);
+            buffer += ",\n\t\t\t\t\t\t\"offset\": ";
+            buffer += std::to_string(reference.declaration.start.offset);
+            buffer += "\n\t\t\t\t\t},\n\t\t\t\t\t\"end\": {\n\t\t\t\t\t\t\"line\": ";
+            buffer += std::to_string(reference.declaration.end.line);
+            buffer += ",\n\t\t\t\t\t\t\"column\": ";
+            buffer += std::to_string(reference.declaration.end.column);
+            buffer += ",\n\t\t\t\t\t\t\"offset\": ";
+            buffer += std::to_string(reference.declaration.end.offset);
+            buffer += "\n\t\t\t\t\t}\n\t\t\t\t}";
+            buffer += "\n\t\t\t}";
+            buffer += "\n\t\t}";
+        }
 
-        //     buffer += "\n\t\t{\n\t\t\t\"type\": \"";
-        //     buffer += reference.type;
-        //     buffer += "\",\n\t\t\t\"name\": \"";
-        //     buffer += reference.name;
-        //     buffer += "\",\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
-        //     write_path(reference.file);
-        //     buffer += "\",\n\t\t\t\t\"line\": ";
-        //     buffer += std::to_string(reference.line);
-        //     buffer += ",\n\t\t\t\t\"column\": ";
-        //     buffer += std::to_string(reference.column);
-        //     buffer += ",\n\t\t\t\t\"offset\": ";
-        //     buffer += std::to_string(reference.offset);
-        //     buffer += "\n\t\t\t}";
-        //     buffer += "\n\t\t}";
-        // }
-
-        // buffer +="\n\t],\n";
+        buffer +="\n\t],\n";
 
         buffer += "\t\"errors\": [\n";
 
