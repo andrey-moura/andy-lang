@@ -128,6 +128,7 @@ namespace andy
             void load_extension(andy::lang::extension* extension);
 
             std::shared_ptr<andy::lang::interpreter_context> current_context = nullptr;
+            std::shared_ptr<andy::lang::interpreter_context> previous_context = nullptr;
             std::shared_ptr<andy::lang::interpreter_context> global_context = nullptr;
 
             /// @brief The call stack.

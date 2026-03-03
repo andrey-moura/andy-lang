@@ -412,6 +412,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
             push_context();
         }
 
+        current_context->caller_node = &source_code;
+
         // Store the call-site lexical context on the function's execution context so that
         // execute_yield can use it as the lexical_parent for the DO...END block.
         current_context->given_block_lexical_context = call_site_lexical_ctx;
@@ -721,6 +723,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
                 nullptr
             };
             push_context(current_context->self ? current_context->self->shared_from_this() : nullptr);
+            current_context->caller_node = &source_code;
             auto ret = call(__call);
             pop_context();
             if(ret == nullptr) {
@@ -1256,5 +1259,6 @@ void andy::lang::interpreter::update_current_context()
     }
 
     global_context = stack.front();
+    previous_context = current_context;
     current_context = stack.back();
 }
