@@ -7,22 +7,31 @@ std::shared_ptr<andy::lang::structure> create_integer_class(andy::lang::interpre
 {
     std::shared_ptr<andy::lang::structure> IntegerClass = std::make_shared<andy::lang::structure>("Integer");
 
-        IntegerClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            int i = object->as<int>();
-            
-            if(i == 0) {
-                return std::make_shared<andy::lang::object>(interpreter->FalseClass);
-            }
+    IntegerClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        int i = object->as<int>();
+        
+        if(i == 0) {
+            return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+        }
 
-            return std::make_shared<andy::lang::object>(interpreter->TrueClass);
-        });
+        return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    });
 
     IntegerClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            int value = object->as<int>();
+        int value = object->as<int>();
 
-            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(std::to_string(value)));
-        });
+        return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(std::to_string(value)));
+    });
 
+    IntegerClass->instance_functions["positive?"] = std::make_shared<andy::lang::function>("positive?", andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        int value = object->as<int>();
+
+        if(value == 0) {
+            return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+        }
+
+        return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    });
 
     andy::lang::add_operators<int>(IntegerClass, interpreter);
 
