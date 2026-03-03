@@ -435,9 +435,8 @@ void andy::lang::lexer::read_next_token()
                 read();
             }
 
-            discard();
-
             push_token(token_type::token_literal, token_kind::token_string);
+            discard();
             return;
         break;
     }
