@@ -405,14 +405,53 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
 
         if(!method_to_call) {
             auto it = global_context->functions.find(function_name);
+
             if(it != global_context->functions.end()) {
                 method_to_call = it->second.get();
             }
+
             if(!method_to_call) {
                 if(current_context->self && !is_new) {
                     throw std::runtime_error("function '" + std::string(function_name) + "' not found in object of class " + std::string(current_context->cls->name));
                 }
-                throw std::runtime_error("function '" + std::string(function_name) + "' not found in current context");
+            }
+
+            if(!method_to_call) {
+                // Last chance
+                for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
+                    auto it = ctx->functions.find("missing");
+                    if(it != ctx->functions.end()) {
+                        method_to_call = it->second.get();
+                        break;
+                    }
+                }
+
+                if(!method_to_call && current_context->cls) {
+                    auto it = current_context->cls->functions.find("missing");
+                    if(it != current_context->cls->functions.end()) {
+                        method_to_call = it->second.get();
+                    }
+                }
+
+                if(!method_to_call) {
+                    auto it = global_context->functions.find("missing");
+                    if(it != global_context->functions.end()) {
+                        method_to_call = it->second.get();
+                    }
+                }
+
+                if(!method_to_call) {
+                    throw std::runtime_error("function '" + std::string(function_name) + "' not found in current context");
+                }
+
+                auto previous_positional_params = std::move(positional_params);
+                positional_params = std::vector<std::shared_ptr<andy::lang::object>>();
+
+                auto function_name_obj = andy::lang::api::to_object(this, function_name);
+
+                positional_params.push_back(function_name_obj);
+                positional_params.push_back(andy::lang::api::to_object(this, std::move(previous_positional_params)));
+                positional_params.push_back(andy::lang::api::to_object(this, std::move(named_params)));
             }
         }
 

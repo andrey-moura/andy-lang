@@ -1,0 +1,13 @@
+#include 'std/tests'
+
+describe 'missing' do
+  context 'when function defined in the current scope' do
+    it 'should invoke the function' do
+      fn missing(name, aargs, kwargs)
+        name
+      end
+
+      expect(non_existent_function).to eq('non_existent_function')
+    end
+  end
+end
