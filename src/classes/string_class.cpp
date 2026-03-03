@@ -1,5 +1,6 @@
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
+#include <andy/lang/api.hpp>
 
 std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpreter* interpreter)
 {
@@ -130,17 +131,22 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
         });
 
     StringClass->instance_functions["starts_with?"] = std::make_shared<andy::lang::function>("starts_with?", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::string& value = object->as<std::string>();
-            const std::string& what = params[0]->as<std::string>();
+        std::string& value = object->as<std::string>();
+        const std::string& what = params[0]->as<std::string>();
 
-            bool starts = value.starts_with(what);
+        bool starts = value.starts_with(what);
 
-            if(starts) {
-                return std::make_shared<andy::lang::object>(interpreter->TrueClass);
-            }
+        return andy::lang::api::to_object(interpreter, starts);
+    });
 
-            return std::make_shared<andy::lang::object>(interpreter->FalseClass);
-        });
+    StringClass->instance_functions["ends_with?"] = std::make_shared<andy::lang::function>("ends_with?", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"what"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        std::string& value = object->as<std::string>();
+        const std::string& what = params[0]->as<std::string>();
+
+        bool ends = value.ends_with(what);
+
+        return andy::lang::api::to_object(interpreter, ends);
+    });
 
     StringClass->instance_functions["=="] = std::make_shared<andy::lang::function>("==", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"other"}, [interpreter, StringClass](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             const std::string& value = object->as<std::string>();
