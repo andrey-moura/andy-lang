@@ -350,6 +350,7 @@ void andy::lang::lexer::read_next_token()
                     read();
                 }
                 push_token(token_type::token_literal, token_kind::token_string);
+                m_tokens.back().string_literal = m_tokens.back().content;
                 return;
             }
         }
@@ -436,6 +437,7 @@ void andy::lang::lexer::read_next_token()
             }
 
             push_token(token_type::token_literal, token_kind::token_string);
+            m_tokens.back().string_literal = m_tokens.back().content;
             discard();
             return;
         break;

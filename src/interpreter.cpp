@@ -251,7 +251,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(c
         }
         break;
         case lexer::token_kind::token_string: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(source_code.token().content)));
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, source_code.token().string_literal);
             return obj;
         }
         break;
