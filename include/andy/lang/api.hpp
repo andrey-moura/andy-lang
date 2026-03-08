@@ -16,7 +16,7 @@ namespace andy
             /// @brief Executes the code in a file and return the result.
             /// @param path The path to the source code.
             /// @return Returns a shared pointer to the object.
-            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path);
+            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path, int argc = 0, char** argv = nullptr);
             /// @brief Convert or cast the object to a specific type.
             /// @tparam T The type to convert to.
             /// @param interpreter The interpreter.

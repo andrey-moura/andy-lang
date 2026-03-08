@@ -13,7 +13,7 @@ namespace andy
     {
         namespace api
         {
-            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path)
+            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path, int argc, char** argv)
             {
                 andy::lang::parser::ast_node root_node;
 
@@ -34,6 +34,11 @@ namespace andy
                 create_builtin_libs();
         
                 andy::lang::interpreter interpreter;
+
+                for(int i = 0; i < argc; i++) {
+                    interpreter.args.push_back(argv[i]);
+                }
+
                 interpreter.input_file_path = path;
                 std::shared_ptr<andy::lang::object> ret = interpreter.execute_all(root_node);
         

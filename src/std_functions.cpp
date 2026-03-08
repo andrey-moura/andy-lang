@@ -106,4 +106,7 @@ void create_std_functions(andy::lang::interpreter* interpreter)
         }
         return andy::lang::api::to_object(interpreter, *file_name);
     });
+    interpreter->global_context->functions["__argv__"] = std::make_shared<andy::lang::function>("__argv__", andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        return andy::lang::api::to_object(interpreter, interpreter->args);
+    });
 }

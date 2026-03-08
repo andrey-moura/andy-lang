@@ -133,8 +133,8 @@ namespace andy
 
             /// @brief The call stack.
             std::vector<std::shared_ptr<interpreter_context>> stack;
+            std::vector<std::string_view> args;
         protected:
-
             std::vector<andy::lang::extension*> extensions;
 
             bool is_global_context() const
