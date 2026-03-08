@@ -433,6 +433,7 @@ int main(int argc, char** argv) {
                     }
                 }
                 inspect_node(child);
+                pop_context();
             }
         };
         auto pop_context_from_node_object_if_any = [&](const andy::lang::parser::ast_node& node) {
@@ -527,7 +528,7 @@ int main(int argc, char** argv) {
                     if(yield_block_node) {
                         const auto& token = yield_block_node->token();
                         tokens_to_write.push_back({ "keyword", token });
-                        push_context();
+                        push_context(true);
                         for(const auto& child : yield_block_node->childrens()) {
                             inspect_node(child);
                         }
@@ -548,6 +549,11 @@ int main(int argc, char** argv) {
                     decl.start = declname_node->token().start;
                     decl.end = declname_node->token().end;
                     current_context->variables.push_back(std::move(decl));
+
+                    auto* value_node = node.childrens().size() >= 3 ? &node.childrens()[2] : nullptr;
+                    if(value_node) {
+                        inspect_node(*value_node);
+                    }
                 }
                 break;
                 case andy::lang::parser::ast_node_type::ast_node_declname:
@@ -625,6 +631,42 @@ int main(int argc, char** argv) {
                         }
                     }
                 }
+                break;
+                case andy::lang::parser::ast_node_type::ast_node_foreach:
+                    {
+                        push_context(true);
+
+                        tokens_to_write.push_back({ "keyword", node.child_from_type(andy::lang::parser::ast_node_type::ast_node_decltype)->token() });
+                        auto* vardecl = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_vardecl);
+                        if(vardecl) {
+                            auto* declname_node = vardecl->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+                            if(declname_node) {
+                                std::string_view variable_name = declname_node->token().content;
+
+                                analyzer_declaration decl;
+                                decl.name = variable_name;
+                                decl.type = "variable";
+                                decl.file = *declname_node->token().file_name;
+                                decl.start = declname_node->token().start;
+                                decl.end = declname_node->token().end;
+
+                                tokens_to_write.push_back({ "variable", declname_node->token() });
+                                current_context->variables.push_back(std::move(decl));
+                            }
+                        }
+                        auto* value_node = node.child_from_type(andy::lang::parser::ast_node_type::ast_node_valuedecl);
+                        if(value_node) {
+                            inspect_node(value_node->childrens().front());
+                            tokens_to_write.push_back({ "keyword", value_node->childrens().back().token() });
+                        }
+                        for(const auto& child : node.context()->childrens()) {
+                            inspect_node(child);
+                        }
+                        pop_context();
+                    }
+                break;
+                default:
+                    // std::cerr << "unhandled node type " << (int)node.type() << std::endl;
                 break;
             }
         };
