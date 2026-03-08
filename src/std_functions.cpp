@@ -4,9 +4,12 @@
 
 #include <iostream>
 #include <random>
+#include <filesystem>
+#include <fstream>
 
 #include <andy/lang/lang.hpp>
 #include <andy/lang/api.hpp>
+#include <andy/lang/preprocessor.hpp>
 #include <andy/lang/interpreter.hpp>
 #include <andy/lang/extension.hpp>
 
@@ -82,6 +85,52 @@ void create_std_functions(andy::lang::interpreter* interpreter)
 
         return nullptr;
     });
+
+    interpreter->global_context->functions["require"] = std::make_shared<andy::lang::function>("require",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"module"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        // yep, the code is kept in memory until the program ends
+
+        std::string file_path = params[0]->as<std::string>();
+
+        std::ifstream f(file_path);
+        if(!f.is_open()) {
+            throw std::runtime_error("Cannot open file: " + file_path);
+        }
+
+        size_t size = 0;
+        f.seekg(0, std::ios::end);
+        size = f.tellg();
+        f.seekg(0);
+
+        std::string code;
+        code.resize(size);
+        f.read(code.data(), size);
+
+        andy::lang::lexer lexer(std::move(file_path), std::move(code));
+        lexer.tokenize();
+
+        andy::lang::preprocessor preprocessor;
+        preprocessor.process(lexer.path(), lexer);
+
+        andy::lang::parser parser;
+        auto* ast = new andy::lang::parser::ast_node(std::move(parser.parse_all(lexer)));
+
+        auto ret = interpreter->execute_all(*ast);
+
+        for(auto& cls : interpreter->current_context->classes) {
+            interpreter->previous_context->classes[cls.first] = cls.second;
+        }
+
+        for(auto& fn : interpreter->current_context->functions) {
+            interpreter->previous_context->functions[fn.first] = fn.second;
+        }
+
+        for(auto& var : interpreter->current_context->variables) {
+            interpreter->previous_context->variables[var.first] = var.second;
+        }
+
+        return ret;
+    });
+
     interpreter->global_context->functions["__file__"] = std::make_shared<andy::lang::function>("__file__",andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         auto current_context = interpreter->current_context;
         auto caller_node = current_context->caller_node;

@@ -1,0 +1,37 @@
+#include 'std/tests'
+
+describe 'std functions' do
+  describe '__file__' do
+    it 'should evaluate to the current file path' do
+      expect(__file__).to ends_with('andy-lang/tests/high-level/std_functions_spec.andy')
+    end
+  end
+  describe '__dir__' do
+    it 'should evaluate to the current file directory' do
+      expect(__dir__).to ends_with('andy-lang/tests/high-level')
+    end
+  end
+  describe 'require' do
+    fn fixture(name)
+      var path = Path.new(__dir__)
+      path /= 'fixtures'
+      path /= "${name}.andy"
+    end
+    context 'when a file is required' do
+      it 'should evaluate the expression' do
+        var path = Path.new(__dir__)
+        path /= 'fixtures'
+        path /= '1.andy'
+        expect(require fixture('1')).to eq 1
+      end
+      it 'should load definitions' do
+        require fixture('fn')
+
+        expect(test).to eq '123'
+      end
+    end
+  end
+end
+
+// TODO list in order
+// 7. Make tests.andy accpet the file path as an argument and filter included files
