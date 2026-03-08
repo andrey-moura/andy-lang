@@ -74,14 +74,11 @@ void create_std_functions(andy::lang::interpreter* interpreter)
     });
 
     interpreter->global_context->functions["import"] = std::make_shared<andy::lang::function>("import",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"module"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        auto current_context = interpreter->current_context;
-        interpreter->pop_context();
-
         std::string module = params[0]->as<std::string>();
-        andy::lang::extension::import(interpreter, module);
 
-        interpreter->stack.push_back(current_context);
-        interpreter->update_current_context();
+        interpreter->stack.push_back(interpreter->global_context);
+        andy::lang::extension::import(interpreter, module);
+        interpreter->stack.pop_back();
 
         return nullptr;
     });
