@@ -113,7 +113,18 @@ namespace andy
                         std::move(value)
                     );
                     return function_object;
-                }
+                } else if constexpr(std::is_same_v<T, std::filesystem::path>) {
+                    auto obj = andy::lang::object::create(interpreter, interpreter->PathClass, std::move(value));
+                    obj->initialize(interpreter);
+                    return obj;
+                } else if constexpr(std::is_same_v<T, std::vector<std::string_view>>) {
+                    std::vector<std::shared_ptr<andy::lang::object>> arr;
+                    for(auto& str : value) {
+                        arr.push_back(to_object(interpreter, str));
+                    }
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->ArrayClass, std::move(arr));
+                    return obj;
+                 }
                 else {
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
                 }
