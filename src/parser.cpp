@@ -897,6 +897,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_foreach(andy::lan
 
     ast_node value_node(ast_node_type::ast_node_valuedecl);
     value_node.add_child(std::move(array_node));
+    value_node.add_child(ast_node(std::move(in_token), ast_node_type::ast_node_decltype));
     foreach_node.add_child(std::move(value_node));
 
     ast_node context_node = extract_context(lexer, *this);
