@@ -106,6 +106,33 @@ void create_std_functions(andy::lang::interpreter* interpreter)
         }
         return andy::lang::api::to_object(interpreter, *file_name);
     });
+
+    interpreter->global_context->functions["__dir__"] = std::make_shared<andy::lang::function>("__dir__",andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        auto current_context = interpreter->current_context;
+        auto caller_node = current_context->caller_node;
+        if(caller_node == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<interactive>");
+        }
+        const andy::lang::parser::ast_node* ast_node_declname = nullptr;
+        if(caller_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
+            ast_node_declname = caller_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+        } else if (caller_node->type() == andy::lang::parser::ast_node_type::ast_node_declname) {
+            ast_node_declname = caller_node;
+        }
+        if(ast_node_declname == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<unamed>");
+        }
+        auto file_name = ast_node_declname->token().file_name;
+        if(file_name == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<unknown>");
+        }
+        std::filesystem::path path(*file_name);
+        if(path.has_parent_path()) {
+            return andy::lang::api::to_object(interpreter, path.parent_path().string());
+        }
+        return andy::lang::api::to_object(interpreter, ".");
+    });
+
     interpreter->global_context->functions["__argv__"] = std::make_shared<andy::lang::function>("__argv__", andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         return andy::lang::api::to_object(interpreter, interpreter->args);
     });
