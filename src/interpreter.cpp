@@ -338,17 +338,22 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         if(positional_params.size() != 1) {
             throw std::runtime_error("assignment operator '=' requires exactly one parameter");
         }
-        // If the parameter is only used once (on the right side of the assignment only),
-        // we can move it instead of copying it.
-        auto use_count = positional_params[0].use_count();
-        if(use_count == 1) {
-            *current_context->self = std::move(*positional_params[0].get());
+        if(positional_params[0] == nullptr) {
+            *current_context->self = std::move(*andy::lang::object::instantiate(this, NullClass).get());
         } else {
-            auto copy = positional_params[0]->native_copy();
-            if(!copy) {
-                throw std::runtime_error("object of class " + std::string(positional_params[0]->cls->name) + " cannot be assigned because it does not support copying");
+            // If the parameter is only used once (on the right side of the assignment only),
+            // we can move it instead of copying it.
+            auto use_count = positional_params[0].use_count();
+            if(use_count == 1) {
+                *current_context->self = std::move(*positional_params[0].get());
+            } else {
+                auto copy = positional_params[0]->native_copy();
+                if(!copy) {
+                    throw std::runtime_error("object of class " + std::string(positional_params[0]->cls->name) + " cannot be assigned because it does not support copying");
+                }
+                *current_context->self = std::move(*copy.get());
             }
-            *current_context->self = std::move(*copy.get());
+
         }
     } else {
         if(is_new) {
