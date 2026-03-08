@@ -7,3 +7,4 @@ release-build/
 andy_tests.xml
 embuild/
 .vscode/
+test.json
