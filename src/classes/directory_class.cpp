@@ -17,7 +17,12 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
 
     DirectoryClass->instance_functions["glob"] = std::make_shared<andy::lang::function>("glob", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"pattern"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         std::filesystem::path& path = object->as<std::filesystem::path>();
+#ifdef _WIN32
+        std::string pattern = params[0]->as<std::string>();
+        std::replace(pattern.begin(), pattern.end(), '/', '\\');
+#else
         const std::string& pattern = params[0]->as<std::string>();
+#endif
 
         std::vector<std::shared_ptr<andy::lang::object>> results;
 
