@@ -16,7 +16,7 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
     });
 
     PathClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        return andy::lang::object::instantiate(interpreter, interpreter->StringClass, object->as<std::filesystem::path>().string());
+        return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(object->as<std::filesystem::path>().string()));
     });
 
     PathClass->instance_functions["exists?"] = std::make_shared<andy::lang::function>("exists?",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
