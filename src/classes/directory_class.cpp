@@ -37,7 +37,7 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
                 std::filesystem::path relative_entry_path = std::filesystem::relative(entry_path, path);
                 std::string entry_path_str = relative_entry_path.string();
                 if(entry_path_str.starts_with(dir_part) && entry_path_str.ends_with(suffix_part)) {
-                    results.push_back(andy::lang::api::to_object(interpreter, std::move(entry_path)));
+                    results.push_back(andy::lang::api::to_object(interpreter, std::move(std::filesystem::path(entry_path))));
                 }
             }
         }
