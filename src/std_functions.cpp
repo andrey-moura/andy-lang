@@ -105,6 +105,7 @@ void create_std_functions(andy::lang::interpreter* interpreter)
         std::string code;
         code.resize(size);
         f.read(code.data(), size);
+        code.resize(f.gcount());
 
         andy::lang::lexer lexer(std::move(file_path_str), std::move(code));
 
