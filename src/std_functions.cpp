@@ -89,11 +89,12 @@ void create_std_functions(andy::lang::interpreter* interpreter)
     interpreter->global_context->functions["require"] = std::make_shared<andy::lang::function>("require",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"module"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
         // yep, the code is kept in memory until the program ends
 
-        std::string file_path = params[0]->as<std::string>();
+        const std::filesystem::path& file_path = params[0]->as<std::filesystem::path>();
+        std::string file_path_str = file_path.string();
 
-        std::ifstream f(file_path);
+        std::ifstream f(file_path, std::ios::binary);
         if(!f.is_open()) {
-            throw std::runtime_error("Cannot open file: " + file_path);
+            throw std::runtime_error("Cannot open file: " + file_path_str);
         }
 
         size_t size = 0;
@@ -105,7 +106,12 @@ void create_std_functions(andy::lang::interpreter* interpreter)
         code.resize(size);
         f.read(code.data(), size);
 
-        andy::lang::lexer lexer(std::move(file_path), std::move(code));
+        andy::lang::lexer lexer(std::move(file_path_str), std::move(code));
+
+        for(const auto& include : interpreter->main_lexer->includes()) {
+            lexer.include_from_parent(include);
+        }
+
         lexer.tokenize();
 
         andy::lang::preprocessor preprocessor;
