@@ -6,7 +6,7 @@ describe 'std functions' do
       if System.windows?
         expect(__file__).to ends_with('\tests\high-level\std_functions_spec.andy')
       else
-        expect(__file__).to ends_with('\tests/high-level/std_functions_spec.andy')
+        expect(__file__).to ends_with('/tests/high-level/std_functions_spec.andy')
       end
     end
   end
@@ -15,7 +15,7 @@ describe 'std functions' do
       if System.windows?
         expect(__dir__).to ends_with('\tests\high-level')
       else
-        expect(__dir__).to ends_with('\tests\high-level')
+        expect(__dir__).to ends_with('/tests/high-level')
       end
     end
   end
