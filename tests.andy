@@ -16,3 +16,5 @@ loop for file in tests_dir
 end
 
 print_summary
+
+failed_tests
