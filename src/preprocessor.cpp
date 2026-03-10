@@ -115,23 +115,33 @@ void andy::lang::preprocessor::process_include(const std::filesystem::path &__fi
     }
 
     std::string file_path_string(file_name_token.content);
-
+#ifdef WIN32
+    while(size_t pos = file_path_string.find('/')) {
+        if(pos == std::string::npos) {
+            break;
+        }
+        file_path_string.replace(pos, 1, "\\");
+    }
+#endif
     std::filesystem::path file_path = __lexer.path();
 
     std::vector<std::string> files;
     // auto files = list_files_with_wildcard(file_path.parent_path(), file_path_string);
     std::vector<std::filesystem::path> include_paths;
+
 #ifdef __ANDY_DEBUG__
     std::filesystem::path system_include_path = ANDYLANG_PROJECT_DIR;
 #elif defined(__linux__)
     std::filesystem::path system_include_path = "/usr/local/include/andy";
 #elif defined(_WIN32)
-    std::filesystem::path system_include_path = "C:/Program Files (x86)/andy-lang/include/andy";
+    std::filesystem::path system_include_path = "C:\\Program Files (x86)\\andy-lang\\include\\andy";
 #else
     throw std::runtime_error("unsupported platform");
 
     std::filesystem::path system_include_path;
 #endif
+
+    system_include_path.make_preferred();
 
     include_paths.push_back(file_path.parent_path());
     include_paths.push_back(system_include_path);
