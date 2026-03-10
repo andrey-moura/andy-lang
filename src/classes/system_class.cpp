@@ -23,7 +23,13 @@ std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpret
     SystemClass->variables["linux?"]       = std::make_shared<andy::lang::object>(interpreter->FalseClass);
     SystemClass->variables["web_assembly?"] = std::make_shared<andy::lang::object>(interpreter->FalseClass);
 
-    SystemClass->variables[std::string(current_os_name) + "?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+#ifdef _WIN32
+    SystemClass->variables["windows?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+#elif __linux__
+    SystemClass->variables["linux?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+#elif __wasm__
+    SystemClass->variables["web_assembly?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+#endif
 
     return SystemClass;
 }
