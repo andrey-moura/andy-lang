@@ -3,12 +3,20 @@
 describe 'std functions' do
   describe '__file__' do
     it 'should evaluate to the current file path' do
-      expect(__file__).to ends_with('andy-lang/tests/high-level/std_functions_spec.andy')
+      if System.windows?
+        expect(__file__).to ends_with('\tests\high-level\std_functions_spec.andy')
+      else
+        expect(__file__).to ends_with('\tests/high-level/std_functions_spec.andy')
+      end
     end
   end
   describe '__dir__' do
     it 'should evaluate to the current file directory' do
-      expect(__dir__).to ends_with('andy-lang/tests/high-level')
+      if System.windows?
+        expect(__dir__).to ends_with('\tests\high-level')
+      else
+        expect(__dir__).to ends_with('\tests\high-level')
+      end
     end
   end
   describe 'require' do

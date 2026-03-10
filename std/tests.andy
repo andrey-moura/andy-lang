@@ -150,7 +150,8 @@ fn print_summary()
     var summary = "\n${total_tests} total, ${passed_tests} passed, ${pending_tests} pending, ${failed_tests} failed"
 
     if failed_tests.positive?
-        out error errors.join('\n')
+        out ''
+        out error errors.join("\n\n")
         out error summary
     else if pending_tests.positive?
         out warning summary
