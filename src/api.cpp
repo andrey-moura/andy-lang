@@ -17,12 +17,13 @@ namespace andy
             {
                 andy::lang::parser::ast_node root_node;
 
+                std::string source = andy::file::read_all_text<char>(path);
+
+                std::string path_str = path.string();
+                andy::lang::lexer l(std::move(path_str), std::move(source));
+                l.tokenize();
+
                 {
-                    std::string source = andy::file::read_all_text<char>(path);
-    
-                    std::string path_str = path.string();
-                    andy::lang::lexer l(std::move(path_str), std::move(source));
-                    l.tokenize();
             
                     andy::lang::preprocessor preprocessor;
                     preprocessor.process(path_str, l);
@@ -34,6 +35,7 @@ namespace andy
                 create_builtin_libs();
         
                 andy::lang::interpreter interpreter;
+                interpreter.main_lexer = &l;
 
                 for(int i = 0; i < argc; i++) {
                     interpreter.args.push_back(argv[i]);

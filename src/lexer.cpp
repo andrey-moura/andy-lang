@@ -176,6 +176,23 @@ bool andy::lang::lexer::includes(const std::string& file_name)
     return std::find(m_includes.begin(), m_includes.end(), file_name) != m_includes.end();
 }
 
+std::vector<std::string_view> andy::lang::lexer::includes() const
+{
+    std::vector<std::string_view> result;
+    result.reserve(m_includes.size());
+
+    for(const auto& include : m_includes) {
+        result.push_back(include);
+    }
+
+    return result;
+}
+
+void andy::lang::lexer::include_from_parent(std::string_view file_name)
+{
+    m_includes.push_back(std::string(file_name));
+}
+
 void andy::lang::lexer::update_start_position(const char &c)
 {
     update_position(m_start, c);

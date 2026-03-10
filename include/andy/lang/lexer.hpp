@@ -132,7 +132,11 @@ namespace andy
             /// @param file_name The name of the file.
             /// @return True if the file is included, false otherwise.
             bool includes(const std::string& file_name);
-
+            /// @brief Get the list of included files.
+            /// @return The list of include files.
+            std::vector<std::string_view> includes() const;
+            /// @brief Included from parent
+            void include_from_parent(std::string_view file_name);
             /// @brief Discard the first character from the m_current and update the start position.
             const char& discard();
         protected:
