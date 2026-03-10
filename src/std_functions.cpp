@@ -4,9 +4,12 @@
 
 #include <iostream>
 #include <random>
+#include <filesystem>
+#include <fstream>
 
 #include <andy/lang/lang.hpp>
 #include <andy/lang/api.hpp>
+#include <andy/lang/preprocessor.hpp>
 #include <andy/lang/interpreter.hpp>
 #include <andy/lang/extension.hpp>
 
@@ -74,15 +77,116 @@ void create_std_functions(andy::lang::interpreter* interpreter)
     });
 
     interpreter->global_context->functions["import"] = std::make_shared<andy::lang::function>("import",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"module"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        auto current_context = interpreter->current_context;
-        interpreter->pop_context();
-
         std::string module = params[0]->as<std::string>();
-        andy::lang::extension::import(interpreter, module);
 
-        interpreter->stack.push_back(current_context);
-        interpreter->update_current_context();
+        interpreter->stack.push_back(interpreter->global_context);
+        andy::lang::extension::import(interpreter, module);
+        interpreter->stack.pop_back();
 
         return nullptr;
+    });
+
+    interpreter->global_context->functions["require"] = std::make_shared<andy::lang::function>("require",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{"module"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        // yep, the code is kept in memory until the program ends
+
+        const std::filesystem::path& file_path = params[0]->as<std::filesystem::path>();
+        std::string file_path_str = file_path.string();
+
+        std::ifstream f(file_path, std::ios::binary);
+        if(!f.is_open()) {
+            throw std::runtime_error("Cannot open file: " + file_path_str);
+        }
+
+        size_t size = 0;
+        f.seekg(0, std::ios::end);
+        size = f.tellg();
+        f.seekg(0);
+
+        std::string code;
+        code.resize(size);
+        f.read(code.data(), size);
+        code.resize(f.gcount());
+
+        andy::lang::lexer lexer(std::move(file_path_str), std::move(code));
+
+        for(const auto& include : interpreter->main_lexer->includes()) {
+            lexer.include_from_parent(include);
+        }
+
+        lexer.tokenize();
+
+        andy::lang::preprocessor preprocessor;
+        preprocessor.process(lexer.path(), lexer);
+
+        andy::lang::parser parser;
+        auto* ast = new andy::lang::parser::ast_node(std::move(parser.parse_all(lexer)));
+
+        auto ret = interpreter->execute_all(*ast);
+
+        for(auto& cls : interpreter->current_context->classes) {
+            interpreter->previous_context->classes[cls.first] = cls.second;
+        }
+
+        for(auto& fn : interpreter->current_context->functions) {
+            interpreter->previous_context->functions[fn.first] = fn.second;
+        }
+
+        for(auto& var : interpreter->current_context->variables) {
+            interpreter->previous_context->variables[var.first] = var.second;
+        }
+
+        return ret;
+    });
+
+    interpreter->global_context->functions["__file__"] = std::make_shared<andy::lang::function>("__file__",andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        auto current_context = interpreter->current_context;
+        auto caller_node = current_context->caller_node;
+        if(caller_node == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<interactive>");
+        }
+        const andy::lang::parser::ast_node* ast_node_declname = nullptr;
+        if(caller_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
+            ast_node_declname = caller_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+        } else if (caller_node->type() == andy::lang::parser::ast_node_type::ast_node_declname) {
+            ast_node_declname = caller_node;
+        }
+        if(ast_node_declname == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<unamed>");
+        }
+        auto file_name = ast_node_declname->token().file_name;
+        if(file_name == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<unknown>");
+        }
+        return andy::lang::api::to_object(interpreter, *file_name);
+    });
+
+    interpreter->global_context->functions["__dir__"] = std::make_shared<andy::lang::function>("__dir__",andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        auto current_context = interpreter->current_context;
+        auto caller_node = current_context->caller_node;
+        if(caller_node == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<interactive>");
+        }
+        const andy::lang::parser::ast_node* ast_node_declname = nullptr;
+        if(caller_node->type() == andy::lang::parser::ast_node_type::ast_node_fn_call) {
+            ast_node_declname = caller_node->child_from_type(andy::lang::parser::ast_node_type::ast_node_declname);
+        } else if (caller_node->type() == andy::lang::parser::ast_node_type::ast_node_declname) {
+            ast_node_declname = caller_node;
+        }
+        if(ast_node_declname == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<unamed>");
+        }
+        auto file_name = ast_node_declname->token().file_name;
+        if(file_name == nullptr) {
+            return andy::lang::api::to_object(interpreter, "<unknown>");
+        }
+        std::filesystem::path path(*file_name);
+        if(path.has_parent_path()) {
+            return andy::lang::api::to_object(interpreter, path.parent_path().string());
+        }
+        return andy::lang::api::to_object(interpreter, ".");
+    });
+
+    interpreter->global_context->functions["__argv__"] = std::make_shared<andy::lang::function>("__argv__", andy::lang::function_storage_type::class_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        return andy::lang::api::to_object(interpreter, interpreter->args);
     });
 }

@@ -261,9 +261,10 @@ static void extract_fn_yield_block_if_exists(andy::lang::parser::ast_node& node,
     auto& next_token = lexer.see_next();
 
     if(next_token.type == andy::lang::lexer::token_type::token_identifier && next_token.content == "do") {
-        lexer.consume_token(); // Consume the 'do' token
-
+        auto& token = lexer.next_token(); // Consume the 'do' token
         andy::lang::parser::ast_node yield_context = extract_context(lexer, parser);
+        yield_context.set_token(std::move(token));
+
         yield_context.set_end_token(lexer.next_token());
         node.add_child(std::move(yield_context));
     }
@@ -896,6 +897,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword_foreach(andy::lan
 
     ast_node value_node(ast_node_type::ast_node_valuedecl);
     value_node.add_child(std::move(array_node));
+    value_node.add_child(ast_node(std::move(in_token), ast_node_type::ast_node_decltype));
     foreach_node.add_child(std::move(value_node));
 
     ast_node context_node = extract_context(lexer, *this);

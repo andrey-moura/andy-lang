@@ -251,7 +251,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(c
         }
         break;
         case lexer::token_kind::token_string: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, std::move(std::string(source_code.token().content)));
+            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, source_code.token().string_literal);
             return obj;
         }
         break;
@@ -268,7 +268,18 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(c
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(const andy::lang::parser::ast_node& source_code)
 {
-    std::string_view function_name = source_code.decname();
+    std::string_view function_name;
+
+    switch(source_code.type())
+    {
+        // declname interpreted as a function call with no parameters
+        case andy::lang::parser::ast_node_type::ast_node_declname:
+            function_name = source_code.token().content;
+        break;
+        default:
+            function_name = source_code.decname();
+        break;
+    }
 
     // Capture the immediate calling context (excluding global at index 0) before any pushes.
     // This becomes the lexical_parent for any DO...END block passed to this call, ensuring
@@ -327,17 +338,22 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         if(positional_params.size() != 1) {
             throw std::runtime_error("assignment operator '=' requires exactly one parameter");
         }
-        // If the parameter is only used once (on the right side of the assignment only),
-        // we can move it instead of copying it.
-        auto use_count = positional_params[0].use_count();
-        if(use_count == 1) {
-            *current_context->self = std::move(*positional_params[0].get());
+        if(positional_params[0] == nullptr) {
+            *current_context->self = std::move(*andy::lang::object::instantiate(this, NullClass).get());
         } else {
-            auto copy = positional_params[0]->native_copy();
-            if(!copy) {
-                throw std::runtime_error("object of class " + std::string(positional_params[0]->cls->name) + " cannot be assigned because it does not support copying");
+            // If the parameter is only used once (on the right side of the assignment only),
+            // we can move it instead of copying it.
+            auto use_count = positional_params[0].use_count();
+            if(use_count == 1) {
+                *current_context->self = std::move(*positional_params[0].get());
+            } else {
+                auto copy = positional_params[0]->native_copy();
+                if(!copy) {
+                    throw std::runtime_error("object of class " + std::string(positional_params[0]->cls->name) + " cannot be assigned because it does not support copying");
+                }
+                *current_context->self = std::move(*copy.get());
             }
-            *current_context->self = std::move(*copy.get());
+
         }
     } else {
         if(is_new) {
@@ -394,14 +410,53 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
 
         if(!method_to_call) {
             auto it = global_context->functions.find(function_name);
+
             if(it != global_context->functions.end()) {
                 method_to_call = it->second.get();
             }
+
             if(!method_to_call) {
                 if(current_context->self && !is_new) {
                     throw std::runtime_error("function '" + std::string(function_name) + "' not found in object of class " + std::string(current_context->cls->name));
                 }
-                throw std::runtime_error("function '" + std::string(function_name) + "' not found in current context");
+            }
+
+            if(!method_to_call) {
+                // Last chance
+                for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
+                    auto it = ctx->functions.find("missing");
+                    if(it != ctx->functions.end()) {
+                        method_to_call = it->second.get();
+                        break;
+                    }
+                }
+
+                if(!method_to_call && current_context->cls) {
+                    auto it = current_context->cls->functions.find("missing");
+                    if(it != current_context->cls->functions.end()) {
+                        method_to_call = it->second.get();
+                    }
+                }
+
+                if(!method_to_call) {
+                    auto it = global_context->functions.find("missing");
+                    if(it != global_context->functions.end()) {
+                        method_to_call = it->second.get();
+                    }
+                }
+
+                if(!method_to_call) {
+                    throw std::runtime_error("function '" + std::string(function_name) + "' not found in current context");
+                }
+
+                auto previous_positional_params = std::move(positional_params);
+                positional_params = std::vector<std::shared_ptr<andy::lang::object>>();
+
+                auto function_name_obj = andy::lang::api::to_object(this, function_name);
+
+                positional_params.push_back(function_name_obj);
+                positional_params.push_back(andy::lang::api::to_object(this, std::move(previous_positional_params)));
+                positional_params.push_back(andy::lang::api::to_object(this, std::move(named_params)));
             }
         }
 
@@ -411,6 +466,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         if(!source_code.fn_object()) {
             push_context();
         }
+
+        current_context->caller_node = &source_code;
 
         // Store the call-site lexical context on the function's execution context so that
         // execute_yield can use it as the lexical_parent for the DO...END block.
@@ -708,33 +765,12 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
         if(variable_it != ctx->variables.end()) {
             return variable_it->second;
         }
-        // If not found as a variable, it could be a function, so we check for that before moving to the next context in the chain.
-        auto function_it = ctx->functions.find(name);
-        if(function_it != ctx->functions.end()) {
-            auto __call = andy::lang::function_call{
-                function_it->first,
-                current_context->cls,
-                current_context->self ? current_context->self->shared_from_this() : nullptr,
-                function_it->second.get(),
-                {},
-                {},
-                nullptr
-            };
-            push_context(current_context->self ? current_context->self->shared_from_this() : nullptr);
-            auto ret = call(__call);
-            pop_context();
-            if(ret == nullptr) {
-                ret = std::make_shared<andy::lang::object>(NullClass);
-            }
-            return ret;
-        }
         // If not found as a variable or function, it could be a class (in the case of a declname used as an expression), so we check for that before moving to the next context in the chain.
         auto class_it = ctx->classes.find(name);
         if(class_it != ctx->classes.end()) {
             auto cls_object = andy::lang::object::create(this, ClassClass, class_it->second);
             return cls_object;
         }
-
         return nullptr;
     };
 
@@ -753,13 +789,17 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_declname(co
         ret = try_find_in_context(global_context);
     }
 
-    if(ret == nullptr) {
-        throw std::runtime_error("'" + std::string(name) + "' is undefined");
-    }
+    // Fallback to a function call
 
     pop_context_from_node_object_if_any(this, source_code);
 
-    return ret;
+    if(ret != nullptr) {
+        return ret;
+    }
+
+    return execute_fn_call(source_code);
+
+    throw std::runtime_error("'" + std::string(name) + "' is undefined");
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const andy::lang::parser::ast_node& source_code)
@@ -1256,5 +1296,6 @@ void andy::lang::interpreter::update_current_context()
     }
 
     global_context = stack.front();
+    previous_context = current_context;
     current_context = stack.back();
 }

@@ -35,6 +35,21 @@ type Include
     end
 end
 
+type EndsWith
+    var expected = null
+    static fn new(value)
+        expected = value
+    end
+
+    fn match(actual)
+        if actual.ends_with?(expected)
+            return true
+        else
+            throw ExpectationNotMet.new("Expected ${actual} to end with ${expected}")
+        end
+    end
+end
+
 type Expect
     var actual = null
     static fn new(value)
@@ -46,7 +61,9 @@ type Expect
     end
 end
 
+var describe_stack = []
 var current_describe_level = 0
+var errors = []
 var total_tests = 0
 var failed_tests = 0
 var pending_tests = 0
@@ -72,32 +89,37 @@ end
 fn describe(what)
     out indent what
     current_describe_level += 1
+    describe_stack.push(what)
     yield
     current_describe_level -= 1
+    describe_stack.pop
+end
+
+fn context(what)
+    out indent "${what}"
+    current_describe_level += 1
+    describe_stack.push(what)
+    yield
+    current_describe_level -= 1
+    describe_stack.pop
 end
 
 fn it(what)
-    var error = null
+    var error_msg = null
     try
         yield
     catch(ExpectationNotMet e)
-        error = e.message
+        error_msg = e.message
+        errors.push("${describe_stack.join(' ')} ${what}\n${error_msg}")
     end
     total_tests += 1
-    if error.present?
+    if error_msg.present?
         out error indent "${what}"
         failed_tests += 1
     else
         out success indent "${what}"
         passed_tests += 1
     end
-end
-
-fn context(what)
-    out indent "${what}"
-    current_describe_level += 1
-    yield
-    current_describe_level -= 1
 end
 
 fn eq(what)
@@ -112,6 +134,10 @@ fn expect(value)
     Expect.new(value)
 end
 
+fn ends_with(what)
+    EndsWith.new(what)
+end
+
 fn pending(what)
     out indent warning "${what} (pending)"
     total_tests += 1
@@ -119,10 +145,15 @@ fn pending(what)
 end
 
 fn print_summary()
+    out "\nTest Summary:"
+
     var summary = "\n${total_tests} total, ${passed_tests} passed, ${pending_tests} pending, ${failed_tests} failed"
-    if failed_tests > 0
+
+    if failed_tests.positive?
+        out ''
+        out error errors.join("\n\n")
         out error summary
-    else if pending_tests > 0
+    else if pending_tests.positive?
         out warning summary
     else
         out success summary

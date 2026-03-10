@@ -28,6 +28,7 @@ namespace andy
             bool is_block_context = false;
             std::shared_ptr<andy::lang::interpreter_context> lexical_parent = nullptr;
             std::shared_ptr<andy::lang::interpreter_context> given_block_lexical_context = nullptr;
+            const andy::lang::parser::ast_node* caller_node = nullptr;
         };
     }; // namespace lang
 }; // namespace andy

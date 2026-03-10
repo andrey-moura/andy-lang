@@ -26,6 +26,7 @@ namespace andy
             ~interpreter() = default;
         public:
             std::filesystem::path input_file_path;
+            andy::lang::lexer* main_lexer = nullptr;
         public:
             /// @brief Load a class into the vm. The class is kept alive by the vm untill it is destroyed.
             /// @param cls The class to be loaded. It is kept alive by the vm untill it is destroyed. It is globally accessible.
@@ -128,12 +129,13 @@ namespace andy
             void load_extension(andy::lang::extension* extension);
 
             std::shared_ptr<andy::lang::interpreter_context> current_context = nullptr;
+            std::shared_ptr<andy::lang::interpreter_context> previous_context = nullptr;
             std::shared_ptr<andy::lang::interpreter_context> global_context = nullptr;
 
             /// @brief The call stack.
             std::vector<std::shared_ptr<interpreter_context>> stack;
+            std::vector<std::string_view> args;
         protected:
-
             std::vector<andy::lang::extension*> extensions;
 
             bool is_global_context() const

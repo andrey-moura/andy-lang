@@ -138,6 +138,15 @@ endif()
 
 target_link_libraries(andy PRIVATE andy-lang)
 
+set(ANDYLANG_PROJECT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(ANDYLANG_BUILD_DIR "${CMAKE_BINARY_DIR}")
+
+if(WIN32)
+    # Replace / with \\
+    string(REPLACE "/" "\\\\" ANDYLANG_PROJECT_DIR "${ANDYLANG_PROJECT_DIR}")
+    string(REPLACE "/" "\\\\" ANDYLANG_BUILD_DIR "${ANDYLANG_BUILD_DIR}")
+endif()
+
 add_definitions(-DANDYLANG_PROJECT_DIR="${CMAKE_CURRENT_LIST_DIR}")
 add_definitions(-DANDYLANG_BUILD_DIR="${CMAKE_BINARY_DIR}")
 add_definitions(-DANDYLANG_VERSION="${ANDYLANG_PROJECT_VERSION}")

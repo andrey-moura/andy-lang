@@ -65,13 +65,26 @@ std::shared_ptr<andy::lang::structure> create_array_class(andy::lang::interprete
         return nullptr;
     });
 
+    ArrayClass->instance_functions["pop"] = std::make_shared<andy::lang::function>("pop",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+
+        if(items.empty()) {
+            return std::make_shared<andy::lang::object>(interpreter->NullClass);
+        }
+
+        auto item = items.back();
+        items.pop_back();
+
+        return item;
+    });
+
     ArrayClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"index"} , [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
+        std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();
 
-            auto index = params[0]->as<int>();
+        auto index = params[0]->as<int>();
 
-            return items[index];
-        });
+        return items[index];
+    });
 
     ArrayClass->instance_functions["=="] = std::make_shared<andy::lang::function>("==",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"other"} , [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
             std::vector<std::shared_ptr<andy::lang::object>>& items = object->as<std::vector<std::shared_ptr<andy::lang::object>>>();

@@ -33,7 +33,7 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
         std::filesystem::path& path = object->as<std::filesystem::path>();
         path /= params[0]->as<std::string>();
 
-        return nullptr;
+        return object;
     });
 
     PathClass->instance_functions["/"] = std::make_shared<andy::lang::function>("/",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
@@ -58,7 +58,6 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
 
         return nullptr;
     });
-
 
     return PathClass;
 }

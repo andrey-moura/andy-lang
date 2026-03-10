@@ -8,6 +8,44 @@
 const static uint64_t __is_delimiter_lookup[] = { 0, 0, 0, 0, 0, 0x100000101, 0, 0x1010000, 0, 0, 0, 0, 0, 0, 0, 0x10001000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 const static bool* is_delimiter_lookup = (bool*)__is_delimiter_lookup;
 const static uint64_t is_operator_lookup[] = { 0, 0, 0, 0, 0x1010000000100, 0x101010001010000, 0, 0x101010100000000, 0, 0, 0, 0x10001000000, 0, 0, 0, 0x100000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+static bool is_alphanum(const char& c)
+{
+    return c >= 'a' && c <= 'z' ||
+           c >= 'A' && c <= 'Z' ||
+           c >= '0' && c <= '9';
+}
+
+static bool is_word_char(const char& c)
+{
+    return is_alphanum(c) || c == '_';
+}
+
+static bool is_alpha(const char& c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+static bool is_digit(const char& c)
+{
+    return c >= '0' && c <= '9';
+}
+
+static bool utf8_is_multibyte_character_continuation(const char& c)
+{
+    return ((uint8_t)c & 0b11000000) == 0b10000000;
+}
+
+static size_t utf8_char_length(const char& c)
+{
+    if (((uint8_t)c & 0b10000000) == 0b00000000) return 1; // 0xxxxxxx
+    if (((uint8_t)c & 0b11100000) == 0b11000000) return 2; // 110xxxxx
+    if (((uint8_t)c & 0b11110000) == 0b11100000) return 3; // 1110xxxx
+    if (((uint8_t)c & 0b11111000) == 0b11110000) return 4; // 11110xxx
+
+    return 0;
+}
+
 // Keep ordered as it is used in binary search
 const static std::vector<std::string_view> keywords_lookup = {
     "break",
@@ -49,7 +87,21 @@ const static std::map<std::string_view, andy::lang::lexer::operator_type> string
 static size_t is_delimiter(std::string_view str)
 {
     if(str.starts_with("end")) {
-        return 3;
+        // Now we can have
+        // end
+        // end[];,()
+        // ending
+        // So we have to make sure that it's only 'end'
+        if(str.size() == 3)
+        {
+            return 3;
+        }
+        if(str.size() > 3) {
+            char next_char = str[3];
+            if(!is_word_char(next_char)) {
+                return 3;
+            }
+        }
     }
     return (size_t)((bool*)is_delimiter_lookup)[(uint8_t)str.front()];
 }
@@ -69,22 +121,6 @@ static bool is_preprocessor(std::string_view str) {
 
     return false;
 }
-
-static bool utf8_is_multibyte_character_continuation(const char& c)
-{
-    return ((uint8_t)c & 0b11000000) == 0b10000000;
-}
-
-static size_t utf8_char_length(const char& c)
-{
-    if (((uint8_t)c & 0b10000000) == 0b00000000) return 1; // 0xxxxxxx
-    if (((uint8_t)c & 0b11100000) == 0b11000000) return 2; // 110xxxxx
-    if (((uint8_t)c & 0b11110000) == 0b11100000) return 3; // 1110xxxx
-    if (((uint8_t)c & 0b11111000) == 0b11110000) return 4; // 11110xxx
-
-    return 0;
-}
-
 
 static void update_position(andy::lang::lexer::token_position& position, const char& c)
 {
@@ -113,23 +149,6 @@ static andy::lang::lexer::operator_type to_operator(std::string_view str) {
     return it->second;
 }
 
-static bool is_alphanum(const char& c)
-{
-    return c >= 'a' && c <= 'z' ||
-           c >= 'A' && c <= 'Z' ||
-           c >= '0' && c <= '9';
-}
-
-static bool is_alpha(const char& c)
-{
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
-static bool is_digit(const char& c)
-{
-    return c >= '0' && c <= '9';
-}
-
 andy::lang::lexer::lexer(std::string __file_name, std::string __source)
     : m_file_name(std::make_shared<std::string>(std::move(__file_name))),
     m_source(std::move(__source)),
@@ -155,6 +174,23 @@ void andy::lang::lexer::include(std::string file_name, std::string source)
 bool andy::lang::lexer::includes(const std::string& file_name)
 {
     return std::find(m_includes.begin(), m_includes.end(), file_name) != m_includes.end();
+}
+
+std::vector<std::string_view> andy::lang::lexer::includes() const
+{
+    std::vector<std::string_view> result;
+    result.reserve(m_includes.size());
+
+    for(const auto& include : m_includes) {
+        result.push_back(include);
+    }
+
+    return result;
+}
+
+void andy::lang::lexer::include_from_parent(std::string_view file_name)
+{
+    m_includes.push_back(std::string(file_name));
 }
 
 void andy::lang::lexer::update_start_position(const char &c)
@@ -206,6 +242,10 @@ void andy::lang::lexer::read(size_t c)
         update_end_position(c);
 
         m_current.remove_prefix(1);
+
+        if(m_current.data() > m_source.data() + m_source.size()) {
+            throw std::runtime_error("lexer: error trying to read past end of file");
+        }
     }
 }
 
@@ -346,10 +386,11 @@ void andy::lang::lexer::read_next_token()
             } else
             if(is_alpha(m_current[1])) {
                 discard();
-                while(m_current.size() && (is_alphanum(m_current.front()) || m_current.front() == '_')) { 
+                while(m_current.size() && is_word_char(m_current.front())) { 
                     read();
                 }
                 push_token(token_type::token_literal, token_kind::token_string);
+                m_tokens.back().string_literal = m_tokens.back().content;
                 return;
             }
         }
@@ -435,9 +476,9 @@ void andy::lang::lexer::read_next_token()
                 read();
             }
 
-            discard();
-
             push_token(token_type::token_literal, token_kind::token_string);
+            m_tokens.back().string_literal = m_tokens.back().content;
+            discard();
             return;
         break;
     }
@@ -453,7 +494,7 @@ void andy::lang::lexer::read_next_token()
 
     // It must be a identifier or a keyword
     read_while([](const char& c) {
-        return is_alphanum(c) || c == '_';
+        return is_word_char(c);
     });
 
     if(m_buffer.empty()) {

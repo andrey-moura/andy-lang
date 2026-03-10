@@ -16,7 +16,7 @@ namespace andy
             /// @brief Executes the code in a file and return the result.
             /// @param path The path to the source code.
             /// @return Returns a shared pointer to the object.
-            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path);
+            std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path, int argc = 0, char** argv = nullptr);
             /// @brief Convert or cast the object to a specific type.
             /// @tparam T The type to convert to.
             /// @param interpreter The interpreter.
@@ -86,6 +86,13 @@ namespace andy
                 } else if constexpr(std::is_same_v<T, andy::lang::dictionary>) {
                     auto obj = andy::lang::object::instantiate(interpreter, interpreter->DictionaryClass, std::move(value));
                     return obj;
+                } else if constexpr(std::is_same_v<T, std::map<std::string, std::shared_ptr<andy::lang::object>>>) {
+                    andy::lang::dictionary dict;
+                    for(auto& [key, val] : value) {
+                        dict.emplace_back(to_object(interpreter, key), std::move(val));
+                    }
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->DictionaryClass, std::move(dict));
+                    return obj;
                 } else if constexpr(std::is_same_v<T, const char*> || std::is_same_v<T, char*> || std::is_same_v<T, std::string_view>) {
                     return to_object(interpreter, std::string(value));
                 }
@@ -106,7 +113,18 @@ namespace andy
                         std::move(value)
                     );
                     return function_object;
-                }
+                } else if constexpr(std::is_same_v<T, std::filesystem::path>) {
+                    auto obj = andy::lang::object::create(interpreter, interpreter->PathClass, std::move(value));
+                    obj->initialize(interpreter);
+                    return obj;
+                } else if constexpr(std::is_same_v<T, std::vector<std::string_view>>) {
+                    std::vector<std::shared_ptr<andy::lang::object>> arr;
+                    for(auto& str : value) {
+                        arr.push_back(to_object(interpreter, str));
+                    }
+                    auto obj = andy::lang::object::instantiate(interpreter, interpreter->ArrayClass, std::move(arr));
+                    return obj;
+                 }
                 else {
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
                 }

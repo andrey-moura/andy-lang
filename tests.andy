@@ -1,4 +1,20 @@
 #include 'std/tests'
-#include 'tests/high-level/*.andy'
+
+var tests_dir = Dir.new(__dir__).glob('tests/high-level/*_spec.andy')
+
+loop for file in tests_dir
+  if __argv__.size > 2
+    loop for arg in __argv__
+      if file.to_string.ends_with?(arg)
+        require file
+        break
+      end
+    end
+  else
+    require file
+  end
+end
 
 print_summary
+
+failed_tests

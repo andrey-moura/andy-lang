@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        std::shared_ptr<andy::lang::object> ret = andy::lang::api::evaluate(file_path);
+        std::shared_ptr<andy::lang::object> ret = andy::lang::api::evaluate(file_path, argc, argv);
 
         if(!ret) {
             return 0;
