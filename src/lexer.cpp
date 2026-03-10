@@ -242,6 +242,10 @@ void andy::lang::lexer::read(size_t c)
         update_end_position(c);
 
         m_current.remove_prefix(1);
+
+        if(m_current.data() > m_source.data() + m_source.size()) {
+            throw std::runtime_error("lexer: error trying to read past end of file");
+        }
     }
 }
 
