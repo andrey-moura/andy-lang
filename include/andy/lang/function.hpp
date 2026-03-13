@@ -65,6 +65,7 @@ namespace andy {
             std::vector<fn_parameter> positional_params;
             std::vector<fn_parameter> named_params;
             std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call&)> native_function;
+            std::function<void(andy::lang::interpreter*)> native_fn;
 
             function() = default;
 
@@ -120,6 +121,11 @@ namespace andy {
 
             function(std::string_view name, function_storage_type __storage_type, std::vector<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call& call)> fn)
                 : name(name), storage_type(__storage_type), native_function(fn) {
+                init_params(__params);
+            }
+
+            function(std::string_view __name, std::vector<std::string> __params, std::function<void(andy::lang::interpreter*)> fn)
+                : name(__name), native_fn(fn) {
                 init_params(__params);
             }
 

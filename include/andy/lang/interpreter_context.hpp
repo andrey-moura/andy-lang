@@ -22,6 +22,9 @@ namespace andy
             
             const andy::lang::parser::ast_node* given_block = nullptr;
 
+            std::vector<std::shared_ptr<andy::lang::object>> positional_params;
+            std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
+
             bool has_returned = false;
             bool catching_exception = false;
             std::shared_ptr<andy::lang::object> return_value;
