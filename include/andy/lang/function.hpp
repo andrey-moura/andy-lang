@@ -64,8 +64,7 @@ namespace andy {
             function_storage_type storage_type;
             std::vector<fn_parameter> positional_params;
             std::vector<fn_parameter> named_params;
-            std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call&)> native_function;
-            std::function<void(andy::lang::interpreter*)> native_fn;
+            std::function<void(andy::lang::interpreter*)> native_function;
 
             function() = default;
 
@@ -89,8 +88,11 @@ namespace andy {
                 : name(name), storage_type(__storage_type) {
                 init_params(__params);
 
-                native_function = [fn](andy::lang::function_call& call) {
-                    return fn(call.object, call.positional_params);
+                native_function = [fn](andy::lang::interpreter* interpreter) {
+                    interpreter->current_context->return_value = fn(
+                        interpreter->current_context->self->shared_from_this(),
+                        interpreter->current_context->positional_params
+                    );
                 };
             }
 
@@ -107,30 +109,42 @@ namespace andy {
                     }
                 }
 
-                native_function = [fn](andy::lang::function_call& call) {
-                    return fn(call.object, call.positional_params, call.named_params);
+                native_function = [fn](andy::lang::interpreter* interpreter) {
+                    interpreter->current_context->return_value = fn(
+                        interpreter->current_context->self->shared_from_this(),
+                        interpreter->current_context->positional_params,
+                        interpreter->current_context->named_params
+                    );
                 };
             }
 
             function(std::string_view name, function_storage_type __storage_type, std::function<std::shared_ptr<andy::lang::object>(std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params)> fn)
                 : name(name), storage_type(__storage_type) {
-                native_function = [fn](andy::lang::function_call& call) {
-                    return fn(call.object, call.positional_params);
+                native_function = [fn](andy::lang::interpreter* interpreter) {
+                    interpreter->current_context->return_value = fn(
+                        interpreter->current_context->self->shared_from_this(),
+                        interpreter->current_context->positional_params
+                    );
                 };
             }
 
             function(std::string_view name, function_storage_type __storage_type, std::vector<std::string> __params, std::function<std::shared_ptr<andy::lang::object>(andy::lang::function_call& call)> fn)
-                : name(name), storage_type(__storage_type), native_function(fn) {
+                : name(name), storage_type(__storage_type) {
                 init_params(__params);
+                native_function = [fn](andy::lang::interpreter* interpreter) {
+                    andy::lang::function_call call;
+                    call.object = interpreter->current_context->self ? interpreter->current_context->self->shared_from_this() : nullptr;
+                    call.positional_params = interpreter->current_context->positional_params;
+                    call.named_params = interpreter->current_context->named_params;
+                    call.given_block = interpreter->current_context->given_block;
+                    interpreter->current_context->return_value = fn(call);
+                };
             }
 
             function(std::string_view __name, std::vector<std::string> __params, std::function<void(andy::lang::interpreter*)> fn)
-                : name(__name), native_fn(fn) {
+                : name(__name), native_function(fn) {
                 init_params(__params);
             }
-
-            std::shared_ptr<andy::lang::object> call(std::shared_ptr<andy::lang::object> o);
-            std::shared_ptr<andy::lang::object> call(andy::lang::structure* c);
 
             protected:
                 void init_params(std::vector<std::string> __params);

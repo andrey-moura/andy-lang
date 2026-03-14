@@ -987,14 +987,12 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call&
         } else {
             ret = execute(*call.method->block_ast.block());
         }
-    } else if(call.method->native_fn) {
+    } else if(call.method->native_function) {
         current_context->positional_params = call.positional_params;
         current_context->named_params = call.named_params;
         current_context->return_value = nullptr;
-        call.method->native_fn(this);
+        call.method->native_function(this);
         ret = current_context->return_value;
-    } else if(call.method->native_function) {
-        ret = call.method->native_function(call);
     }
 
     if(is_constructor) {
