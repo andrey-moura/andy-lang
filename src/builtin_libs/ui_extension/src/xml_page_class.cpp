@@ -34,8 +34,8 @@ private:
 std::shared_ptr<andy::lang::structure> create_xml_page_class(andy::lang::interpreter* interpreter)
 {
     auto xml_page_class = std::make_shared<andy::lang::structure>("XMLPage");
-        xml_page_class->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            auto xml_string = params[0]->as<std::string>();
+        xml_page_class->functions["new"] = std::make_shared<andy::lang::function>("new", [](andy::lang::interpreter* interpreter) {
+            auto xml_string = interpreter->current_context->positional_params[0]->as<std::string>();
             //auto xml_page = std::make_shared<andylang_ui_xml_page>(std::move(xml_string), interpreter, object->derived_instance);
             //object->set_native(std::move(xml_page));
 

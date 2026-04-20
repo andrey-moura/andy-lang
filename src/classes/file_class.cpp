@@ -9,9 +9,9 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
 {
     auto FileClass = std::make_shared<andy::lang::structure>("File");
 
-        FileClass->functions["exists?"] = std::make_shared<andy::lang::function>("exists?", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        FileClass->functions["exists?"] = std::make_shared<andy::lang::function>("exists?", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
             std::filesystem::path path;
-            std::shared_ptr<andy::lang::object> path_object = params[0];
+            std::shared_ptr<andy::lang::object> path_object = interpreter->current_context->positional_params[0];
             if(path_object->cls == interpreter->StringClass) {
                 path = path_object->as<std::string>();
             } else if(path_object->cls == interpreter->PathClass) {
@@ -26,9 +26,9 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
             }
         });
 
-    FileClass->functions["read"] = std::make_shared<andy::lang::function>("read",andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        FileClass->functions["read"] = std::make_shared<andy::lang::function>("read", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
             std::filesystem::path path;
-            std::shared_ptr<andy::lang::object> path_object = params[0];
+            std::shared_ptr<andy::lang::object> path_object = interpreter->current_context->positional_params[0];
             if(path_object->cls == interpreter->StringClass) {
                 path = path_object->as<std::string>();
             } else if(path_object->cls == interpreter->PathClass) {
@@ -39,8 +39,8 @@ std::shared_ptr<andy::lang::structure> create_file_class(andy::lang::interpreter
             return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(andy::file::read_all_text<char>(path)));
         });
 
-    FileClass->functions["read_all_lines"] = std::make_shared<andy::lang::function>("read_all_lines",andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            const std::string& input_path = params[0]->as<std::string>();
+        FileClass->functions["read_all_lines"] = std::make_shared<andy::lang::function>("read_all_lines", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
+            const std::string& input_path = interpreter->current_context->positional_params[0]->as<std::string>();
             std::filesystem::path path = std::filesystem::absolute(input_path);
 
             if(!std::filesystem::exists(path)) {

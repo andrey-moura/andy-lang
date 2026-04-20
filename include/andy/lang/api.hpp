@@ -59,7 +59,7 @@ namespace andy
             /// @param object The object.
             /// @param fn The function name.
             /// @return Returns a shared pointer to the object.
-            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object);
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> positional_params = {});
             /// @brief Creates the object with a value and automatically determines the class.
             /// @tparam T The type of the value.
             /// @param interpreter The interpreter.
@@ -86,7 +86,7 @@ namespace andy
                 } else if constexpr(std::is_same_v<T, andy::lang::dictionary>) {
                     auto obj = andy::lang::object::instantiate(interpreter, interpreter->DictionaryClass, std::move(value));
                     return obj;
-                } else if constexpr(std::is_same_v<T, std::map<std::string, std::shared_ptr<andy::lang::object>>>) {
+                } else if constexpr(std::is_same_v<T, std::map<std::string, std::shared_ptr<andy::lang::object>>> || std::is_same_v<T, std::map<std::string_view, std::shared_ptr<andy::lang::object>>>) {
                     andy::lang::dictionary dict;
                     for(auto& [key, val] : value) {
                         dict.emplace_back(to_object(interpreter, key), std::move(val));
@@ -97,8 +97,10 @@ namespace andy
                     return to_object(interpreter, std::string(value));
                 }
                 else if constexpr(std::is_same_v<T, std::shared_ptr<andy::lang::structure>>) {
-                    auto class_object = andy::lang::object::create(interpreter, interpreter->ClassClass, std::move(value));
-                    class_object->cls->functions["new"]->call(class_object);
+                    auto class_object = std::make_shared<andy::lang::object>(interpreter->ClassClass);
+                    class_object->set_native<std::shared_ptr<andy::lang::structure>>(std::move(value));
+                    class_object->initialize(interpreter);
+
                     return class_object;
                 } else if constexpr(std::is_same_v<T, bool>) {
                     if(value) {
@@ -129,6 +131,11 @@ namespace andy
                     throw std::runtime_error("Unsupported type for to_object: " + std::string(typeid(T).name()));
                 }
             }
+            /// @brief Checks if the object is present (not null, not false, not empty string, etc.).
+            /// @param interpreter The interpreter.
+            /// @param obj The object to check.
+            /// @return Returns true if the object is present, false otherwise.
+            bool is_present(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj);
             /// @brief Adds a class to another class.
             /// @param interpreter The interpreter.
             /// @param cls The class.

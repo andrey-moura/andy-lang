@@ -62,24 +62,25 @@ std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpret
 {
     auto window_class = std::make_shared<andy::lang::structure>("Window");
 
-    window_class->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        std::string_view title = params[0]->as<std::string>();
-        auto window = std::make_shared<andylang_drawing_window>(title, interpreter, object);
+    window_class->functions["new"] = std::make_shared<andy::lang::function>("new", std::initializer_list<std::string>{"title"}, [](andy::lang::interpreter* interpreter) {
+        auto object = interpreter->current_context->self;
+        std::string_view title = interpreter->current_context->positional_params[0]->as<std::string>();
+        auto window = std::make_shared<andylang_drawing_window>(title, interpreter, object->shared_from_this());
         object->set_native(std::move(window));
         object->variables["bindings"] = andy::lang::api::to_object(interpreter, andy::lang::dictionary{});
 
         return nullptr;
     });
 
-    window_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
-        std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
-        auto window = call.object->as<std::shared_ptr<andylang_drawing_window>>();
-        window->show(maximized->is_present());
+    window_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::interpreter* interpreter) {
+        std::shared_ptr<andy::lang::object> maximized = interpreter->current_context->named_params["maximized"];
+        auto window = interpreter->current_context->self->as<std::shared_ptr<andylang_drawing_window>>();
+//        window->show(maximized->is_present());
 
         return nullptr;
     });
 
-    window_class->instance_functions["set_page"] = std::make_shared<andy::lang::function>("set_page", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"page"}, [interpreter](andy::lang::function_call& call) {
+    window_class->instance_functions["set_page"] = std::make_shared<andy::lang::function>("set_page", std::initializer_list<std::string>{"page"}, [](andy::lang::interpreter* interpreter) {
 //             std::shared_ptr<andy::lang::object> page_name = call.positional_params[0];
 //             if(page_name->cls != interpreter->StringClass) {
 //                 throw std::runtime_error("function 'set_page' expects a string as parameter, got '" + std::string(page_name->cls->name) + "'");

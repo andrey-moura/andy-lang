@@ -57,7 +57,7 @@ andy::lang::interpreter::interpreter()
 
 void andy::lang::interpreter::load(std::shared_ptr<andy::lang::structure> cls)
 {
-    cls->functions["subclasses"] = std::make_shared<andy::lang::function>("subclasses", function_storage_type::instance_function, [cls,this](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    cls->functions["subclasses"] = std::make_shared<andy::lang::function>("subclasses", [cls, this](andy::lang::interpreter* interpreter) {
         std::vector<std::shared_ptr<andy::lang::object>> subclasses;
         subclasses.reserve(cls->deriveds.size());
 
@@ -203,9 +203,7 @@ static std::shared_ptr<andy::lang::structure> do_execute_classdecl(andy::lang::i
         break;
         case andy::lang::parser::ast_node_type::ast_node_classdecl: {
             auto child_cls = do_execute_classdecl(interpreter, class_child);
-            auto cls_object = andy::lang::object::create(interpreter, interpreter->ClassClass, child_cls);
-            cls_object->cls->functions["new"]->call(cls_object);
-            cls->variables[child_cls->name] = cls_object;
+            andy::lang::api::contained_class(interpreter, cls, child_cls);
             interpreter->load(child_cls);
         }
         break;
@@ -291,7 +289,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
     }
 
     std::vector<std::shared_ptr<andy::lang::object>> positional_params;
-    std::map<std::string, std::shared_ptr<andy::lang::object>> named_params;
+    std::map<std::string_view, std::shared_ptr<andy::lang::object>> named_params;
 
     const andy::lang::parser::ast_node* params_node = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_fn_params);
 
@@ -309,30 +307,44 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
             value = execute(*value_node);
 
             if(name) {
-                std::string content = std::string(name->token().content);
-                named_params[content] = value;
+                named_params[name->token().content] = value;
             } else {
                 positional_params.push_back(value);
             }
         }
     }
 
+    bool is_new = function_name == "new";
     // If the function call has an object (obj.fn()), we need to push the context to search for the
     // function in the object and its class, and then pop it. If we don't have an object we need to
     // search in the current context and then in the global context.
     push_context_from_node_object_if_any(this, source_code);
 
+    if(is_new && !current_context->cls) {
+        throw std::runtime_error("new operator requires to be called in a class context");
+    }
+
+    if(is_new && current_context->self) {
+        throw std::runtime_error("new operator cannot be called on an object");
+    }
+
+    std::shared_ptr<andy::lang::object> ret = nullptr;
+
+    if(is_new) {
+        ret = std::make_shared<andy::lang::object>(current_context->cls);
+        stack.pop_back(); // Pop the context we pushed to search for the class, since we already have the class in current_context->cls.
+        push_context_with_object(ret);
+        ret->initialize(this);
+    }
+
     std::string_view object_name = "";
     bool is_super = function_name == "super";
     bool is_assignment = function_name == "=";
-    bool is_new = function_name == "new";
     andy::lang::function* method_to_call = nullptr;
 
     if(is_assignment && !current_context->self) {
         throw std::runtime_error("assignment operator '=' can only be used with a variable");
     }
-
-    std::shared_ptr<andy::lang::object> ret = nullptr;
 
     if(is_assignment) {
         if(positional_params.size() != 1) {
@@ -357,21 +369,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         }
     } else {
         if(is_new) {
-            if(!current_context->cls) {
-                andy::lang::error::internal("new called without a class");
-            }
-
             auto it = current_context->cls->functions.find("new");
 
-            if(it == current_context->cls->functions.end()) {
-                if(is_new) {
-                    // Simple default constructor call
-                    ret = andy::lang::object::instantiate(this, current_context->cls);
-                    pop_context_from_node_object_if_any(this, source_code);
-                    return ret;
-                }
-                throw std::runtime_error("function '" + std::string(function_name) + "' not found in class " + std::string(current_context->cls->name));
-            } else {
+            if(it != current_context->cls->functions.end()) {
                 method_to_call = it->second.get();
             }
         } else {
@@ -415,13 +415,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
                 method_to_call = it->second.get();
             }
 
-            if(!method_to_call) {
-                if(current_context->self && !is_new) {
-                    throw std::runtime_error("function '" + std::string(function_name) + "' not found in object of class " + std::string(current_context->cls->name));
-                }
-            }
-
-            if(!method_to_call) {
+            if(!method_to_call && !is_new) {
                 // Last chance
                 for(auto ctx = current_context; ctx != nullptr; ctx = ctx->lexical_parent) {
                     auto it = ctx->functions.find("missing");
@@ -463,30 +457,103 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_fn_call(con
         // If the function call has an object (obj.fn()), we have already pushed the context to search for
         // the function in the object and its class, so we don't need to push it again. If we don't have an
         // object we need to push the context to execute the function in it's own context.
-        if(!source_code.fn_object()) {
+        if(!is_new && !source_code.fn_object()) {
             push_context();
         }
 
         current_context->caller_node = &source_code;
+        // Stores positional_params and named_params on the context so that they can be accessed by the called function and also by execute_yield.
+        current_context->positional_params = std::move(positional_params);
+        current_context->named_params = std::move(named_params);
 
         // Store the call-site lexical context on the function's execution context so that
         // execute_yield can use it as the lexical_parent for the DO...END block.
         current_context->given_block_lexical_context = call_site_lexical_ctx;
 
-        andy::lang::function_call __call = {
-            function_name,
-            current_context->cls,
-            current_context->self ? current_context->self->shared_from_this() : nullptr,
-            method_to_call,
-            std::move(positional_params),
-            std::move(named_params),
-            source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
-        };
+        if(method_to_call) {
+            if(current_context->positional_params.size() != method_to_call->positional_params.size()) {
+                throw std::runtime_error("function " + std::string(method_to_call->name) + " expects " + std::to_string(method_to_call->positional_params.size()) + " parameters, but " + std::to_string(current_context->positional_params.size()) + " were given");
+            }
+
+            for(const auto& param : method_to_call->named_params) {
+                auto it = current_context->named_params.find(param.name);
+
+                if(it == current_context->named_params.end()) {
+                    if(param.has_default_value) {
+                        if(param.default_value_node) {
+                            current_context->named_params[param.name] = node_to_object(
+                                *param.default_value_node,
+                                current_context->cls,
+                                current_context->self ? current_context->self->shared_from_this() : nullptr
+                            );
+                        }
+                    } else {
+                        throw std::runtime_error("function '" + std::string(method_to_call->name) + "' called without named parameter " + param.name);
+                    }
+                }
+            }
+        } else if(is_new) {
+            // Default constructor, no function body to execute, just need to check the parameters and set the self variable.
+            if(current_context->positional_params.size() != 0) {
+                throw std::runtime_error("default constructor expects 0 parameters, but " + std::to_string(current_context->positional_params.size()) + " were given");
+            }
+            if(current_context->named_params.size() != 0) {
+                throw std::runtime_error("default constructor does not expect named parameters, but " + std::to_string(current_context->named_params.size()) + " were given");
+            }
+
+            if(current_context->self->cls->base) {
+                // call the base class constructor
+                push_context();
+                current_context->cls = current_context->self->cls->base;
+                auto base = execute_fn_call(*source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_declname));
+                pop_context();
+                current_context->self->base_instance = base;
+                pop_context_from_node_object_if_any(this, source_code);
+            }
+
+            auto self = current_context->self->shared_from_this();
+
+            pop_context();
+
+            return self;
+        }
+
+        current_context->given_block = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
+
+        if(method_to_call->block_ast.childrens().size()) {
+            for(size_t i = 0; i < method_to_call->positional_params.size(); i++) {
+                current_context->variables[method_to_call->positional_params[i].name] = current_context->positional_params[i];
+            }
+
+            for(auto& [name, value] : current_context->named_params) {
+                current_context->variables[name] = value;
+            }
+            
+            if(method_to_call->block_ast.type() == andy::lang::parser::ast_node_type::ast_node_context) {
+                ret = execute_all(method_to_call->block_ast);
+            } else {
+                ret = execute(*method_to_call->block_ast.block());
+            }
+        } else if(method_to_call->native_function) {
+            ret = method_to_call->native_function(this);
+        }
 
         if(is_new) {
-            ret = andy::lang::object::instantiate(this, current_context->cls, __call);
-        } else {
-            ret = call(__call);
+            if(ret) {
+                throw std::runtime_error("constructor should not return a value");
+            }
+
+            ret = current_context->self->shared_from_this();
+        }
+
+        for (auto& [name, value] : current_context->variables) {
+            if(value && value->base_instance) {
+                if(value.use_count() == 2) {
+                    // used by base_instance and current_context->variables
+                    value->base_instance = nullptr;
+                    // Now the use count is 1, it will be destroyed when the current_context is destroyed
+                }
+            }
         }
     }
 
@@ -543,20 +610,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_interpolate
         } else {
             std::shared_ptr<andy::lang::object> obj = execute(node_child);
             if(obj->cls != StringClass) {
-                auto method = obj->cls->instance_functions.find("to_string");
-                if(method == obj->cls->instance_functions.end()) {
-                    throw std::runtime_error("object of class " + std::string(obj->cls->name) + " does not have a function called 'to_string'");
-                }
-                andy::lang::function_call __call = {
-                    "to_string",
-                    obj->cls,
-                    obj,
-                    method->second.get(),
-                    {},
-                    {},
-                    nullptr
-                };
-                obj = call(__call);
+                obj = andy::lang::api::call(this, "to_string", obj);
             }
             str += obj->as<std::string>();
         }
@@ -580,30 +634,31 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_vardecl(con
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_conditional(const andy::lang::parser::ast_node& source_code)
 {
-        std::shared_ptr<andy::lang::object> ret = execute(*source_code.condition());
+    std::shared_ptr<andy::lang::object> ret = execute(*source_code.condition());
+    bool presence = andy::lang::api::is_present(this, ret);
 
-        if(ret && ret->is_present()) {
-            auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
+    if(presence) {
+        auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
 
-            ret = execute(*context);
-        } else {
-            auto e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_else);
-            if(!e) {
-                e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_conditional);
-            }
-            if(e) {
-                ret = execute(*e);
-            }
+        ret = execute(*context);
+    } else {
+        auto e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_else);
+        if(!e) {
+            e = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_conditional);
         }
+        if(e) {
+            ret = execute(*e);
+        }
+    }
 
-        return ret;
+    return ret;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_while(const andy::lang::parser::ast_node& source_code)
 {
     bool match_condition = source_code.decl_type() == "until";
 
-    while(execute(*source_code.condition())->is_present() != match_condition) {
+    while(andy::lang::api::is_present(this, execute(*source_code.condition())) != match_condition) {
         push_block_context();
         execute(*source_code.context());
 
@@ -728,19 +783,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_for(const a
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const andy::lang::parser::ast_node& source_code)
 {
-    andy::lang::function method;
-    method.name = "yield";
-    method.block_ast = *current_context->given_block;
-    andy::lang::function_call __call = {
-        "yield",
-        nullptr,
-        nullptr,
-        &method,
-        {},
-        {},
-        current_context->given_block
-    };
-
+    // Previous block
+    auto block = current_context->given_block;
     // Create a block context whose lexical_parent is the context where the DO...END block
     // was written (captured at call time), not where yield is being executed.
     auto ctx = std::make_shared<interpreter_context>();
@@ -749,7 +793,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_yield(const
     stack.push_back(ctx);
     update_current_context();
 
-    auto ret = call(__call);
+    std::shared_ptr<andy::lang::object> ret = execute(*block);
     pop_context();
     return ret;
 }
@@ -936,82 +980,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_all(const a
     return execute_all(source_code.childrens().begin(), source_code.childrens().end());
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::interpreter::call(function_call& call)
-{
-    std::shared_ptr<andy::lang::object> ret = nullptr;
-
-    if(call.positional_params.size() != call.method->positional_params.size()) {
-        throw std::runtime_error("function " + std::string(call.method->name) + " expects " + std::to_string(call.method->positional_params.size()) + " parameters, but " + std::to_string(call.positional_params.size()) + " were given");
-    }
-
-    for(const auto& param : call.method->named_params) {
-        auto it = call.named_params.find(param.name);
-
-        if(it == call.named_params.end()) {
-            if(param.has_default_value) {
-                if(param.default_value_node) {
-                    call.named_params[param.name] = node_to_object(*param.default_value_node, call.cls, call.object);
-                }
-            } else {
-                throw std::runtime_error("function '" + std::string(call.method->name) + "' called without named parameter " + param.name);
-            }
-        }
-    }
-
-    current_context->given_block = call.given_block;
-
-    bool is_constructor = call.method->name == "new";
-
-    if(is_constructor) {
-        // Special case
-        // The object is created before the method is called
-        // If the object was instantiated in from native code, it will be passed as a parameter
-        if(!call.object) {
-            return andy::lang::object::instantiate(this, call.cls, call);
-        } else {
-            call.object->initialize(this);
-        }
-    }
-
-    if(call.method->block_ast.childrens().size()) {
-        for(size_t i = 0; i < call.method->positional_params.size(); i++) {
-            current_context->variables[call.method->positional_params[i].name] = call.positional_params[i];
-        }
-
-        for(auto& [name, value] : call.named_params) {
-            current_context->variables[name] = value;
-        }
-        
-        if(call.method->block_ast.type() == andy::lang::parser::ast_node_type::ast_node_context) {
-            ret = execute_all(call.method->block_ast);
-        } else {
-            ret = execute(*call.method->block_ast.block());
-        }
-    } else if(call.method->native_function) {
-        ret = call.method->native_function(call);
-    }
-
-    if(is_constructor) {
-        if(ret) {
-            throw std::runtime_error("constructor should not return a value");
-        }
-
-        ret = call.object;
-    }
-
-    for (auto& [name, value] : current_context->variables) {
-        if(value && value->base_instance) {
-            if(value.use_count() == 2) {
-                // used by base_instance and current_context->variables
-                value->base_instance = nullptr;
-                // Now the use count is 1, it will be destroyed when the current_context is destroyed
-            }
-        }
-    }
-
-    return ret;
-}
-
 void andy::lang::interpreter::init()
 {
     // The global context
@@ -1094,7 +1062,8 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 {},
                 fn_object
             };
-            return call(__call);
+            andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+            // return call(__call);
         }
 
         if(fn_object) {
@@ -1125,7 +1094,8 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                     {},
                     fn_object
                 };
-                return call(__call);
+                andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+                // return call(__call);
             }
             throw std::runtime_error("class " + std::string(class_name) + " does not have a variable or function called '" + std::string(var_name) + "'");
         } else {
@@ -1152,7 +1122,8 @@ const std::shared_ptr<andy::lang::object> andy::lang::interpreter::try_object_fr
                 {},
                 node.child_from_type(andy::lang::parser::ast_node_type::ast_node_context)
             };
-            return call(__call);
+            andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+            // return call(__call);
         }
     }
 

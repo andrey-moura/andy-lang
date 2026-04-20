@@ -95,8 +95,14 @@ bool andy::lang::extension::exists(std::filesystem::path current_dir, std::strin
 void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::string_view module)
 {
     andy::lang::extension* builtin = find_builtin(builtins, module);
+
+    interpreter->stack.push_back(interpreter->global_context);
+    interpreter->update_current_context();
+
     if(builtin) {
         interpreter->load_extension(builtin);
+        interpreter->stack.pop_back();
+        interpreter->update_current_context();
         return;
     }
 
@@ -142,4 +148,7 @@ void andy::lang::extension::import(andy::lang::interpreter* interpreter, std::st
     andy::lang::extension* extension = create_extension();
 
     interpreter->load_extension(extension);
+
+    interpreter->stack.pop_back();
+    interpreter->update_current_context();
 }

@@ -2,6 +2,7 @@
 #include <andy/lang/preprocessor.hpp>
 #include <andy/lang/lexer.hpp>
 #include <andy/lang/parser.hpp>
+#include <andy/lang/error.hpp>
 
 #include <andy/file.hpp>
 
@@ -75,20 +76,24 @@ namespace andy
                     __call.method = method->second.get();
                 }
 
-                std::shared_ptr<andy::lang::object> ret = interpreter->call(__call);
+                // std::shared_ptr<andy::lang::object> ret = interpreter->call(__call);
+                andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
 
                 interpreter->pop_context();
 
+                std::shared_ptr<andy::lang::object> ret = nullptr;
                 return ret;
             }
 
-            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object)
+            std::shared_ptr<andy::lang::object> call(andy::lang::interpreter* interpreter, std::string_view function_name, std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> positional_params)
             {
-                interpreter->push_context_with_object(object);
-
-                if(!object) {
-                    object = andy::lang::object::instantiate(interpreter, interpreter->NullClass);
+                if(object) {
+                    interpreter->push_context_with_object(object);
+                } else {
+                    interpreter->push_context();
                 }
+
+                interpreter->current_context->positional_params = std::move(positional_params);
 
                 auto run_it = object->cls->instance_functions.find(function_name);
 
@@ -96,21 +101,27 @@ namespace andy
                     throw std::runtime_error("function '" + std::string(function_name) + "' is not defined in type " + std::string(object->cls->name));
                 }
 
-                andy::lang::function_call run_it_call = {
-                    function_name,
-                    object->cls,
-                    object->shared_from_this(),
-                    run_it->second.get(),
-                    {},
-                    {},
-                    nullptr
-                };
+                std::shared_ptr<andy::lang::object> ret = nullptr;
 
-                auto ret = interpreter->call(run_it_call);
+                if(run_it->second->block_ast.childrens().size()) {
+                    ret = interpreter->execute(run_it->second->block_ast);
+                } else if(run_it->second->native_function) {
+                    ret = run_it->second->native_function(interpreter);
+                }
 
                 interpreter->pop_context();
 
                 return ret;
+            }
+
+            bool is_present(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj)
+            {
+                if(!obj) {
+                    return false;
+                }
+
+                auto ret = call(interpreter, "present?", obj);
+                return cast_object_to<bool>(interpreter, std::move(ret));
             }
         };
     }; // namespace lang

@@ -244,8 +244,6 @@ namespace andy
 
             void log_native_destructor();
         public:
-            bool is_present() const;
-
             template<typename T>
             const T& as() const {
                 if(base_instance) {

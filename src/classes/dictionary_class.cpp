@@ -1,13 +1,14 @@
 #include <andy/lang/lang.hpp>
 #include <andy/lang/api.hpp>
 #include <andy/lang/interpreter.hpp>
+#include <andy/lang/error.hpp>
 
 std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::interpreter* interpreter)
 {
     auto DictionaryClass = std::make_shared<andy::lang::structure>("Dictionary");
 
-        DictionaryClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            const std::string& value = object->as<std::string>();
+        DictionaryClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", [](andy::lang::interpreter* interpreter) {
+            const auto& value = interpreter->current_context->self->as<andy::lang::dictionary>();
 
             if(value.empty()) {
                 return std::make_shared<andy::lang::object>(interpreter->FalseClass);
@@ -16,10 +17,10 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             return std::make_shared<andy::lang::object>(interpreter->TrueClass);
         });
 
-    DictionaryClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]",andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"key"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-            std::shared_ptr<andy::lang::object> key = params[0];
+        DictionaryClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]", std::initializer_list<std::string>{"key"}, [](andy::lang::interpreter* interpreter) {
+            std::shared_ptr<andy::lang::object> key = interpreter->current_context->positional_params[0];
 
-            auto& dictionary = object->as<andy::lang::dictionary>();
+            auto& dictionary = interpreter->current_context->self->as<andy::lang::dictionary>();
 
             auto operator_it = key->cls->instance_functions.find("==");
 
@@ -31,7 +32,9 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
                     operator_it->second.get(),
                     { pair.first }
                 };
-                auto result = interpreter->call(__call);
+                // auto result = interpreter->call(__call);
+                andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+                std::shared_ptr<andy::lang::object> result = nullptr;
                 if(result->cls == interpreter->TrueClass) {
                     return pair.second;
                 }
@@ -40,9 +43,9 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
             return std::make_shared<andy::lang::object>(interpreter->NullClass);
         });
 
-    DictionaryClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string",andy::lang::function_storage_type::instance_function, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+        DictionaryClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", [](andy::lang::interpreter* interpreter) {
             std::string result = "{";
-            auto& dictionary = object->as<andy::lang::dictionary>();
+            auto& dictionary = interpreter->current_context->self->as<andy::lang::dictionary>();
             for(auto& pair : dictionary) {
                 result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
                     "to_string",
