@@ -9,19 +9,20 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
 {
     auto DirectoryClass = std::make_shared<andy::lang::structure>("Dir");
 
-    DirectoryClass->functions["new"] = std::make_shared<andy::lang::function>("new",andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        object->set_native<std::filesystem::path>(std::move(std::filesystem::path(params[0]->as<std::string>())));
+    DirectoryClass->functions["new"] = std::make_shared<andy::lang::function>("new", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
+        auto object = interpreter->current_context->self;
+        object->set_native<std::filesystem::path>(std::move(std::filesystem::path(interpreter->current_context->positional_params[0]->as<std::string>())));
 
         return nullptr;
     });
 
-    DirectoryClass->instance_functions["glob"] = std::make_shared<andy::lang::function>("glob", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"pattern"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        std::filesystem::path& path = object->as<std::filesystem::path>();
+        DirectoryClass->instance_functions["glob"] = std::make_shared<andy::lang::function>("glob", std::initializer_list<std::string>{"pattern"}, [](andy::lang::interpreter* interpreter) {
+        std::filesystem::path& path = interpreter->current_context->self->as<std::filesystem::path>();
 #ifdef _WIN32
-        std::string pattern = params[0]->as<std::string>();
+        std::string pattern = interpreter->current_context->positional_params[0]->as<std::string>();
         std::replace(pattern.begin(), pattern.end(), '/', '\\');
 #else
-        const std::string& pattern = params[0]->as<std::string>();
+        const std::string& pattern = interpreter->current_context->positional_params[0]->as<std::string>();
 #endif
 
         std::vector<std::shared_ptr<andy::lang::object>> results;
@@ -45,9 +46,9 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
         return andy::lang::object::instantiate(interpreter, interpreter->ArrayClass, std::move(results));
     });
 
-    DirectoryClass->functions["exists?"] = std::make_shared<andy::lang::function>("exists?", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    DirectoryClass->functions["exists?"] = std::make_shared<andy::lang::function>("exists?", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
         std::filesystem::path path;
-        std::shared_ptr<andy::lang::object> path_object = params[0];
+        std::shared_ptr<andy::lang::object> path_object = interpreter->current_context->positional_params[0];
         if(path_object->cls == interpreter->StringClass) {
             path = path_object->as<std::string>();
         } else if(path_object->cls == interpreter->PathClass) {
@@ -62,9 +63,9 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
         }
     });
 
-    DirectoryClass->functions["create"] = std::make_shared<andy::lang::function>("create",andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"path"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    DirectoryClass->functions["create"] = std::make_shared<andy::lang::function>("create", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
         std::filesystem::path path;
-        std::shared_ptr<andy::lang::object> path_object = params[0];
+        std::shared_ptr<andy::lang::object> path_object = interpreter->current_context->positional_params[0];
         if(path_object->cls == interpreter->StringClass) {
             path = path_object->as<std::string>();
         } else if(path_object->cls == interpreter->PathClass) {
@@ -76,7 +77,7 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
         return nullptr;
     });
 
-    DirectoryClass->functions["home"] = std::make_shared<andy::lang::function>("home",andy::lang::function_storage_type::class_function,std::initializer_list<std::string>{}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
+    DirectoryClass->functions["home"] = std::make_shared<andy::lang::function>("home", [](andy::lang::interpreter* interpreter) {
         std::filesystem::path path = std::filesystem::path(std::getenv("HOME"));
         if(path.empty()) {
             throw std::runtime_error("Unable to retrieve home directory");

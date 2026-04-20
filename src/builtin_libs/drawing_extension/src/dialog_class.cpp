@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "andy/lang/api.hpp"
+#include <andy/lang/error.hpp>
 
 #include "andy/xml.hpp"
 #include "andy/string.hpp"
@@ -25,9 +26,10 @@ private:
 std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpreter* interpreter)
 {
     auto dialog_class = std::make_shared<andy::lang::structure>("Dialog");
-    dialog_class->functions["new"] = std::make_shared<andy::lang::function>("new", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"title"}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {
-        std::string_view title = params[0]->as<std::string>();
-        auto dialog = std::make_shared<andylang_drawing_dialog>(title, interpreter, object->derived_instance);
+    dialog_class->functions["new"] = std::make_shared<andy::lang::function>("new", std::initializer_list<std::string>{"title"}, [](andy::lang::interpreter* interpreter) {
+        auto object = interpreter->current_context->self;
+        std::string_view title = interpreter->current_context->positional_params[0]->as<std::string>();
+        auto dialog = std::make_shared<andylang_drawing_dialog>(title, interpreter, object->derived_instance->shared_from_this());
         object->set_native(std::move(dialog));
 
         std::filesystem::path views_file = std::filesystem::absolute("views");
@@ -40,16 +42,18 @@ std::shared_ptr<andy::lang::structure> create_dialog_class(andy::lang::interpret
             andy::xml::schema schema = andy::xml::schema(andy::xml::decode(schema_file_path));
             auto page = std::make_shared<andy::drawing::page>(std::move(schema), std::move(xml));
             auto page_class_call = andy::lang::function_call("Drawing.Page", nullptr);
-            auto page_class_object = interpreter->call(page_class_call);
+            // auto page_class_object = interpreter->call(page_class_call);
+            std::shared_ptr<andy::lang::object> page_class_object = nullptr;
+            andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
             auto page_instance = andy::lang::object::create(interpreter, page_class_object->as<std::shared_ptr<andy::lang::structure>>(), std::move(page));
         }
         return nullptr;
     });
 
-    dialog_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::function_call& call) {
-        std::shared_ptr<andy::lang::object> maximized = call.named_params["maximized"];
-        auto dialog = call.object->as<std::shared_ptr<andylang_drawing_dialog>>();
-        dialog->show(maximized->is_present());
+    dialog_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::interpreter* interpreter) {
+        std::shared_ptr<andy::lang::object> maximized = interpreter->current_context->named_params["maximized"];
+        auto dialog = interpreter->current_context->self->as<std::shared_ptr<andylang_drawing_dialog>>();
+//        dialog->show(maximized->is_present());
 
         return nullptr;
     });

@@ -18,6 +18,8 @@ namespace andy
             std::map<std::string_view, std::shared_ptr<andy::lang::object>> variables;
             std::map<std::string_view, std::shared_ptr<andy::lang::function>> functions;
             std::map<std::string_view, std::shared_ptr<andy::lang::inline_function>> inline_functions;
+            std::vector<std::shared_ptr<andy::lang::object>> positional_params;
+            std::map<std::string_view, std::shared_ptr<andy::lang::object>> named_params;
             std::map<std::string_view, std::shared_ptr<andy::lang::structure>> classes;
             
             const andy::lang::parser::ast_node* given_block = nullptr;

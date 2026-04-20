@@ -389,7 +389,8 @@ int main(int argc, char* argv[]) {
                     if(method_iterator) {
                         output_file << "," << std::endl;
                     }
-                    output_file << "\t\t{\"" << name << "\", andy::lang::function(\"" << name << "\", andy::lang::function_storage_type::instance_function, {}, [interpreter](std::shared_ptr<andy::lang::object> object, std::vector<std::shared_ptr<andy::lang::object>> params) {" << std::endl;
+                    output_file << "\t\t{\"" << name << "\", andy::lang::function(\"" << name << "\", [](andy::lang::interpreter* interpreter) {" << std::endl;
+                    output_file << "\t\t\tauto object = interpreter->current_context->self;" << std::endl;
 
                     if(method.name == "new") {
                         output_file << "\t\t\tif constexpr(sizeof(" << snake_case_name << ") < andy::lang::max_native_size) {" << std::endl;

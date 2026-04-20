@@ -41,58 +41,10 @@ void andy::lang::object::initialize(andy::lang::interpreter* interpreter)
 
 void andy::lang::object::initialize(andy::lang::interpreter *interpreter, andy::lang::function_call new_call)
 {
-    interpreter->push_context_with_object(shared_from_this());
     initialize(interpreter);
-
-    auto new_it = cls->functions.find("new");
-
-    if(new_it == cls->functions.end()) {
-        // default constructor
-        if(new_call.positional_params.size() || new_call.named_params.size()) {
-            throw std::runtime_error("Default constructor does not accept parameters in class " + std::string(cls->name));
-        }
-        if(cls->base) {
-            // call the base class constructor
-            base_instance = std::make_shared<object>(cls->base);
-            base_instance->derived_instance = shared_from_this();
-            base_instance->initialize(interpreter, new_call);
-        }
-    } else {
-        new_call.name = "new";
-        new_call.cls = cls;
-        new_call.object = shared_from_this();
-        new_call.method = new_it->second.get();
-
-        interpreter->call(new_call);
-    }
-
-    interpreter->pop_context();
 }
 
 void andy::lang::object::log_native_destructor()
 {
     andy::console::log_debug("{}#{} native destructor", cls->name, (void*)this);
-}
-
-bool andy::lang::object::is_present() const
-{
-    if(!cls) {
-        throw std::runtime_error("object has no class");
-    }
-    
-    auto it = cls->instance_functions.find("present?");
-
-    if(it == cls->instance_functions.end()) {
-        throw std::runtime_error("present? is not defined in class " + std::string(cls->name));
-    } else {
-        auto this_without_const = const_cast<object*>(this);
-
-        auto obj = it->second->call( this_without_const->shared_from_this() );
-
-        if(obj->cls->name == "True") {
-            return true;
-        } else {
-            return false;
-        }
-    }
 }

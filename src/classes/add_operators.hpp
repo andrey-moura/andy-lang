@@ -93,16 +93,16 @@
     }
 
 #define UNARY_OPERATOR(op, T) \
-    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, {}, [interpreter](andy::lang::function_call& call) { \
-        T& value = call.object->as<T>(); \
+    andy::lang::function(#op, [](andy::lang::interpreter* interpreter) { \
+        T& value = interpreter->current_context->self->as<T>(); \
         value op; \
-        return call.object; \
+        return interpreter->current_context->self->shared_from_this(); \
     })
 
 #define BINARY_ASSIGNMENT_OPERATOR(op, T) \
-    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) { \
-        const auto& params = call.positional_params; \
-        T& value = call.object->as<T>(); \
+    andy::lang::function(#op, { "other" }, [](andy::lang::interpreter* interpreter) { \
+        const auto& params = interpreter->current_context->positional_params; \
+        T& value = interpreter->current_context->self->as<T>(); \
         auto& param = params[0]; \
         if (params[0]->cls == interpreter->IntegerClass) { \
             value op params[0]->as<int>(); \
@@ -111,16 +111,16 @@
         } else if (params[0]->cls == interpreter->DoubleClass) { \
             value op params[0]->as<double>(); \
         } else { \
-            throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
+            throw std::runtime_error("undefined operator " #op " (" + std::string(interpreter->current_context->self->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
-        return call.object; \
+        return interpreter->current_context->self->shared_from_this(); \
     })
 
 #define BINARY_COMPARISON_OPERATOR(op, T) \
-    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) { \
-        const auto& params = call.positional_params; \
+    andy::lang::function(#op, { "other" }, [](andy::lang::interpreter* interpreter) { \
+        const auto& params = interpreter->current_context->positional_params; \
         std::shared_ptr<andy::lang::object> other = params[0]; \
-        T& value = call.object->as<T>(); \
+        T& value = interpreter->current_context->self->as<T>(); \
         bool comparison_result = false; \
         if (params[0]->cls == interpreter->IntegerClass) { \
             comparison_result = value op params[0]->as<int>(); \
@@ -129,17 +129,17 @@
         } else if (params[0]->cls == interpreter->DoubleClass) { \
             comparison_result = value op params[0]->as<double>(); \
         } else { \
-            throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
+            throw std::runtime_error("undefined operator " #op " (" + std::string(interpreter->current_context->self->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
         return andy::lang::api::to_object(interpreter, comparison_result); \
     })
 
 #define BINARY_ARITHMETIC_OPERATOR(op, T) \
-    andy::lang::function(#op, andy::lang::function_storage_type::instance_function, { "other" }, [interpreter](andy::lang::function_call& call) { \
-        auto object = call.object; \
-        auto other = call.positional_params[0]; \
-        const auto& params = call.positional_params; \
-        T value = call.object->as<T>(); \
+    andy::lang::function(#op, { "other" }, [](andy::lang::interpreter* interpreter) { \
+        auto object = interpreter->current_context->self->shared_from_this(); \
+        auto other = interpreter->current_context->positional_params[0]; \
+        const auto& params = interpreter->current_context->positional_params; \
+        T value = interpreter->current_context->self->as<T>(); \
         if (other->cls == interpreter->IntegerClass) { \
             value = value op other->as<int>(); \
         } else if (other->cls == interpreter->FloatClass) { \
@@ -147,7 +147,7 @@
         } else if (other->cls == interpreter->DoubleClass) { \
             value = value op other->as<double>(); \
         } else { \
-            throw std::runtime_error("undefined operator " #op " (" + std::string(call.object->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
+            throw std::runtime_error("undefined operator " #op " (" + std::string(interpreter->current_context->self->cls->name) + ", " + std::string(params[0]->cls->name) + ")"); \
         } \
         return andy::lang::object::instantiate(interpreter, object->cls, value); \
     })
@@ -196,9 +196,9 @@ namespace andy
                 { "/",  BINARY_ARITHMETIC_OPERATOR(/, T)  },
             };
             if constexpr (std::is_same_v<T, int>) {
-                cls->instance_functions["%"] = std::make_shared<andy::lang::function>("%", andy::lang::function_storage_type::instance_function, std::initializer_list<std::string>{ "other" }, [interpreter](andy::lang::function_call& call) {
-                    auto object = call.object;
-                    auto other = call.positional_params[0];
+                cls->instance_functions["%"] = std::make_shared<andy::lang::function>("%", std::initializer_list<std::string>{ "other" }, [](andy::lang::interpreter* interpreter) {
+                    auto object = interpreter->current_context->self->shared_from_this();
+                    auto other = interpreter->current_context->positional_params[0];
                     if(other->cls != interpreter->IntegerClass) {
                         throw std::runtime_error("undefined operator % (" + std::string(object->cls->name) + ", " + std::string(other->cls->name) + ")");
                     }

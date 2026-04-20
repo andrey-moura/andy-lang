@@ -114,8 +114,6 @@ namespace andy
             /// @brief The global function class.
             std::shared_ptr<andy::lang::structure> FunctionClass;
 
-            std::shared_ptr<andy::lang::object> call(function_call& call);
-
             std::shared_ptr<andy::lang::structure> find_class(const std::string_view& name);
 
             const std::shared_ptr<andy::lang::object> try_object_from_declname

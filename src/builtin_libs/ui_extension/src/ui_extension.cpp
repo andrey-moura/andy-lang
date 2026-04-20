@@ -25,8 +25,8 @@ public:
     virtual void load(andy::lang::interpreter* interpreter) override
     {
         auto UIClass = std::make_shared<andy::lang::structure>("UI");
-        UIClass->functions["main"] = std::make_shared<andy::lang::function>("main", andy::lang::function_storage_type::class_function, std::initializer_list<std::string>{"app_class"}, [this, interpreter](andy::lang::function_call& call) {
-            auto app_class_class = call.positional_params[0];
+        UIClass->functions["main"] = std::make_shared<andy::lang::function>("main", std::initializer_list<std::string>{"app_class"}, [this](andy::lang::interpreter* interpreter) {
+            auto app_class_class = interpreter->current_context->positional_params[0];
             if (!app_class_class || app_class_class->cls != interpreter->ClassClass) {
                 throw std::runtime_error("UI.main expects an class, got " + (app_class_class ? std::string(app_class_class->cls->name) : "null"));
             }

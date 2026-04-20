@@ -30,20 +30,6 @@ andy::lang::fn_parameter::fn_parameter(std::string_view __name)
     }
 }
 
-std::shared_ptr<andy::lang::object> andy::lang::function::call(std::shared_ptr<andy::lang::object> o)
-{
-    andy::lang::function_call call = {
-        name,
-        nullptr,
-        o,
-        this,
-        {},
-        {},
-        nullptr
-    };
-    return native_function(call);
-}
-
 void andy::lang::function::init_params(std::vector<std::string> __params)
 {
     for(auto& param : __params) {
