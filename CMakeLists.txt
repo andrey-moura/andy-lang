@@ -162,6 +162,7 @@ install(TARGETS andy-lang DESTINATION lib)
 # Install andy-lang headers
 install(DIRECTORY include/andy DESTINATION include)
 install(DIRECTORY std DESTINATION include/andy)
+install(DIRECTORY utility DESTINATION src/andy-lang)
 
 install(EXPORT andy-langTargets
     FILE andy-langTargets.cmake
