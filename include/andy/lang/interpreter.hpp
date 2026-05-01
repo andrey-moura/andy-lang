@@ -27,6 +27,7 @@ namespace andy
         public:
             std::filesystem::path input_file_path;
             andy::lang::lexer* main_lexer = nullptr;
+            const andy::lang::parser::ast_node* current_node = nullptr;
         public:
             /// @brief Load a class into the vm. The class is kept alive by the vm untill it is destroyed.
             /// @param cls The class to be loaded. It is kept alive by the vm untill it is destroyed. It is globally accessible.

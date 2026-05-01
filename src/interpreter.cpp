@@ -913,6 +913,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_throw(const
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy::lang::parser::ast_node& source_code)
 {
+    auto previous_node = current_node;
+    current_node = &source_code;
+
     static auto executors = std::map<andy::lang::parser::ast_node_type, std::shared_ptr<andy::lang::object>(andy::lang::interpreter::*)(const andy::lang::parser::ast_node&)>{
         { andy::lang::parser::ast_node_type::ast_node_classdecl,           &andy::lang::interpreter::execute_classdecl           },
         { andy::lang::parser::ast_node_type::ast_node_context,             &andy::lang::interpreter::execute_context             },
@@ -943,6 +946,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute(const andy:
     }
 
     auto ret = (this->*it->second)(source_code);
+
+    current_node = previous_node;
 
     return ret;
 }
