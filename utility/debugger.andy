@@ -1,0 +1,19 @@
+if __argv__.size < 2
+  out 'andy --debugger <path_to_executable> <args>'
+
+  return 1
+end
+
+var utility_folder = Path.new(__dir__)
+var debugger_folder = utility_folder / 'debugger'
+var current_system_debugger = debugger_folder / "${System.OS.lower}.andy"
+
+unless File.exists?(current_system_debugger)
+  throw "No debugger found for the current system: ${System.OS}"
+end
+
+require current_system_debugger
+
+var debugger = Debugger.new(__argv__[1])
+
+debugger.init()

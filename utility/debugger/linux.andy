@@ -1,0 +1,10 @@
+type Debugger
+  var executable_path = null
+
+  fn run
+    out false
+  end
+
+  fn init
+  end
+end
