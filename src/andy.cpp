@@ -12,6 +12,20 @@
     std::exception e;
 #endif
 
+andy::lang::interpreter interpreter;
+
+extern "C" const char* andy_interpreter_current_node_path() {
+    std::cout << "Debugger requested current node path";
+    if(!interpreter.current_node) {
+        std::cout << " which is null" << std::endl;
+        return nullptr;
+    } else {
+        std::cout << ": ";
+    }
+    std::cout << interpreter.current_node->token().file_name << std::endl;
+    return interpreter.current_node->token().file_name->c_str();
+}
+
 int main(int argc, char** argv) {
     try {
         std::filesystem::path andy_executable_path = argv[0];
@@ -77,7 +91,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        std::shared_ptr<andy::lang::object> ret = andy::lang::api::evaluate(file_path, argc, argv);
+        std::shared_ptr<andy::lang::object> ret = andy::lang::api::evaluate(&interpreter, file_path, argc, argv);
 
         if(!ret) {
             return 0;
