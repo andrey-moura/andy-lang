@@ -673,8 +673,8 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_while(const
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_break(const andy::lang::parser::ast_node& source_code)
 {
-        current_context->has_returned = true;
-        return nullptr;
+    current_context->has_returned = true;
+    return nullptr;
 }
 
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_context(const andy::lang::parser::ast_node& source_code)
