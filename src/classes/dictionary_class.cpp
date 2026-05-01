@@ -7,71 +7,70 @@ std::shared_ptr<andy::lang::structure> create_dictionary_class(andy::lang::inter
 {
     auto DictionaryClass = std::make_shared<andy::lang::structure>("Dictionary");
 
-        DictionaryClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", [](andy::lang::interpreter* interpreter) {
-            const auto& value = interpreter->current_context->self->as<andy::lang::dictionary>();
+    DictionaryClass->instance_functions["present?"] = std::make_shared<andy::lang::function>("present?", [](andy::lang::interpreter* interpreter) {
+        const auto& value = interpreter->current_context->self->as<andy::lang::dictionary>();
 
-            if(value.empty()) {
-                return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+        if(value.empty()) {
+            return std::make_shared<andy::lang::object>(interpreter->FalseClass);
+        }
+
+        return std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    });
+
+    DictionaryClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]", std::initializer_list<std::string>{"key"}, [](andy::lang::interpreter* interpreter) {
+        std::shared_ptr<andy::lang::object> key = interpreter->current_context->positional_params[0];
+
+        auto& dictionary = interpreter->current_context->self->as<andy::lang::dictionary>();
+
+        auto operator_it = key->cls->instance_functions.find("==");
+
+        for(auto& pair : dictionary) {
+            andy::lang::function_call __call = {
+                "==",
+                key->cls,
+                key,
+                operator_it->second.get(),
+                { pair.first }
+            };
+            // auto result = interpreter->call(__call);
+            andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
+            std::shared_ptr<andy::lang::object> result = nullptr;
+            if(result->cls == interpreter->TrueClass) {
+                return pair.second;
             }
+        }
 
-            return std::make_shared<andy::lang::object>(interpreter->TrueClass);
-        });
+        return std::make_shared<andy::lang::object>(interpreter->NullClass);
+    });
 
-        DictionaryClass->instance_functions["[]"] = std::make_shared<andy::lang::function>("[]", std::initializer_list<std::string>{"key"}, [](andy::lang::interpreter* interpreter) {
-            std::shared_ptr<andy::lang::object> key = interpreter->current_context->positional_params[0];
+    DictionaryClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", [](andy::lang::interpreter* interpreter) {
+        std::string result = "{";
+        auto& dictionary = interpreter->current_context->self->as<andy::lang::dictionary>();
+        for(auto& pair : dictionary) {
+            result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
+                "to_string",
+                pair.first->cls,
+                pair.first,
+                pair.first->cls->instance_functions["to_string"].get(),
+                {},
+                {},
+                nullptr
+            });
+            result += ": ";
+            result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
+                "to_string",
+                pair.second->cls,
+                pair.second,
+                pair.second->cls->instance_functions["to_string"].get(),
+                {},
+                {},
+                nullptr
+            });
+            result += ", ";
+        }
+        result += "}";
+        return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(result));
+    });
 
-            auto& dictionary = interpreter->current_context->self->as<andy::lang::dictionary>();
-
-            auto operator_it = key->cls->instance_functions.find("==");
-
-            for(auto& pair : dictionary) {
-                andy::lang::function_call __call = {
-                    "==",
-                    key->cls,
-                    key,
-                    operator_it->second.get(),
-                    { pair.first }
-                };
-                // auto result = interpreter->call(__call);
-                andy::lang::error::internal("Temporary disabled code reached at " + std::string(__FILE__) + ":" + std::to_string(__LINE__));
-                std::shared_ptr<andy::lang::object> result = nullptr;
-                if(result->cls == interpreter->TrueClass) {
-                    return pair.second;
-                }
-            }
-
-            return std::make_shared<andy::lang::object>(interpreter->NullClass);
-        });
-
-        DictionaryClass->instance_functions["to_string"] = std::make_shared<andy::lang::function>("to_string", [](andy::lang::interpreter* interpreter) {
-            std::string result = "{";
-            auto& dictionary = interpreter->current_context->self->as<andy::lang::dictionary>();
-            for(auto& pair : dictionary) {
-                result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
-                    "to_string",
-                    pair.first->cls,
-                    pair.first,
-                    pair.first->cls->instance_functions["to_string"].get(),
-                    {},
-                    {},
-                    nullptr
-                });
-                result += ": ";
-                result += andy::lang::api::call<std::string>(interpreter, andy::lang::function_call{
-                    "to_string",
-                    pair.second->cls,
-                    pair.second,
-                    pair.second->cls->instance_functions["to_string"].get(),
-                    {},
-                    {},
-                    nullptr
-                });
-                result += ", ";
-            }
-            result += "}";
-            return andy::lang::object::instantiate(interpreter, interpreter->StringClass, std::move(result));
-        });
-
-    
     return DictionaryClass;
 }
