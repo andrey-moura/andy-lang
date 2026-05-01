@@ -128,6 +128,15 @@ namespace andy
                 auto ret = call(interpreter, "present?", obj);
                 return cast_object_to<bool>(interpreter, std::move(ret));
             }
+
+            bool is_truthy(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj)
+            {
+                if(!obj) {
+                    return false;
+                }
+
+                return obj->cls != interpreter->FalseClass && obj->cls != interpreter->NullClass;
+            }
         };
     }; // namespace lang
 };

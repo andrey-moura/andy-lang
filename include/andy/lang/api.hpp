@@ -150,6 +150,11 @@ namespace andy
             /// @param obj The object to check.
             /// @return Returns true if the object is present, false otherwise.
             bool is_present(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj);
+            /// @brief Checks if the object is truthy (not null and not false).
+            /// @param interpreter The interpreter.
+            /// @param obj The object to check.
+            /// @return Returns true if the object is truthy, false otherwise.
+            bool is_truthy(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj);
             /// @brief Adds a class to another class.
             /// @param interpreter The interpreter.
             /// @param cls The class.

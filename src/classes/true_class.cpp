@@ -29,7 +29,7 @@ std::shared_ptr<andy::lang::structure> create_true_class(andy::lang::interpreter
     
         TrueClass->instance_functions["&&"] = std::make_shared<andy::lang::function>("&&", std::initializer_list<std::string>{"other"}, [TrueClass](andy::lang::interpreter* interpreter) {
                 std::shared_ptr<andy::lang::object> other = interpreter->current_context->positional_params[0];
-        // if(other->is_present()) {
+        // if(other->is_truthy()) {
         //     return std::make_shared<andy::lang::object>(TrueClass);
         // } else {
         //     return std::make_shared<andy::lang::object>(interpreter->FalseClass);

@@ -635,9 +635,9 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_vardecl(con
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_conditional(const andy::lang::parser::ast_node& source_code)
 {
     std::shared_ptr<andy::lang::object> ret = execute(*source_code.condition());
-    bool presence = andy::lang::api::is_present(this, ret);
+    bool truthy = andy::lang::api::is_truthy(this, ret);
 
-    if(presence) {
+    if(truthy) {
         auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
 
         ret = execute(*context);
