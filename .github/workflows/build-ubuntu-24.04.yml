@@ -13,9 +13,10 @@ jobs:
       id-token: write
       contents: read
       checks: write
+
     steps:
     - name: Install dependencies
-      run: sudo apt-get install -y build-essential
+      run: sudo apt-get install -y build-essential ccache
 
     - name: Checkout andy-lang
       uses: actions/checkout@v3
@@ -23,8 +24,25 @@ jobs:
         path: 'andy-lang'
         submodules: 'recursive'
 
+    - name: Cache ccache
+      uses: actions/cache@v4
+      with:
+        path: ~/.ccache
+        key: ${{ runner.os }}-ccache-${{ hashFiles('andy-lang/**/*.cpp', 'andy-lang/**/*.h', 'andy-lang/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-ccache-
+
+    - name: Configure ccache
+      run: |
+        ccache --max-size=500M
+        ccache -s
+
     - name: Configure CMake for andy-lang
-      run: cmake -DCMAKE_BUILD_TYPE=Release -B build .
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -B build .
       working-directory: andy-lang
       
     - name: Build project for andy-lang
@@ -42,6 +60,9 @@ jobs:
     - name: Run tests for andy-lang
       run: andy --tests
       working-directory: andy-lang
+
+    - name: ccache stats
+      run: ccache -s
 
     - name: Generate artifacts
       uses: actions/upload-artifact@v4
