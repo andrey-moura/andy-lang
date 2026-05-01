@@ -93,12 +93,6 @@ add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
 
-add_executable(debug
-    ${CMAKE_CURRENT_LIST_DIR}/experiments/some/debub-linux.cpp
-)
-
-target_link_libraries(debug PRIVATE elf dw)
-
 if(FALSE)
     find_package(Clang REQUIRED)
 
