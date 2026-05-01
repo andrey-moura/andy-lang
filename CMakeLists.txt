@@ -93,6 +93,12 @@ add_executable(andy
     ${CMAKE_CURRENT_LIST_DIR}/src/andy.cpp
 )
 
+add_executable(debug
+    ${CMAKE_CURRENT_LIST_DIR}/experiments/some/debub-linux.cpp
+)
+
+target_link_libraries(debug PRIVATE elf dw)
+
 if(FALSE)
     find_package(Clang REQUIRED)
 
@@ -122,6 +128,9 @@ if(UNIX)
     # set_target_properties(andy PROPERTIES LINK_SEARCH_START_STATIC ON)
     # set_target_properties(andy PROPERTIES LINK_SEARCH_END_STATIC ON)
     # target_link_options(andy PRIVATE -static-libgcc -static-libstdc++ -static)
+    target_link_options(andy PRIVATE
+        "-Wl,-Map=${CMAKE_BINARY_DIR}/andy.map"
+    )
 elseif(WIN32)
     add_executable(andy-lang-installer WIN32 ${CMAKE_CURRENT_LIST_DIR}/win32/installer.cpp)
     if(EXISTS "${CMAKE_BINARY_DIR}/Release/andy.exe")
