@@ -610,6 +610,7 @@ andy::lang::parser::ast_node andy::lang::parser::parse_keyword(andy::lang::lexer
         { "fn" ,       &andy::lang::parser::parse_keyword_function  },
         { "return",    &andy::lang::parser::parse_keyword_return    },
         { "if",        &andy::lang::parser::parse_keyword_if        },
+        { "unless",    &andy::lang::parser::parse_keyword_if    },
         { "loop",      &andy::lang::parser::parse_keyword_loop      },
         { "namespace", &andy::lang::parser::parse_keyword_namespace },
         { "break",     &andy::lang::parser::parse_keyword_break     },

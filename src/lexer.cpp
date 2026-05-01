@@ -60,6 +60,7 @@ const static std::vector<std::string_view> keywords_lookup = {
     "throw",
     "try",
     "type",
+    "unless",
     "var",
     "within",
     "yield"

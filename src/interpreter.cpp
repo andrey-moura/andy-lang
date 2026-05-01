@@ -635,9 +635,10 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_vardecl(con
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_conditional(const andy::lang::parser::ast_node& source_code)
 {
     std::shared_ptr<andy::lang::object> ret = execute(*source_code.condition());
+    bool match_codition = source_code.decl_type() == "if";
     bool truthy = andy::lang::api::is_truthy(this, ret);
 
-    if(truthy) {
+    if(truthy == match_codition) {
         auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
 
         ret = execute(*context);
@@ -658,7 +659,7 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_while(const
 {
     bool match_condition = source_code.decl_type() == "until";
 
-    while(andy::lang::api::is_present(this, execute(*source_code.condition())) != match_condition) {
+    while(andy::lang::api::is_truthy(this, execute(*source_code.condition())) != match_condition) {
         push_block_context();
         execute(*source_code.context());
 
