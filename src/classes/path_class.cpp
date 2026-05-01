@@ -11,7 +11,12 @@ std::shared_ptr<andy::lang::structure> create_path_class(andy::lang::interpreter
     PathClass->variables["temp"] = andy::lang::object::create(interpreter, PathClass, std::move(std::filesystem::temp_directory_path()));
     PathClass->functions["new"] = std::make_shared<andy::lang::function>("new", std::initializer_list<std::string>{"path"}, [](andy::lang::interpreter* interpreter) {
         auto object = interpreter->current_context->self;
-        object->set_native<std::filesystem::path>(std::move(std::filesystem::path(interpreter->current_context->positional_params[0]->as<std::string>())));
+        auto param = interpreter->current_context->positional_params[0];
+        if(param->cls == interpreter->StringClass) {
+            object->set_native<std::filesystem::path>(std::move(std::filesystem::path(param->as<std::string>())));
+        } else if(param->cls == interpreter->DictionaryClass || param->cls == interpreter->PathClass) {
+            object->set_native<std::filesystem::path>(std::move(param->as<std::filesystem::path>()));
+        }
 
         return nullptr;
     });
