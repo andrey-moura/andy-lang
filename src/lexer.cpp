@@ -644,11 +644,7 @@ std::string andy::lang::lexer::token::human_start_position() const
 
 void andy::lang::lexer::token::merge(const token &other)
 {
-    if(string_literal.empty()) {
-        string_literal = content;
-    }
-    string_literal += other.content;
-
+    content += other.content;
     end = other.end;
 }
 
