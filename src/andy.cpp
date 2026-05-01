@@ -6,10 +6,13 @@
 #include <andy/console.hpp>
 
 #ifdef __ANDY_DEBUG__
-    #define try if(true)
-    #define catch(e) if(false)
+    #define try_if_not_debug if(true)
+    #define catch_if_not_debug(e) if(false)
 
     std::exception e;
+#else
+    #define try_if_not_debug try
+    #define catch_if_not_debug(e) catch(e)
 #endif
 
 andy::lang::interpreter interpreter;
@@ -27,7 +30,7 @@ extern "C" const char* andy_interpreter_current_node_path() {
 }
 
 int main(int argc, char** argv) {
-    try {
+    try_if_not_debug {
         std::filesystem::path andy_executable_path = argv[0];
         //vm_instance = std::make_shared<andy::lang::vm>();
 
@@ -91,7 +94,18 @@ int main(int argc, char** argv) {
             }
         }
 
-        std::shared_ptr<andy::lang::object> ret = andy::lang::api::evaluate(&interpreter, file_path, argc, argv);
+        std::shared_ptr<andy::lang::object> ret;
+
+        try {
+            ret = andy::lang::api::evaluate(&interpreter, file_path, argc, argv);
+        } catch(andy_lang_runtime_exception& e) {
+            if(e.exception_object->cls == interpreter.StringClass) {
+                andy::console::log_error(e.exception_object->as<std::string>());
+            } else {
+                andy::console::log_error("An exception occurred");
+            }
+            return 1;
+        }
 
         if(!ret) {
             return 0;
@@ -103,7 +117,7 @@ int main(int argc, char** argv) {
             return ret_value;
         }
         
-    } catch (const std::exception& e) {
+    } catch_if_not_debug (const std::exception& e) {
         andy::console::log_error(e.what());
         return 1;
     }

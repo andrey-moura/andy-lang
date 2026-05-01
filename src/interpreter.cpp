@@ -852,15 +852,6 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_else(const 
     return execute_all(*context);
 }
 
-struct andy_lang_runtime_exception {
-    andy_lang_runtime_exception(std::shared_ptr<andy::lang::object> exception_object)
-        : exception_object(std::move(exception_object))
-    {
-        
-    }
-    std::shared_ptr<andy::lang::object> exception_object;
-};
-
 std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_try(const andy::lang::parser::ast_node& source_code)
 {
     push_block_context();
@@ -881,9 +872,16 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_try(const a
         auto context = source_code.child_from_type(andy::lang::parser::ast_node_type::ast_node_context);
         execute(*context);
     } catch(const andy_lang_runtime_exception& e) {
-        // Go back to the push_context on the beginning of this function
-        while(current_context && !current_context->catching_exception) {
+        // Go back to the push_context on the beginning of this function without poping the global_context
+        while(current_context && !current_context->catching_exception && stack.size() > 1) {
             pop_context();
+        }
+        if(!stack.size()) {
+            andy::lang::error::internal("Interpreter stack is empty while handling an exception");
+        }
+        if(!current_context->catching_exception) {
+            // We have popped all contexts and we are still not catching the exception, which means that this exception is uncaught.
+            throw;
         }
         auto catcher = catchers.find(e.exception_object->cls->name);
         if(catcher == catchers.end()) {

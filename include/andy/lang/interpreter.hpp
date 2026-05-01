@@ -9,6 +9,15 @@
 #include <andy/lang/object.hpp>
 #include <andy/lang/interpreter_context.hpp>
 
+struct andy_lang_runtime_exception {
+    andy_lang_runtime_exception(std::shared_ptr<andy::lang::object> exception_object)
+        : exception_object(std::move(exception_object))
+    {
+        
+    }
+    std::shared_ptr<andy::lang::object> exception_object;
+};
+
 namespace andy
 {
     namespace lang
