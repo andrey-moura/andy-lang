@@ -54,7 +54,7 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return andy::lang::object::instantiate(interpreter, StringClass, value.substr(start, size));
         });
 
-        StringClass->instance_functions["to_lower_case!"] = std::make_shared<andy::lang::function>("to_lower_case!", [](andy::lang::interpreter* interpreter) {
+        StringClass->instance_functions["lower!"] = std::make_shared<andy::lang::function>("lower!", [](andy::lang::interpreter* interpreter) {
             std::string& value = interpreter->current_context->self->as<std::string>();
 
             for(char & c : value) {
@@ -64,14 +64,14 @@ std::shared_ptr<andy::lang::structure> create_string_class(andy::lang::interpret
             return nullptr;
         });
 
-        StringClass->instance_functions["to_lower_case"] = std::make_shared<andy::lang::function>("to_lower_case!", [StringClass](andy::lang::interpreter* interpreter) {
+        StringClass->instance_functions["lower"] = std::make_shared<andy::lang::function>("lower", [StringClass](andy::lang::interpreter* interpreter) {
             std::string value = interpreter->current_context->self->as<std::string>();
 
             for(char & c : value) {
                 c = std::tolower(c);
             }
 
-            return andy::lang::object::instantiate(interpreter, StringClass, value);
+            return andy::lang::api::to_object(interpreter, value);
         });
 
         StringClass->instance_functions["to_integer!"] = std::make_shared<andy::lang::function>("to_integer!", [](andy::lang::interpreter* interpreter) {
