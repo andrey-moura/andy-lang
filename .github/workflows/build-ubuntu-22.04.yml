@@ -42,7 +42,7 @@ jobs:
       working-directory: andy-lang
 
     - name: Run tests for andy-lang
-      run: andy tests
+      run: andy --tests
       working-directory: andy-lang
 
     - name: Generate artifacts

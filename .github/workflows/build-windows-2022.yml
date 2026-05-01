@@ -60,5 +60,5 @@ jobs:
           andy-lang/build/Release/andy-lang-installer.exe
     - name: Run tests for andy-lang
       run: |
-        & "C:\Program Files (x86)\andy-lang\bin\andy.exe" tests
+        & "C:\Program Files (x86)\andy-lang\bin\andy.exe" --tests
       working-directory: andy-lang
