@@ -17,7 +17,7 @@ namespace andy
 #elif defined(__wasm__)
                 src_dir = std::filesystem::path("/");
 #elif defined(_WIN32)
-                src_dir = std::filesystem::path("C:/Program Files (x86)/andy-lang/src");
+                src_dir = std::filesystem::path("C:/Program Files (x86)/andy-lang/andy-lang/src");
 #else
                 throw std::runtime_error("unsupported OS");
 #endif
