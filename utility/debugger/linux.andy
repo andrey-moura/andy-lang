@@ -1,6 +1,10 @@
 type Debugger
   var executable_path = null
 
+  static fn new(path)
+    executable_path = path
+  end
+
   fn run
     out false
   end

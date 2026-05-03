@@ -1,5 +1,7 @@
 #if __linux__
   #include 'debugger/linux.andy'
+#else
+  throw 'Unsupported platform'
 #end
 
 if __argv__.size < 2
