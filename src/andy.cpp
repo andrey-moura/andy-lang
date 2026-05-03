@@ -58,11 +58,11 @@ int main(int argc, char** argv) {
                     file_path.replace_extension(".andy");
 
                     if(!std::filesystem::exists(file_path)) {
-                        throw std::runtime_error("utility does not exist");
+                        throw std::runtime_error("utility does not exist. Searched for '" + file_path.string() + "'");
                     }
 
                     if(!std::filesystem::is_regular_file(file_path)) {
-                        throw std::runtime_error("utility is not a regular file");
+                        throw std::runtime_error("utility is not a regular file. Searched for '" + file_path.string() + "'");
                     }
                 }
             }

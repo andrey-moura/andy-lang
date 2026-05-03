@@ -122,6 +122,9 @@ if(UNIX)
     # set_target_properties(andy PROPERTIES LINK_SEARCH_START_STATIC ON)
     # set_target_properties(andy PROPERTIES LINK_SEARCH_END_STATIC ON)
     # target_link_options(andy PRIVATE -static-libgcc -static-libstdc++ -static)
+    target_link_options(andy PRIVATE
+        "-Wl,-Map=${CMAKE_BINARY_DIR}/andy.map"
+    )
 elseif(WIN32)
     add_executable(andy-lang-installer WIN32 ${CMAKE_CURRENT_LIST_DIR}/win32/installer.cpp)
     if(EXISTS "${CMAKE_BINARY_DIR}/Release/andy.exe")
@@ -162,6 +165,7 @@ install(TARGETS andy-lang DESTINATION lib)
 # Install andy-lang headers
 install(DIRECTORY include/andy DESTINATION include)
 install(DIRECTORY std DESTINATION include/andy)
+install(DIRECTORY utility DESTINATION src/andy-lang)
 
 install(EXPORT andy-langTargets
     FILE andy-langTargets.cmake
