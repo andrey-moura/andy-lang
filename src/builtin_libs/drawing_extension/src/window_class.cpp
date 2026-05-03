@@ -75,7 +75,7 @@ std::shared_ptr<andy::lang::structure> create_window_class(andy::lang::interpret
     window_class->instance_functions["show"] = std::make_shared<andy::lang::function>("show", std::initializer_list<std::string>{"maximized: false"}, [](andy::lang::interpreter* interpreter) {
         std::shared_ptr<andy::lang::object> maximized = interpreter->current_context->named_params["maximized"];
         auto window = interpreter->current_context->self->as<std::shared_ptr<andylang_drawing_window>>();
-//        window->show(maximized->is_present());
+//        window->show(andy::lang::api::is_truthy(interpreter, maximized));
 
         return nullptr;
     });

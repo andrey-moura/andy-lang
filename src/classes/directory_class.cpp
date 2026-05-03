@@ -85,6 +85,14 @@ std::shared_ptr<andy::lang::structure> create_directory_class(andy::lang::interp
         return andy::lang::object::instantiate(interpreter, interpreter->PathClass, std::move(path));
     });
 
-    
+    DirectoryClass->functions["current"] = std::make_shared<andy::lang::function>("current", [DirectoryClass](andy::lang::interpreter* interpreter) {
+        std::filesystem::path path = std::filesystem::current_path();
+        if(path.empty()) {
+            throw std::runtime_error("Unable to retrieve current directory");
+        }
+
+        return andy::lang::object::instantiate(interpreter, DirectoryClass, std::move(path));
+    });
+
     return DirectoryClass;
 }

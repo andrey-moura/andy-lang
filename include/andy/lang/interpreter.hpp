@@ -9,6 +9,15 @@
 #include <andy/lang/object.hpp>
 #include <andy/lang/interpreter_context.hpp>
 
+struct andy_lang_runtime_exception {
+    andy_lang_runtime_exception(std::shared_ptr<andy::lang::object> exception_object)
+        : exception_object(std::move(exception_object))
+    {
+        
+    }
+    std::shared_ptr<andy::lang::object> exception_object;
+};
+
 namespace andy
 {
     namespace lang
@@ -27,6 +36,7 @@ namespace andy
         public:
             std::filesystem::path input_file_path;
             andy::lang::lexer* main_lexer = nullptr;
+            const andy::lang::parser::ast_node* current_node = nullptr;
         public:
             /// @brief Load a class into the vm. The class is kept alive by the vm untill it is destroyed.
             /// @param cls The class to be loaded. It is kept alive by the vm untill it is destroyed. It is globally accessible.

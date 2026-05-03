@@ -15,8 +15,22 @@ namespace andy
         {
             /// @brief Executes the code in a file and return the result.
             /// @param path The path to the source code.
+            /// @param argc The number of arguments to pass to the code. This is optional and defaults to 0.
+            /// @param argv The arguments to pass to the code. This is optional and defaults to nullptr.
             /// @return Returns a shared pointer to the object.
             std::shared_ptr<andy::lang::object> evaluate(std::filesystem::path path, int argc = 0, char** argv = nullptr);
+            /// @brief Executes the code in a file and return the result.
+            /// @param interpreter The interpreter to execute the code in. If the interpreter is not initialized, it will be initialized with the code in the file.
+            /// @param path The path to the source code.
+            /// @param argc The number of arguments to pass to the code. This is optional and defaults to 0.
+            /// @param argv The arguments to pass to the code. This is optional and defaults to nullptr.
+            /// @return Returns a shared pointer to the object.
+            std::shared_ptr<andy::lang::object> evaluate(
+                andy::lang::interpreter* interpreter,
+                std::filesystem::path path,
+                int argc = 0,
+                char** argv = nullptr
+            );
             /// @brief Convert or cast the object to a specific type.
             /// @tparam T The type to convert to.
             /// @param interpreter The interpreter.
@@ -136,6 +150,11 @@ namespace andy
             /// @param obj The object to check.
             /// @return Returns true if the object is present, false otherwise.
             bool is_present(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj);
+            /// @brief Checks if the object is truthy (not null and not false).
+            /// @param interpreter The interpreter.
+            /// @param obj The object to check.
+            /// @return Returns true if the object is truthy, false otherwise.
+            bool is_truthy(andy::lang::interpreter* interpreter, std::shared_ptr<andy::lang::object> obj);
             /// @brief Adds a class to another class.
             /// @param interpreter The interpreter.
             /// @param cls The class.

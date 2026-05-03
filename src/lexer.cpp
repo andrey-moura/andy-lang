@@ -60,6 +60,7 @@ const static std::vector<std::string_view> keywords_lookup = {
     "throw",
     "try",
     "type",
+    "unless",
     "var",
     "within",
     "yield"
@@ -643,11 +644,7 @@ std::string andy::lang::lexer::token::human_start_position() const
 
 void andy::lang::lexer::token::merge(const token &other)
 {
-    if(string_literal.empty()) {
-        string_literal = content;
-    }
-    string_literal += other.content;
-
+    content += other.content;
     end = other.end;
 }
 

@@ -1,1 +1,1 @@
-puts('Hello, world!');
+out 'Hello, world!'

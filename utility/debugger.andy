@@ -1,0 +1,15 @@
+#if __linux__
+  #include 'debugger/linux.andy'
+#else
+  throw 'Unsupported platform'
+#end
+
+if __argv__.size < 2
+  out 'andy --debugger <path_to_executable> <args>'
+
+  return 1
+end
+
+var debugger = Debugger.new(__argv__[1])
+
+debugger.init
