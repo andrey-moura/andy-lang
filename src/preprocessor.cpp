@@ -78,9 +78,6 @@ andy::lang::preprocessor::~preprocessor()
 
 void andy::lang::preprocessor::process(const std::filesystem::path &__file_name, andy::lang::lexer &__lexer)
 {
-    // Now we have a rule defined: The preprocessors must be at the beginning of the file.
-    // The preprocessor will stop executing when it finds a token that is not a preprocessor (and is not a comment).
-
     andy::lang::lexer::token token = __lexer.next_token();
 
     while(!token.is_eof()) {
