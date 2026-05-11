@@ -21,8 +21,10 @@ namespace andy
         public:
             void process(const std::filesystem::path& __file_name, andy::lang::lexer& __lexer);
         public:
+            void process_token(const std::filesystem::path& __file_name, andy::lang::lexer& __lexer, andy::lang::lexer::token& token);
             void process_include(const std::filesystem::path& __file_name, andy::lang::lexer& __lexer);
             void process_compile(const std::filesystem::path& __file_name, andy::lang::lexer& __lexer);
+            void process_if(const std::filesystem::path& __file_name, andy::lang::lexer& __lexer);
         };
     };
 };
