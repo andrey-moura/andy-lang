@@ -38,7 +38,14 @@ void write_path(std::string_view path)
 #endif
 }
 
-void write_linter_warning(std::string_view type, std::string_view message, std::string_view file_name, andy::lang::lexer::token_position start, size_t length)
+void write_linter_warning(
+    std::string_view type,
+    std::string_view message,
+    std::string_view file_name,
+    andy::lang::lexer::token_position start,
+    andy::lang::lexer::token_position end,
+    std::string_view tags
+)
 {
     if(num_linter_warnings) {
         buffer += ",\n";
@@ -49,15 +56,24 @@ void write_linter_warning(std::string_view type, std::string_view message, std::
     buffer += message;
     buffer += "\",\n\t\t\t\"location\": {\n\t\t\t\t\"file\": \"";
     buffer += file_name;
-    buffer += "\",\n\t\t\t\t\"line\": ";
+    buffer += "\",\n\t\t\t\t\"start\": {\n\t\t\t\t\t\"line\": ";
     buffer += std::to_string(start.line);
-    buffer += ",\n\t\t\t\t\"column\": ";
+    buffer += ",\n\t\t\t\t\t\"column\": ";
     buffer += std::to_string(start.column);
-    buffer += ",\n\t\t\t\t\"offset\": ";
+    buffer += ",\n\t\t\t\t\t\"offset\": ";
     buffer += std::to_string(start.offset);
-    buffer += ",\n\t\t\t\t\"length\": ";
-    buffer += std::to_string(length);
-    buffer += "\n\t\t\t}\n\t\t}";
+    buffer += "\n\t\t\t\t}";
+    buffer += ",\n\t\t\t\t\"end\": {\n\t\t\t\t\t\"line\": ";
+    buffer += std::to_string(end.line);
+    buffer += ",\n\t\t\t\t\t\"column\": ";
+    buffer += std::to_string(end.column);
+    buffer += ",\n\t\t\t\t\t\"offset\": ";
+    buffer += std::to_string(end.offset);
+    buffer += "\n\t\t\t\t}\n\t\t\t},\n\t\t\t\"tags\": [";
+    buffer += "\"";
+    buffer += tags;
+    buffer += "\"";
+    buffer += "]\n\t\t}";
     ++num_linter_warnings;
 }
 
@@ -91,6 +107,18 @@ void print_help(std::string_view program_name) {
                 << "      Reads content from temp_file.andy, but treats it as if it came from main.andy.\n";
 }
 
+struct log_output {
+    log_output(bool enabled) : enabled(enabled) {}
+    bool enabled;
+    template<typename T>
+    log_output& operator<<(const T& value) {
+        if(enabled) {
+            std::cerr << value;
+        }
+        return *this;
+    }
+};
+
 int main(int argc, char** argv) {
     struct switch_option {
         bool enabled;
@@ -112,6 +140,7 @@ int main(int argc, char** argv) {
     switch_option is_server { false, false };
     switch_option write_to_stdout { true, false };
     switch_option write_to_output { false, true };
+    switch_option should_debug { false, false };
 
     std::string tokenization_error;
     std::string parse_error;
@@ -120,6 +149,7 @@ int main(int argc, char** argv) {
         { "--stdin",  &read_from_stdin },
         { "--temp",   &read_from_temp  },
         { "--server", &is_server       },
+        { "--debug",  &should_debug    },
         { "--stdout", &write_to_stdout },
         { "--out",    &write_to_output }
     };
@@ -165,6 +195,8 @@ int main(int argc, char** argv) {
             throw std::runtime_error("andy-analyzer: unknown option '" + std::string(s) + "'");
         }
     }
+
+    log_output debug(should_debug);
 
     bool run = true;
 
@@ -262,12 +294,20 @@ int main(int argc, char** argv) {
             std::string_view modifier;
         };
         std::vector<analyzer_token> tokens_to_write;
-
+        bool next_token_is_macro = false;
         // Preprocessor must be processed before the preprocessor run
         for(const auto& token : l.tokens()) {
+            if(next_token_is_macro) {
+                tokens_to_write.push_back({ "macro", token });
+                next_token_is_macro = false;
+                continue;
+            }
             switch(token.type) {    
                 case andy::lang::lexer::token_type::token_preprocessor:
                     tokens_to_write.push_back({ "keyword", token });
+                    if(token.content == "#if") {
+                        next_token_is_macro = true;
+                    }
                 break;
             }
         }
@@ -673,8 +713,8 @@ int main(int argc, char** argv) {
 
         inspect_node(root_node);
 
-        for(size_t i = 0; i < l.tokens().size(); ++i) {
-            const auto& token = l.tokens()[i];
+        for(const auto& token : l.tokens()) {
+            debug << "Inspecting token " << token.content << " of type " << static_cast<int>(token.type) << "\n";
             switch(token.type) {
                 case andy::lang::lexer::token_type::token_comment:
                     tokens_to_write.push_back({ "comment", token });
@@ -693,7 +733,8 @@ int main(int argc, char** argv) {
                             tokens_to_write.push_back({ "string", token });
                         break;
                         case andy::lang::lexer::token_kind::token_boolean:
-                            tokens_to_write.push_back({ "keyword", token });
+                        case andy::lang::lexer::token_kind::token_null:
+                            tokens_to_write.push_back({ "macro", token });
                         break;
                     }
                 break;
@@ -747,6 +788,7 @@ int main(int argc, char** argv) {
 
         buffer += "\n\t],\n";
 
+        buffer += "\t\"linter\": [\n";
             // size_t offset = token.start.offset;
             // size_t end_offset = token.end.offset;
             // std::string_view source = l.source(token);
@@ -789,6 +831,63 @@ int main(int argc, char** argv) {
         //     }
         // }
 
+        andy::lang::lexer::token_position start_position;
+        andy::lang::lexer::token_position end_position;
+        int target_line = 0;
+        std::string_view target_file;
+        bool accumulate = false;
+
+        for(const auto& token : l.unreachable_tokens()) {
+            if(!accumulate) {
+                start_position = token.start;
+
+                target_line = token.start.line;
+                target_file = *token.file_name;
+                accumulate = true;
+
+                continue;
+            }
+
+            bool is_on_same_line = token.start.line == target_line;
+            bool is_on_next_line = token.start.line == target_line + 1;
+            bool is_os_same_line_or_next_line = is_on_same_line || is_on_next_line;
+            bool is_on_same_file = *token.file_name == target_file;
+
+            if(is_os_same_line_or_next_line && is_on_same_file) {
+                target_line = token.start.line;
+                end_position = token.end;
+                continue;
+            }
+
+            write_linter_warning(
+                "unreachable-code",
+                "Unreachable code",
+                *token.file_name,
+                start_position,
+                end_position,
+                "unreachable"
+            );
+
+            accumulate = false;
+            start_position = token.start;
+
+            target_line = token.start.line;
+            target_file = *token.file_name;
+            accumulate = true;
+        }
+
+        if(accumulate) {
+            write_linter_warning(
+                "unreachable-code",
+                "Unreachable code",
+                target_file,
+                start_position,
+                end_position,
+                "unreachable"
+            );
+        }
+    
+        buffer += "\t],\n";
         buffer += "\t\"references\": [";
 
         for(size_t i = 0; i < references.size(); i++) {

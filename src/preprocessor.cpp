@@ -65,7 +65,18 @@ std::vector<std::string> list_files_with_wildcard(const std::filesystem::path& b
 
 std::map<std::string, void(andy::lang::preprocessor::*)(const std::filesystem::path&, andy::lang::lexer&), std::less<>> preprocessor_directives = {
     { "#include", &andy::lang::preprocessor::process_include },
-    { "#compile", &andy::lang::preprocessor::process_compile }
+    { "#compile", &andy::lang::preprocessor::process_compile },
+    { "#if",      &andy::lang::preprocessor::process_if      }
+};
+
+std::map<std::string_view, bool> preprocessor_definitions = {
+#ifdef __linux__
+    { "__linux__", true },
+    { "__windows__", false },
+#elif defined(_WIN32)
+    { "__windows__", true },
+    { "__linux__", false },
+#endif
 };
 
 andy::lang::preprocessor::preprocessor()
@@ -78,30 +89,31 @@ andy::lang::preprocessor::~preprocessor()
 
 void andy::lang::preprocessor::process(const std::filesystem::path &__file_name, andy::lang::lexer &__lexer)
 {
-    // Now we have a rule defined: The preprocessors must be at the beginning of the file.
-    // The preprocessor will stop executing when it finds a token that is not a preprocessor (and is not a comment).
-
     andy::lang::lexer::token token = __lexer.next_token();
 
     while(!token.is_eof()) {
-        switch(token.type) {
-            case andy::lang::lexer::token_type::token_comment:
-                // Do nothing
-            break;
-            case andy::lang::lexer::token_type::token_preprocessor: {
-                if(auto it = preprocessor_directives.find(token.content); it != preprocessor_directives.end()) {
-                    (this->*it->second)(__file_name, __lexer);
-                } else {
-                    throw std::runtime_error(token.error_message_at_current_position("unknown preprocessor directive"));
-                }
-            }
-            break;
-        }
-
+        process_token(__file_name, __lexer, token);
         token = __lexer.next_token();
     }
 
     __lexer.reset();
+}
+
+void andy::lang::preprocessor::process_token(const std::filesystem::path &__file_name, andy::lang::lexer &__lexer, andy::lang::lexer::token &token)
+{
+    switch(token.type) {
+        case andy::lang::lexer::token_type::token_comment:
+            // Do nothing
+        break;
+        case andy::lang::lexer::token_type::token_preprocessor: {
+            if(auto it = preprocessor_directives.find(token.content); it != preprocessor_directives.end()) {
+                (this->*it->second)(__file_name, __lexer);
+            } else {
+                throw std::runtime_error(token.error_message_at_current_position("unknown preprocessor directive"));
+            }
+        }
+        break;
+    }
 }
 
 void andy::lang::preprocessor::process_include(const std::filesystem::path &__file_name, andy::lang::lexer &__lexer)
@@ -241,4 +253,45 @@ void andy::lang::preprocessor::process_compile(const std::filesystem::path &__fi
     }
 
     std::filesystem::current_path(current_path);
+}
+
+void andy::lang::preprocessor::process_if(const std::filesystem::path &__file_name, andy::lang::lexer &__lexer)
+{
+    andy::lang::lexer::token directive = std::move(__lexer.current_token());
+    andy::lang::lexer::token condition = std::move(__lexer.see_next());
+
+    __lexer.erase_tokens(2); // Remove the directive and the condition token
+
+    auto it = preprocessor_definitions.find(condition.content);
+
+    if(it == preprocessor_definitions.end()) {
+        throw std::runtime_error(condition.error_message_at_current_position(std::string(condition.content) + " is not defined"));
+    }
+
+    bool should_include_token = it->second;
+
+    while(true) {
+        andy::lang::lexer::token& token = __lexer.next_token();
+
+        if(token.type == andy::lang::lexer::token_type::token_preprocessor) {
+            if(token.content == "#end") {
+                __lexer.erase_tokens(1); // Remove the #end directive
+                break;
+            } else if (token.content == "#else") {
+                __lexer.erase_tokens(1); // Remove the #else directive
+                should_include_token = !should_include_token;
+                continue;
+            }
+
+            if(should_include_token) {
+                process_token(__file_name, __lexer, token);
+            }
+        }
+
+        if(should_include_token) {
+            __lexer.next_token(); // Move the iterator to the next token, so it will be processed in the next iteration.
+        } else {
+            __lexer.mark_unreachable(); // Mark the token as unreachable, so it will be ignored by the parser and the analyzer.
+        }
+    }
 }

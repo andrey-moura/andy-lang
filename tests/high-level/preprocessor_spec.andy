@@ -1,0 +1,38 @@
+#include 'std/tests'
+
+describe 'preprocessor' do
+  describe '#include' do
+    it 'allows access to functions from included files' do
+      #include 'fixtures/fn.andy'
+      expect(test).to eq('123')
+    end
+  end
+  describe '#if' do
+    #if __linux__
+      context 'verifying __linux__' do
+        it 'evaluates to true on Linux' do
+          expect(System.linux?).to eq(true)
+        end
+      end
+    #else
+      context 'verifying __linux__ disabled' do
+        it 'evaluates to false on non-Linux systems' do
+          expect(System.linux?).to eq(false)
+        end
+      end
+    #end
+    #if __windows__
+      context 'verifying __windows__' do
+        it 'evaluates to true on Windows' do
+          expect(System.windows?).to eq(true)
+        end
+      end
+    #else
+      context 'verifying __windows__' do
+        it 'evaluates to false on non-Windows systems' do
+          expect(System.windows?).to eq(false)
+        end
+      end
+    #end
+  end
+end
