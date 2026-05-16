@@ -227,29 +227,26 @@ std::shared_ptr<andy::lang::object> andy::lang::interpreter::execute_valuedecl(c
     switch(source_code.token().kind)
     {
         case lexer::token_kind::token_boolean: {
-            if(source_code.token().boolean_literal) {
-                return std::make_shared<andy::lang::object>(TrueClass);
-            } else {
-                return std::make_shared<andy::lang::object>(FalseClass);
-            }
+            std::shared_ptr<andy::lang::object> obj = andy::lang::api::to_object(this, source_code.token().boolean_literal);
+            return obj;
         }
         break;
         case lexer::token_kind::token_integer: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, IntegerClass, source_code.token().integer_literal);
+            std::shared_ptr<andy::lang::object> obj = andy::lang::api::to_object(this, source_code.token().integer_literal);
             return obj;
         }
         case lexer::token_kind::token_float: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, FloatClass, source_code.token().float_literal);
+            std::shared_ptr<andy::lang::object> obj = andy::lang::api::to_object(this, source_code.token().float_literal);
             return obj;
         }
         break;
         case lexer::token_kind::token_double: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, DoubleClass, source_code.token().double_literal);
+            std::shared_ptr<andy::lang::object> obj = andy::lang::api::to_object(this, source_code.token().double_literal);
             return obj;
         }
         break;
         case lexer::token_kind::token_string: {
-            std::shared_ptr<andy::lang::object> obj = andy::lang::object::instantiate(this, StringClass, source_code.token().string_literal);
+            std::shared_ptr<andy::lang::object> obj = andy::lang::api::to_object(this, source_code.token().string_literal);
             return obj;
         }
         break;

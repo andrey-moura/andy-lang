@@ -733,3 +733,18 @@ void andy::lang::lexer::extract_and_push_string(bool is_interpolated)
 
     throw std::runtime_error("lexer: unexpected end of file");
 }
+
+void andy::lang::lexer::mark_unreachable(size_t count)
+{
+    if(iterator + count > m_tokens.size()) {
+        throw std::runtime_error("unexpected end of file");
+    }
+
+    m_unreachable_tokens.reserve(m_unreachable_tokens.size() + count);
+
+    for(size_t i = 0; i < count; i++) {
+        m_unreachable_tokens.push_back(std::move(m_tokens[iterator - 1 + i]));
+    }
+
+    erase_tokens(count);
+}

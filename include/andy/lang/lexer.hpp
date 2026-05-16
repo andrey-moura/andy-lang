@@ -117,6 +117,7 @@ namespace andy
 
             std::vector<std::string> m_includes;            
             std::vector<andy::lang::lexer::token> m_tokens;
+            std::vector<andy::lang::lexer::token> m_unreachable_tokens;
             
             // iterating
             std::string_view m_current;
@@ -209,11 +210,17 @@ namespace andy
             /// @brief Erase a number of tokens starting from the current iterator.
             /// @param count The number of tokens to erase.
             void erase_tokens(size_t count);
+            /// @brief Mark the n next tokens as unreachable.
+            /// @param count The number of tokens to mark as unreachable.
+            void mark_unreachable(size_t count = 1);
             /// @brief Erase the EOF token.
             void erase_eof();
             /// @brief The tokens.
             /// @return The tokens.
             const std::vector<andy::lang::lexer::token>& tokens() const { return m_tokens; }
+            /// @brief  The unreachable tokens. These tokens are ignored by the parser and the analyzer.
+            /// @return The unreachable tokens.
+            const std::vector<andy::lang::lexer::token>& unreachable_tokens() const { return m_unreachable_tokens; }
         protected:
         public:
             //extern std::vector<std::pair<std::string_view, andy::lang::lexer::cursor_type>> cursor_type_from_string_map;
