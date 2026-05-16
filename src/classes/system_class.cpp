@@ -1,6 +1,7 @@
 #include <andy/lang/lang.hpp>
 #include <andy/lang/interpreter.hpp>
 #include <andy/lang/extension.hpp>
+#include <andy/lang/api.hpp>
 
 std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpreter* interpreter)
 {
@@ -17,18 +18,18 @@ std::shared_ptr<andy::lang::structure> create_system_class(andy::lang::interpret
         throw std::runtime_error("unsupported OS");
     #endif
 
-    SystemClass->variables["OS"] = andy::lang::object::create(interpreter, interpreter->StringClass, std::string(current_os_name));
+    SystemClass->variables["OS"] = andy::lang::api::to_object(interpreter, std::move(std::string(current_os_name)));
 
-    SystemClass->variables["windows?"]     = std::make_shared<andy::lang::object>(interpreter->FalseClass);
-    SystemClass->variables["linux?"]       = std::make_shared<andy::lang::object>(interpreter->FalseClass);
-    SystemClass->variables["web_assembly?"] = std::make_shared<andy::lang::object>(interpreter->FalseClass);
+    SystemClass->variables["windows?"]     = andy::lang::api::to_object(interpreter, false);
+    SystemClass->variables["linux?"]       = andy::lang::api::to_object(interpreter, false);
+    SystemClass->variables["web_assembly?"] = andy::lang::api::to_object(interpreter, false);
 
 #ifdef _WIN32
-    SystemClass->variables["windows?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    SystemClass->variables["windows?"] = andy::lang::api::to_object(interpreter, true);
 #elif __linux__
-    SystemClass->variables["linux?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    SystemClass->variables["linux?"] = andy::lang::api::to_object(interpreter, true);
 #elif __wasm__
-    SystemClass->variables["web_assembly?"] = std::make_shared<andy::lang::object>(interpreter->TrueClass);
+    SystemClass->variables["web_assembly?"] = andy::lang::api::to_object(interpreter, true);
 #endif
 
     return SystemClass;
