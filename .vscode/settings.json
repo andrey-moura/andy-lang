@@ -113,7 +113,7 @@
     ],
     "cmake.debugConfig": {
         "args": [
-            "tests/high-level/namespace_spec.andy",
+            "/home/andrey/Moonslate/andy-lang/utility/debugger.andy",
         ],
         "cwd": "${workspaceFolder}",
         "visualizerFile": "${workspaceFolder}/natvis.xml",

@@ -6,9 +6,9 @@ type Debugger
   end
 
   fn run
-    out false
   end
 
   fn init
+    out "Executable path: " + executable_path
   end
 end
