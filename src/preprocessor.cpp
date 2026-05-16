@@ -72,9 +72,9 @@ std::map<std::string, void(andy::lang::preprocessor::*)(const std::filesystem::p
 std::map<std::string_view, bool> preprocessor_definitions = {
 #ifdef __linux__
     { "__linux__", true },
-    { "__win32__", false },
+    { "__windows__", false },
 #elif defined(_WIN32)
-    { "__win32__", true },
+    { "__windows__", true },
     { "__linux__", false },
 #endif
 };
@@ -288,8 +288,10 @@ void andy::lang::preprocessor::process_if(const std::filesystem::path &__file_na
             }
         }
 
-        if(!should_include_token) {
-            __lexer.erase_tokens(1); // Remove the token
+        if(should_include_token) {
+            __lexer.next_token(); // Move the iterator to the next token, so it will be processed in the next iteration.
+        } else {
+            __lexer.mark_unreachable(); // Mark the token as unreachable, so it will be ignored by the parser and the analyzer.
         }
     }
 }
